@@ -1,0 +1,21 @@
+[package]
+name = "jereko-cli"
+description = "Jereko command-line interface"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "jereko"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { workspace = true }
+jereko-config = { workspace = true }
+jereko-core = { workspace = true }
+jereko-server = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

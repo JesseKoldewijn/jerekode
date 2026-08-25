@@ -1,0 +1,33 @@
+[workspace]
+members = [
+    "crates/jereko-core",
+    "crates/jereko-config",
+    "crates/jereko-server",
+    "crates/jereko-cli",
+    "crates/jereko-providers",
+    "conformance",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Jereko Contributors"]
+repository = "https://github.com/jerekode/jerekode"
+
+[workspace.dependencies]
+async-trait = "0.1"
+axum = "0.8"
+clap = { version = "4", features = ["derive"] }
+jereko-config = { path = "crates/jereko-config" }
+jereko-core = { path = "crates/jereko-core" }
+jereko-providers = { path = "crates/jereko-providers" }
+jereko-server = { path = "crates/jereko-server" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4", "serde"] }

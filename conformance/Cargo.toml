@@ -1,0 +1,17 @@
+[package]
+name = "jereko-conformance"
+description = "Conformance test harness for Jereko (owned fixtures, no upstream code)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+jereko-config = { workspace = true }
+jereko-core = { workspace = true }
+jereko-providers = { workspace = true }
+jereko-server = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
