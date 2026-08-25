@@ -1,50 +1,94 @@
 /**
- * Jereko Bun Sidecar — Plugin Host Entry Point (Phase 0 stub)
+ * Jereko Bun Sidecar — Plugin Host Entry Point
  *
- * The sidecar runs as a child process of the `jereko` CLI. It hosts TUI and
- * server plugins with full Bun/TypeScript fidelity while the Rust core handles
- * HTTP, sessions, and provider routing.
- *
- * ## IPC Contract (Phase 1)
- *
- * Transport: stdio JSON-lines (one message per line) or Unix domain socket.
- *
- * ### Rust → Sidecar messages
- * - `{ "type": "init", "config": { ... }, "plugins": [ ... ] }`
- * - `{ "type": "session.start", "sessionId": "..." }`
- * - `{ "type": "session.message", "sessionId": "...", "content": "..." }`
- * - `{ "type": "shutdown" }`
- *
- * ### Sidecar → Rust messages
- * - `{ "type": "ready" }`
- * - `{ "type": "tui.render", "frame": { ... } }`
- * - `{ "type": "plugin.event", "plugin": "...", "event": { ... } }`
- * - `{ "type": "error", "message": "..." }`
- *
- * See `sidecar/README.md` for full contract documentation.
+ * JSON-line IPC over stdio (one message per line).
  */
 
-export type SidecarMessage =
+export type SidecarOutbound =
+  | { type: "init"; config: Record<string, unknown>; plugins: string[] }
+  | { type: "session_start"; sessionId: string }
+  | { type: "session_message"; sessionId: string; content: string }
+  | { type: "tui_render"; frame: Record<string, unknown> }
+  | { type: "shutdown" };
+
+export type SidecarInbound =
   | { type: "ready" }
+  | { type: "tui_render"; frame: Record<string, unknown> }
+  | { type: "plugin_event"; plugin: string; event: Record<string, unknown> }
   | { type: "error"; message: string }
   | { type: "log"; level: "info" | "warn" | "error"; message: string };
 
 export interface SidecarOptions {
-  /** Path to opencode.json-derived config passed from Rust */
   configPath?: string;
+  onMessage?: (msg: SidecarOutbound) => void;
 }
 
-/**
- * Start the plugin host sidecar (stub).
- */
+function emit(msg: SidecarInbound): void {
+  console.log(JSON.stringify(msg));
+}
+
+function handleOutbound(msg: SidecarOutbound): void {
+  switch (msg.type) {
+    case "init":
+      emit({ type: "log", level: "info", message: `loaded ${msg.plugins.length} plugins` });
+      emit({ type: "ready" });
+      break;
+    case "session_start":
+      emit({ type: "log", level: "info", message: `session ${msg.sessionId} started` });
+      break;
+    case "session_message":
+      emit({
+        type: "plugin_event",
+        plugin: "sidecar",
+        event: { sessionId: msg.sessionId, content: msg.content },
+      });
+      break;
+    case "tui_render":
+      emit({ type: "tui_render", frame: msg.frame });
+      break;
+    case "shutdown":
+      emit({ type: "log", level: "info", message: "sidecar shutting down" });
+      process.exit(0);
+      break;
+  }
+}
+
+/** Start the plugin host sidecar — reads JSON-line commands from stdin. */
 export function startSidecar(options: SidecarOptions = {}): void {
-  const msg: SidecarMessage = {
+  emit({
     type: "log",
     level: "info",
-    message: `jereko sidecar stub started (config: ${options.configPath ?? "none"})`,
-  };
-  console.log(JSON.stringify(msg));
-  console.log(JSON.stringify({ type: "ready" } satisfies SidecarMessage));
+    message: `jereko sidecar started (config: ${options.configPath ?? "none"})`,
+  });
+  emit({ type: "ready" });
+
+  if (import.meta.main) {
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    Bun.stdin.stream().pipeTo(
+      new WritableStream({
+        write(chunk) {
+          buffer += decoder.decode(chunk, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const msg = JSON.parse(line) as SidecarOutbound;
+              options.onMessage?.(msg);
+              handleOutbound(msg);
+            } catch (err) {
+              emit({
+                type: "error",
+                message: `invalid JSON-line: ${String(err)}`,
+              });
+            }
+          }
+        },
+      }),
+    );
+  }
 }
 
 if (import.meta.main) {

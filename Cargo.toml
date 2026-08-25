@@ -5,6 +5,7 @@ members = [
     "crates/jereko-server",
     "crates/jereko-cli",
     "crates/jereko-providers",
+    "crates/jereko-plugins",
     "conformance",
 ]
 resolver = "2"
@@ -22,6 +23,7 @@ axum = "0.8"
 clap = { version = "4", features = ["derive"] }
 jereko-config = { path = "crates/jereko-config" }
 jereko-core = { path = "crates/jereko-core" }
+jereko-plugins = { path = "crates/jereko-plugins" }
 jereko-providers = { path = "crates/jereko-providers" }
 jereko-server = { path = "crates/jereko-server" }
 serde = { version = "1", features = ["derive"] }

@@ -9,5 +9,7 @@ mod provider;
 mod registry;
 
 pub use error::{ProviderError, ProviderResult};
-pub use provider::{CompletionRequest, CompletionResponse, ModelInfo, Provider, ProviderId};
+pub use provider::{
+    resolve, CompletionRequest, CompletionResponse, ModelInfo, Provider, ProviderId, StubProvider,
+};
 pub use registry::ProviderRegistry;

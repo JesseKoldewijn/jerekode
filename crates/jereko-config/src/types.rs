@@ -27,9 +27,9 @@ pub struct OpenCodeConfig {
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub providers: HashMap<String, ProviderOverride>,
 
-    /// Plugin configuration (resolved by the Bun sidecar).
+    /// Plugin configuration (resolved by PluginOrchestrator).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub plugins: Vec<PluginRef>,
+    pub plugins: Vec<PluginEntry>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
@@ -41,12 +41,31 @@ pub struct ProviderOverride {
     pub api_key_env: Option<String>,
 }
 
+/// Plugin entry in config — unqualified string (Bun) or explicit host object.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct PluginRef {
-    pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
+#[serde(untagged)]
+pub enum PluginEntry {
+    /// Bun plugin (default host): `"@acme/server-plugin"`.
+    Bun(String),
+    /// Explicit native dylib path.
+    Native { native: String },
+    /// Explicit WASM path (Phase 4).
+    Wasm { wasm: String },
+    /// Legacy structured form with name/path.
+    Named {
+        name: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        path: Option<String>,
+    },
+}
+
+impl PluginEntry {
+    pub fn display_name(&self) -> &str {
+        match self {
+            Self::Bun(s) | Self::Named { name: s, .. } => s,
+            Self::Native { native } | Self::Wasm { wasm: native } => native,
+        }
+    }
 }
 
 /// Minimal stub for `tui.json` shape.

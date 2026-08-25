@@ -6,7 +6,11 @@
 
 pub mod adapters;
 pub mod error;
+pub mod extensions;
+pub mod handlers;
+pub mod persistence;
 pub mod router;
+pub mod session_store;
 pub mod state;
 
 pub use error::{ServerError, ServerResult};
@@ -16,18 +20,9 @@ pub use state::AppState;
 use jereko_config::OpenCodeConfig;
 use std::net::SocketAddr;
 
-/// Start the HTTP server (stub — binds and serves health endpoints).
-pub async fn serve(config: &OpenCodeConfig) -> ServerResult<()> {
-    let host = config.host.as_deref().unwrap_or("127.0.0.1");
-    let port = config.port.unwrap_or(4096);
-    let addr: SocketAddr = format!("{host}:{port}").parse().map_err(|e| {
-        ServerError::Bind(
-            format!("{host}:{port}"),
-            std::io::Error::new(std::io::ErrorKind::InvalidInput, e),
-        )
-    })?;
-
-    let state = AppState::default();
+/// Start the HTTP server on a specific address (for tests).
+pub async fn serve_on(addr: SocketAddr, config: &OpenCodeConfig) -> ServerResult<()> {
+    let state = AppState::new(config);
     let app = build_router(state);
 
     tracing::info!(%addr, "jereko server listening");
@@ -40,4 +35,17 @@ pub async fn serve(config: &OpenCodeConfig) -> ServerResult<()> {
         .map_err(|e| ServerError::Serve(e.to_string()))?;
 
     Ok(())
+}
+
+/// Start the HTTP server using config host/port.
+pub async fn serve(config: &OpenCodeConfig) -> ServerResult<()> {
+    let host = config.host.as_deref().unwrap_or("127.0.0.1");
+    let port = config.port.unwrap_or(4096);
+    let addr: SocketAddr = format!("{host}:{port}").parse().map_err(|e| {
+        ServerError::Bind(
+            format!("{host}:{port}"),
+            std::io::Error::new(std::io::ErrorKind::InvalidInput, e),
+        )
+    })?;
+    serve_on(addr, config).await
 }

@@ -9,5 +9,6 @@
 //! serde shapes stay inside their adapter modules.
 
 pub mod normalized;
+pub mod status;
 pub mod v1;
 pub mod v2;

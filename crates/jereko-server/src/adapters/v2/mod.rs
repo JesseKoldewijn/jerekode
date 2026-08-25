@@ -31,3 +31,13 @@ pub fn denormalize_create_session(
         session: resp.session,
     }
 }
+
+/// Convert normalized send-message response to v2 wire format.
+pub fn denormalize_send_message(
+    resp: crate::adapters::normalized::SendMessageResponse,
+) -> V2SendMessageResponse {
+    V2SendMessageResponse {
+        session: resp.session,
+        content: resp.assistant_message.content,
+    }
+}

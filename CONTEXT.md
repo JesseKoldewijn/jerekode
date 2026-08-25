@@ -46,14 +46,14 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 
 | Phase | Focus | Status |
 |-------|-------|--------|
-| **0** | Workspace scaffolding, stubs, architecture foundations | Current |
-| **0.5** | Agent context, ADRs, engineering standards, CI stub | Current |
-| **1** | Config JSONC, HTTP adapter round-trips, fixture-driven conformance | Next |
-| **2** | PluginOrchestrator + BunPluginHost, SidecarPort IPC, TUI via `jereko run`, plugin routes | Planned |
-| **2.5** | NativePluginHost — in-process dylib, server hooks (tools, providers, transforms) | Planned |
-| **3** | Bun TUI plugins; full provider implementations | Future |
-| **4** | WasmPluginHost for untrusted plugins | Future |
-| **5** | Native TUI plugins; `TuiPluginHost` trait | Future |
+| **0** | Workspace scaffolding, stubs, architecture foundations | Complete |
+| **0.5** | Agent context, ADRs, engineering standards, CI stub | Complete |
+| **1** | Config JSONC, HTTP adapter round-trips, fixture-driven conformance | Complete |
+| **2** | PluginOrchestrator + BunPluginHost, SidecarPort IPC, TUI via `jereko run`, plugin routes | Complete (stub transport) |
+| **2.5** | NativePluginHost — in-process dylib, server hooks (tools, providers, transforms) | Stub (C ABI header + load stub) |
+| **3** | Bun TUI plugins; full provider implementations | Stub (`tui.render` IPC + bootstrap) |
+| **4** | WasmPluginHost, MCP/LSP/PTY stubs, SQLite persistence stub | Partial (stubs) |
+| **5** | Native TUI plugins; perf baseline hooks; `native-tui` feature flag | Documented stubs |
 
 Detailed design: [docs/architecture.md](docs/architecture.md).  
 Testing approach: [docs/conformance.md](docs/conformance.md).  

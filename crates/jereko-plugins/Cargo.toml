@@ -1,0 +1,23 @@
+[package]
+name = "jereko-plugins"
+description = "Plugin orchestrator and host implementations for Jereko"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+native-tui = []
+
+[dependencies]
+async-trait = { workspace = true }
+jereko-config = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

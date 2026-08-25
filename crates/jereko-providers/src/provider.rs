@@ -109,7 +109,6 @@ impl Provider for StubProvider {
 }
 
 /// Resolve a provider from a registry by id string.
-#[allow(dead_code)] // TODO(phase-1): wire into server handlers
 pub fn resolve<'a>(
     registry: &'a crate::registry::ProviderRegistry,
     id: &str,

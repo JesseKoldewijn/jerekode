@@ -20,4 +20,7 @@ pub enum ConfigError {
 
     #[error("config validation failed: {0}")]
     Validation(String),
+
+    #[error("invalid environment variable {var}: {value}")]
+    InvalidEnv { var: String, value: String },
 }

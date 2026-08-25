@@ -1,0 +1,10 @@
+[package]
+name = "jereko-plugin-sdk"
+description = "Native plugin SDK stub for Jereko (Phase 2.5+)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]

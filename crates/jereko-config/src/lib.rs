@@ -13,13 +13,13 @@
 //!
 //! # JSONC
 //!
-//! Config files use JSONC on disk. This stub parses strict JSON via
-//! `serde_json`; full JSONC support (comments, trailing commas) is Phase 1.
+//! Config files use JSONC on disk (comments, trailing commas supported).
 
 mod error;
+mod jsonc;
 mod loader;
 mod types;
 
 pub use error::{ConfigError, ConfigResult};
-pub use loader::{ConfigLayer, ConfigLoader, MergeStrategy};
-pub use types::{OpenCodeConfig, TuiConfig};
+pub use loader::{CliOverrides, ConfigLayer, ConfigLoader, MergeStrategy};
+pub use types::{OpenCodeConfig, PluginEntry, TuiConfig};

@@ -1,4 +1,5 @@
 use crate::error::{ConfigError, ConfigResult};
+use crate::jsonc::parse_jsonc;
 use crate::types::{OpenCodeConfig, TuiConfig};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -22,6 +23,15 @@ pub enum MergeStrategy {
     DeepMerge,
 }
 
+/// CLI-level overrides applied after all file/env layers.
+#[derive(Debug, Clone, Default)]
+pub struct CliOverrides {
+    pub provider: Option<String>,
+    pub model: Option<String>,
+    pub host: Option<String>,
+    pub port: Option<u16>,
+}
+
 /// Loads and merges configuration from multiple precedence layers.
 #[derive(Debug, Default)]
 pub struct ConfigLoader {
@@ -39,38 +49,118 @@ impl ConfigLoader {
         }
     }
 
-    /// Parse a JSON/JSONC config file from disk.
+    /// Load all discovered config paths with full precedence:
+    /// defaults → global → project → env → CLI.
     ///
-    /// TODO(phase-1): swap `serde_json` for a JSONC parser (comments, trailing commas).
+    /// Global config parse failures are logged and skipped so a broken user-level
+    /// file does not prevent project config from loading.
+    pub fn load_discovered(
+        project_root: impl AsRef<Path>,
+        cli: &CliOverrides,
+    ) -> ConfigResult<Self> {
+        let mut loader = Self::new();
+        let paths = Self::discover_paths(&project_root);
+
+        for (path, layer) in [
+            (&paths.global_opencode, ConfigLayer::Global),
+            (&paths.global_tui, ConfigLayer::Global),
+            (&paths.project_opencode, ConfigLayer::Project),
+            (&paths.project_tui, ConfigLayer::Project),
+        ] {
+            if path.exists() {
+                if let Err(err) = loader.load_file(path, layer) {
+                    if layer == ConfigLayer::Global {
+                        tracing::warn!(path = %path.display(), %err, "skipping invalid global config");
+                    } else {
+                        return Err(err);
+                    }
+                }
+            }
+        }
+
+        loader.apply_env_overrides()?;
+        loader.apply_cli_overrides(cli);
+        Ok(loader)
+    }
+
+    /// Parse a JSONC config file from disk.
     pub fn load_file(&mut self, path: impl AsRef<Path>, layer: ConfigLayer) -> ConfigResult<()> {
         let path = path.as_ref();
         let raw = fs::read_to_string(path).map_err(|source| ConfigError::ReadFile {
             path: path.display().to_string(),
             source,
         })?;
+        let display = path.display().to_string();
 
         if path
             .file_name()
             .and_then(|n| n.to_str())
             .is_some_and(|n| n.contains("tui"))
         {
-            let parsed: TuiConfig =
-                serde_json::from_str(&raw).map_err(|source| ConfigError::Parse {
-                    path: path.display().to_string(),
-                    source,
-                })?;
+            let parsed: TuiConfig = parse_jsonc(&raw, &display)?;
             self.tui = merge_tui(&self.tui, &parsed);
         } else {
-            let parsed: OpenCodeConfig =
-                serde_json::from_str(&raw).map_err(|source| ConfigError::Parse {
-                    path: path.display().to_string(),
-                    source,
-                })?;
+            let parsed: OpenCodeConfig = parse_jsonc(&raw, &display)?;
             self.opencode = merge_opencode(&self.opencode, &parsed);
         }
 
         self.loaded_layers.push(layer);
         Ok(())
+    }
+
+    pub fn apply_env_overrides(&mut self) -> ConfigResult<()> {
+        let mut applied = false;
+
+        if let Some(provider) = env_var(&["JEREKO_PROVIDER", "OPENCODE_PROVIDER"]) {
+            self.opencode.provider = Some(provider);
+            applied = true;
+        }
+        if let Some(model) = env_var(&["JEREKO_MODEL", "OPENCODE_MODEL"]) {
+            self.opencode.model = Some(model);
+            applied = true;
+        }
+        if let Some(host) = env_var(&["JEREKO_HOST", "OPENCODE_HOST"]) {
+            self.opencode.host = Some(host);
+            applied = true;
+        }
+        if let Some(port_str) = env_var(&["JEREKO_PORT", "OPENCODE_PORT"]) {
+            let port: u16 = port_str.parse().map_err(|_| ConfigError::InvalidEnv {
+                var: "JEREKO_PORT/OPENCODE_PORT".into(),
+                value: port_str,
+            })?;
+            self.opencode.port = Some(port);
+            applied = true;
+        }
+
+        if applied {
+            self.loaded_layers.push(ConfigLayer::Environment);
+        }
+        Ok(())
+    }
+
+    pub fn apply_cli_overrides(&mut self, cli: &CliOverrides) {
+        let mut applied = false;
+
+        if let Some(ref provider) = cli.provider {
+            self.opencode.provider = Some(provider.clone());
+            applied = true;
+        }
+        if let Some(ref model) = cli.model {
+            self.opencode.model = Some(model.clone());
+            applied = true;
+        }
+        if let Some(ref host) = cli.host {
+            self.opencode.host = Some(host.clone());
+            applied = true;
+        }
+        if let Some(port) = cli.port {
+            self.opencode.port = Some(port);
+            applied = true;
+        }
+
+        if applied {
+            self.loaded_layers.push(ConfigLayer::Cli);
+        }
     }
 
     pub fn opencode(&self) -> &OpenCodeConfig {
@@ -85,7 +175,7 @@ impl ConfigLoader {
         &self.loaded_layers
     }
 
-    /// Resolve standard config search paths (stub — returns empty if missing).
+    /// Resolve standard config search paths.
     pub fn discover_paths(project_root: impl AsRef<Path>) -> ConfigPaths {
         ConfigPaths {
             global_opencode: default_global_config("opencode.json"),
@@ -105,6 +195,13 @@ pub struct ConfigPaths {
     pub global_tui: PathBuf,
     pub project_opencode: PathBuf,
     pub project_tui: PathBuf,
+}
+
+fn env_var(names: &[&str]) -> Option<String> {
+    names
+        .iter()
+        .find_map(|name| std::env::var(name).ok())
+        .filter(|v| !v.is_empty())
 }
 
 fn default_global_config(filename: &str) -> PathBuf {
@@ -165,6 +262,8 @@ fn merge_tui(base: &TuiConfig, overlay: &TuiConfig) -> TuiConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::OpenCodeConfig;
+    use std::io::Write;
 
     #[test]
     fn later_layer_overrides_scalar() {
@@ -189,5 +288,55 @@ mod tests {
         assert!(ConfigLayer::Global < ConfigLayer::Project);
         assert!(ConfigLayer::Project < ConfigLayer::Environment);
         assert!(ConfigLayer::Environment < ConfigLayer::Cli);
+    }
+
+    #[test]
+    fn project_overrides_global() {
+        let dir = tempfile::tempdir().unwrap();
+        let global = dir.path().join("global.json");
+        let project = dir.path().join(".opencode/opencode.json");
+        fs::create_dir_all(project.parent().unwrap()).unwrap();
+
+        fs::write(
+            &global,
+            r#"{"provider":"openai","model":"gpt-4o","port":4096}"#,
+        )
+        .unwrap();
+        fs::write(&project, r#"{"model":"gpt-4o-mini","port":8080}"#).unwrap();
+
+        let mut loader = ConfigLoader::new();
+        loader.load_file(&global, ConfigLayer::Global).unwrap();
+        loader.load_file(&project, ConfigLayer::Project).unwrap();
+
+        assert_eq!(loader.opencode().provider.as_deref(), Some("openai"));
+        assert_eq!(loader.opencode().model.as_deref(), Some("gpt-4o-mini"));
+        assert_eq!(loader.opencode().port, Some(8080));
+    }
+
+    #[test]
+    fn cli_overrides_env() {
+        let mut loader = ConfigLoader::new();
+        loader.opencode.provider = Some("openai".into());
+        loader.loaded_layers.push(ConfigLayer::Environment);
+
+        loader.apply_cli_overrides(&CliOverrides {
+            provider: Some("anthropic".into()),
+            ..Default::default()
+        });
+
+        assert_eq!(loader.opencode().provider.as_deref(), Some("anthropic"));
+        assert!(loader.loaded_layers().contains(&ConfigLayer::Cli));
+    }
+
+    #[test]
+    fn loads_jsonc_fixture() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("opencode.jsonc");
+        let mut file = fs::File::create(&path).unwrap();
+        write!(file, r#"{{"provider":"anthropic","port":4096,}}"#).unwrap();
+
+        let mut loader = ConfigLoader::new();
+        loader.load_file(&path, ConfigLayer::Project).unwrap();
+        assert_eq!(loader.opencode().provider.as_deref(), Some("anthropic"));
     }
 }

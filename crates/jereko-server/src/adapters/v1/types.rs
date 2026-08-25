@@ -29,6 +29,17 @@ pub struct V1SendMessageResponse {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct V1ListProvidersResponse {
+    pub providers: Vec<V1ProviderSummary>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct V1ProviderSummary {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct V1ErrorResponse {
     pub error: String,
 }

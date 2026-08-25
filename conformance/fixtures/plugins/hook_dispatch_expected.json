@@ -1,0 +1,4 @@
+[
+  { "plugin": "native-tools", "output": { "host": "native", "stub": true } },
+  { "plugin": "@acme/server-plugin", "output": { "status": "ok" } }
+]
