@@ -181,10 +181,14 @@ mod tests {
     async fn loads_invokes_and_unloads_test_dylib() {
         let path = test_dylib_path();
         if !path.exists() {
-            eprintln!(
-                "skipping native dylib test; build jereko-test-native-plugin first ({})",
+            let msg = format!(
+                "native dylib missing at {}; build jereko-test-native-plugin first",
                 path.display()
             );
+            if std::env::var_os("CI").is_some() {
+                panic!("{msg}");
+            }
+            eprintln!("skipping: {msg}");
             return;
         }
 
