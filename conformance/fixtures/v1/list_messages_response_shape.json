@@ -1,0 +1,13 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    },
+    {
+      "role": "assistant",
+      "content": "[stub:anthropic] received 1 messages",
+      "provider": "anthropic"
+    }
+  ]
+}

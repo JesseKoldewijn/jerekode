@@ -117,6 +117,28 @@ impl SessionStorePort for SqliteSessionStore {
         existed
     }
 
+    fn delete(&self, id: &SessionId) -> bool {
+        self.conn
+            .lock()
+            .expect("sqlite lock")
+            .execute("DELETE FROM sessions WHERE id = ?1", [&id.0])
+            .map(|n| n > 0)
+            .unwrap_or(false)
+    }
+
+    fn list_ids(&self) -> Vec<SessionId> {
+        let conn = self.conn.lock().expect("sqlite lock");
+        let mut stmt = match conn.prepare("SELECT id FROM sessions") {
+            Ok(s) => s,
+            Err(_) => return Vec::new(),
+        };
+        let rows = stmt.query_map([], |row| row.get::<_, String>(0));
+        match rows {
+            Ok(iter) => iter.filter_map(|r| r.ok()).map(SessionId).collect(),
+            Err(_) => Vec::new(),
+        }
+    }
+
     fn len(&self) -> usize {
         let conn = self.conn.lock().expect("sqlite lock poisoned");
         conn.query_row("SELECT COUNT(*) FROM sessions", [], |row| {
@@ -173,5 +195,18 @@ mod tests {
         });
         assert!(store.update(session));
         assert_eq!(store.get(&id).unwrap().messages.len(), 1);
+    }
+
+    #[test]
+    fn deletes_and_lists_ids() {
+        let dir = TempDir::new().unwrap();
+        let store = SqliteSessionStore::open(dir.path().join("s.db")).unwrap();
+        let a = store.insert(Session::new());
+        let b = store.insert(Session::new());
+        let ids = store.list_ids();
+        assert_eq!(ids.len(), 2);
+        assert!(store.delete(&a));
+        assert!(!store.delete(&a));
+        assert_eq!(store.list_ids(), vec![b]);
     }
 }

@@ -54,6 +54,29 @@ impl HandlerContext {
         Ok(normalized::GetSessionResponse { session })
     }
 
+    pub fn list_messages(
+        &self,
+        session_id: &str,
+    ) -> Result<Vec<jereko_core::Message>, HandlerError> {
+        Ok(self.get_session(session_id)?.session.messages)
+    }
+
+    pub fn delete_session(&self, session_id: &str) -> Result<(), HandlerError> {
+        let id = jereko_core::SessionId(session_id.to_string());
+        if !self.sessions.delete(&id) {
+            return Err(HandlerError::SessionNotFound(session_id.into()));
+        }
+        Ok(())
+    }
+
+    pub fn list_sessions(&self) -> Vec<String> {
+        self.sessions
+            .list_ids()
+            .into_iter()
+            .map(|id| id.0)
+            .collect()
+    }
+
     pub async fn send_message(
         &self,
         session_id: &str,
