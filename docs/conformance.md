@@ -24,7 +24,9 @@ Tests live at **pre-agreed seams** — public interfaces where behavior is obser
 | Config merge | `jereko-config` | Unit | loader precedence with owned JSONC |
 | Sidecar IPC | `SidecarPort` | Integration | JSON-line contract; Bun CI hard-gate |
 | PluginOrchestrator | hook dispatch | Integration | ordered chain across hosts |
+| `tool.execute.before` | server tools + plugins | Integration | bash command mutation before execute |
 | NativePluginHost | dylib / C ABI | Integration | test cdylib; CI hard-gate |
+| `@jerekode/rtk` | packages/rtk | Unit + conformance | shared rules; OpenCode2 + native |
 | WasmPluginHost | WASM hook ABI | Unit | `jereko_hook` fixture module |
 | Tools / policy | `ToolExecutor` | Unit + router | `/tools/execute` fixtures |
 | Extensions | MCP / LSP / PTY | Unit + router | call_tool, hover, pty I/O |

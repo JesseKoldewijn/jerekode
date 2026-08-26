@@ -38,6 +38,13 @@ Jereko is an AI coding agent runtime built as a **Rust core + Bun sidecar** arch
 | `jereko-config` | Config loading, precedence merge, `opencode.json` / `tui.json` types |
 | `jereko-server` | Axum HTTP server, v1/v2 adapters, tools, extensions, policy |
 | `jereko-cli` | CLI entry point (`serve`, `run`, `version`) |
+| `jereko-providers` | Provider trait, registry, HTTP adapters |
+| `jereko-plugins` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
+| `jereko-plugin-sdk` | Native plugin C ABI / Rust helpers |
+| `jereko-rtk-plugin` | Native RTK adapter (`packages/rtk/native`) |
+
+**JS packages (Bun workspaces):** `sidecar/` (plugin host), `packages/rtk/` (`@jerekode/rtk` OpenCode2 entry + shared rules). See [ADR 004](./adr/004-rtk-dual-adapter.md).
+
 | `jereko-providers` | Provider trait, registry, streaming HTTP adapters |
 | `jereko-plugins` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
 | `jereko-plugin-sdk` | Native plugin C ABI / Rust helpers |

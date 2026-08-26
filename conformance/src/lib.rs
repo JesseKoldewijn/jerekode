@@ -9,4 +9,6 @@ mod e2e_tests;
 #[cfg(test)]
 mod http_blackbox_tests;
 #[cfg(test)]
+mod rtk_tests;
+#[cfg(test)]
 mod workspace_tests;

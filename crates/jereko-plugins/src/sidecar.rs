@@ -101,20 +101,49 @@ impl SidecarPort for InMemorySidecarPort {
             payload,
         } = &message
         {
-            let transformed = payload
-                .get("input")
-                .cloned()
-                .unwrap_or_else(|| payload.clone());
-            self.inbound.lock().await.push(SidecarInbound::HookResult {
-                request_id: request_id.clone(),
-                plugin: plugin.clone(),
-                output: serde_json::json!({
+            let output = if hook == "tool.execute.before" {
+                let command = payload
+                    .get("command")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| {
+                        payload
+                            .get("args")
+                            .and_then(|a| a.get("command"))
+                            .and_then(|v| v.as_str())
+                    })
+                    .unwrap_or("");
+                let rewritten = if command.starts_with("git") || command.starts_with("gh ") {
+                    format!("rtk {command}")
+                } else {
+                    command.to_string()
+                };
+                serde_json::json!({
+                    "host": "bun",
+                    "hook": hook,
+                    "tool": "bash",
+                    "command": rewritten,
+                    "args": { "command": rewritten },
+                    "rewritten": rewritten != command,
+                    "stub": false,
+                    "status": "ok",
+                })
+            } else {
+                let transformed = payload
+                    .get("input")
+                    .cloned()
+                    .unwrap_or_else(|| payload.clone());
+                serde_json::json!({
                     "host": "bun",
                     "hook": hook,
                     "transformed": transformed,
                     "stub": false,
                     "status": "ok",
-                }),
+                })
+            };
+            self.inbound.lock().await.push(SidecarInbound::HookResult {
+                request_id: request_id.clone(),
+                plugin: plugin.clone(),
+                output,
             });
         }
         self.outbound.lock().await.push(message);

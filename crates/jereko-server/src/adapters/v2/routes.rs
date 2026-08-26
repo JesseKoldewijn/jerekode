@@ -94,7 +94,7 @@ async fn execute_tool(
     State(state): State<AppState>,
     Json(call): Json<ToolCall>,
 ) -> impl IntoResponse {
-    let result: ToolResult = state.ctx.execute_tool(call);
+    let result: ToolResult = state.ctx.execute_tool(call).await;
     let status = if result.ok {
         StatusCode::OK
     } else {

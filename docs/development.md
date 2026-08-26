@@ -61,10 +61,22 @@ Follow [.agents/skills/tdd/SKILL.md](../.agents/skills/tdd/SKILL.md):
 
 ## Workspace layout tips
 
+- **Monorepo:** Bun workspaces (`packages/*`, `sidecar`) + Cargo workspace (`crates/*`, `packages/rtk/native`, `conformance`).
 - Handlers in `jereko-server` operate only on **normalized** types.
 - Provider HTTP adapters live in `jereko-providers`; registry stubs are for tests.
 - Extension hosts (MCP/LSP/PTY/WASM) hang off `AppState` / `ExtensionHosts`.
 - Sandbox policy for tools: `jereko-server` `ToolPolicy`.
+- First-party RTK adapter: `packages/rtk` (see [ADR 004](./adr/004-rtk-dual-adapter.md)).
+
+```bash
+# Root JS install (workspaces)
+bun install
+bun test ./packages/rtk
+cd sidecar && bun run check && bun test
+
+cargo build -p jereko-rtk-plugin --locked
+cargo test -p jereko-rtk-plugin --locked
+```
 
 ## Releases
 

@@ -3,7 +3,9 @@
 **/*.rs.bk
 
 # Bun / Node
+/node_modules/
 sidecar/node_modules/
+packages/*/node_modules/
 sidecar/bun.lockb
 
 # IDE

@@ -1,0 +1,10 @@
+{
+  "hook": "tool.execute.before",
+  "payload": {
+    "tool": "bash",
+    "command": "git status",
+    "args": { "command": "git status" }
+  },
+  "expected_command": "rtk git status",
+  "notes": "Host-agnostic RTK rewrite for git status"
+}

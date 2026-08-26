@@ -2,6 +2,7 @@
 
 mod bun_host;
 mod error;
+mod hooks;
 mod host;
 mod native_host;
 mod orchestrator;
@@ -12,6 +13,7 @@ mod wasm_host;
 
 pub use bun_host::BunPluginHost;
 pub use error::{PluginError, PluginResult};
+pub use hooks::{TOOL_EXECUTE_BEFORE, apply_command_mutations, bash_before_hook, set_command_arg};
 pub use host::PluginHost;
 pub use native_host::NativePluginHost;
 pub use orchestrator::PluginOrchestrator;

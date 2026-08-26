@@ -10,6 +10,7 @@ authors.workspace = true
 axum = { workspace = true }
 jereko-config = { workspace = true }
 jereko-core = { workspace = true }
+jereko-plugins = { workspace = true }
 jereko-providers = { workspace = true }
 portable-pty = "0.9"
 rusqlite = { version = "0.40", features = ["bundled"] }

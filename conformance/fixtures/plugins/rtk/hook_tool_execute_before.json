@@ -1,0 +1,10 @@
+{
+  "hook": "tool.execute.before",
+  "payload": {
+    "tool": "bash",
+    "name": "bash",
+    "command": "git status",
+    "args": { "command": "git status" }
+  },
+  "required_output_fields": ["host", "hook", "command", "status"]
+}
