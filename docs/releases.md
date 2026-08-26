@@ -19,13 +19,23 @@ Local install aliases: [`scripts/install.sh`](../scripts/install.sh) / [distribu
 Every push/merge to `main` triggers the **Release** workflow (unless the commit message contains `[skip release]`):
 
 1. **Bump** `[workspace.package] version` to `0.1.<github.run_number>` via `scripts/set-version.sh`.
-2. **Commit** `chore: release v0.1.<n> [skip release]`, then:
-   - **Prefer** push to `main` (PromptComposer-style) when allowed — `GITHUB_TOKEN`, or optional secret `RELEASE_PUSH_TOKEN` (admin PAT) when “require PR” blocks the bot.
-   - **Otherwise** soft-fail that push, **push a sync branch** (uploads the bump commit), open a **sync PR** so `Cargo.toml` can land on `main` without re-triggering release, and continue (the publish job creates the tag).
-3. **Build** multi-platform `jereko` binaries (release profile).
+2. **Commit** `chore: release v0.1.<n> [skip release]`, then land it on `main`:
+   - **Default (protected `main`):** push branch `release/sync-0.1.<n>`, open a PR labeled `release-sync`, enable **auto-merge (squash)**. It merges when required checks (`rust`, `bun-sidecar`) pass. This run’s build/publish uses the bumped commit immediately and does **not** wait for that merge.
+   - **Optional:** secret `RELEASE_PUSH_TOKEN` (admin PAT) pushes the bump straight to `main` (PromptComposer-style) and skips the sync PR.
+3. **Build** multi-platform `jereko` binaries (release profile) from the bumped commit.
 4. **Publish** a GitHub Release tagged `v0.1.<n>` with archives attached.
 
-This matches [PromptComposer](https://github.com/JesseKoldewijn/PromptComposer): release on every successful `main` merge with a monotonic patch from the workflow run number — not changeset/release-please/semantic-release. PromptComposer can push directly because `main` is unprotected there; this repo keeps PR-only protection and falls back to tag + sync PR (or `RELEASE_PUSH_TOKEN`).
+### Sync PR auto-merge & loop prevention
+
+Repo setting **Allow auto-merge** is on. The workflow runs `gh pr merge --auto --squash` on the sync PR.
+
+| Guard | Role |
+|-------|------|
+| Commit message + PR title include `[skip release]` | Squash into `main` does not start another Release run |
+| Label `release-sync` | Marks automation PRs in the UI |
+| Branch `release/sync-*` | Stable head name for retries / `gh pr view` |
+
+This matches [PromptComposer](https://github.com/JesseKoldewijn/PromptComposer): release on every successful `main` merge with a monotonic patch from the workflow run number — not changeset/release-please/semantic-release. PromptComposer pushes bumps directly because its `main` is unprotected; this repo keeps PR-only protection and uses sync PR + auto-merge (or `RELEASE_PUSH_TOKEN`).
 
 Humans and agents must still land code on `main` **only via pull request** (see [CONTRIBUTING.md](../CONTRIBUTING.md)). The release job’s version-bump write is the documented CI exception.
 

@@ -6,10 +6,10 @@ name: Release
 # PR builds live in pr-build.yml and never create releases.
 # Include [skip release] in a commit message to skip the main-push path.
 #
-# Version bump on main: prefer direct push (PromptComposer). On personal repos
-# with "require PR" protection, GITHUB_TOKEN cannot bypass — we soft-fail that
-# push, publish via tag (objects uploaded with the tag), and open a sync PR.
-# Optional repo secret RELEASE_PUSH_TOKEN (admin PAT) restores direct main push.
+# With branch protection (require PR), the default path is:
+#   bump on release/sync-0.1.N → open labeled sync PR → enable auto-merge →
+#   build/publish from the bumped commit (does not wait for the sync PR).
+# Optional secret RELEASE_PUSH_TOKEN (admin PAT) restores a direct push to main.
 
 on:
   push:
@@ -37,6 +37,7 @@ env:
 jobs:
   prepare:
     name: Resolve / bump version
+    # Loop prevention: sync-PR squash/merges include [skip release] in the commit message.
     if: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' || !contains(github.event.head_commit.message, '[skip release]') }}
     runs-on: ubuntu-22.04
     outputs:
@@ -62,6 +63,7 @@ jobs:
           GITHUB_REF: ${{ github.ref }}
           RUN_NUMBER: ${{ github.run_number }}
           GH_TOKEN: ${{ secrets.RELEASE_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+          HAS_PUSH_TOKEN: ${{ secrets.RELEASE_PUSH_TOKEN != '' }}
         run: |
           set -euo pipefail
           chmod +x scripts/set-version.sh
@@ -74,6 +76,48 @@ jobs:
                 gsub(/"/, "", $3); print $3; exit
               }
             ' Cargo.toml
+          }
+
+          ensure_release_sync_label() {
+            gh label create release-sync \
+              --description "Auto version-bump sync from Release workflow" \
+              --color 0E8A16 \
+              2>/dev/null || true
+          }
+
+          open_sync_pr_with_automerge() {
+            local version="$1"
+            local tag="$2"
+            local branch="release/sync-${version}"
+
+            if ! git push --force-with-lease origin "HEAD:refs/heads/${branch}"; then
+              echo "::error::Failed to push ${branch}; cannot publish without a reachable commit."
+              exit 1
+            fi
+
+            ensure_release_sync_label
+
+            local pr_url=""
+            if pr_url="$(gh pr view "${branch}" --json url -q .url 2>/dev/null)"; then
+              echo "Sync PR for ${branch} already exists: ${pr_url}"
+            else
+              local body
+              body="Auto version bump from the Release workflow after merge to main (label \`release-sync\`). Keeps Cargo.toml aligned with ${tag}. Commit/title include \`[skip release]\` so merging does not start another release. Auto-merge (squash) is enabled; merges when required checks pass. Build/publish in this run uses the bumped commit and does not wait for the sync PR."
+              pr_url="$(gh pr create \
+                --base main \
+                --head "${branch}" \
+                --title "chore: release ${tag} [skip release]" \
+                --label release-sync \
+                --body "${body}")"
+              echo "Opened sync PR: ${pr_url}"
+            fi
+
+            # Enable auto-merge once required checks (rust, bun-sidecar) are green.
+            if gh pr merge --auto --squash "${branch}"; then
+              echo "Enabled auto-merge (squash) for ${branch}."
+            else
+              echo "::warning::Could not enable auto-merge for ${branch}. Merge manually after checks pass."
+            fi
           }
 
           CARGO_VERSION="$(read_cargo_version)"
@@ -98,28 +142,15 @@ jobs:
               # [skip release] so a sync-PR squash/merge does not re-trigger Release.
               git commit -m "chore: release ${TAG} [skip release]"
 
-              if git push origin HEAD:main; then
-                echo "Pushed version bump to main (PromptComposer-style)."
+              if [[ "${HAS_PUSH_TOKEN}" == "true" ]] && git push origin HEAD:main; then
+                echo "Pushed version bump to main via RELEASE_PUSH_TOKEN (PromptComposer-style)."
               else
-                echo "::warning::Direct push to main was blocked by branch protection."
-                echo "::warning::Publishing via branch + sync PR (tag created at publish). For PromptComposer-style direct pushes, add secret RELEASE_PUSH_TOKEN (admin PAT) or allow an Actions bypass where the plan supports it."
-                # Upload bump commit objects via a branch (avoid pushing the tag here —
-                # tag pushes also trigger this workflow). softprops creates the tag later.
-                BRANCH="chore/release-${VERSION}"
-                if ! git push --force-with-lease origin "HEAD:refs/heads/${BRANCH}"; then
-                  echo "::error::Failed to push ${BRANCH}; cannot publish without a reachable commit."
-                  exit 1
-                fi
-                if gh pr view "${BRANCH}" --json number >/dev/null 2>&1; then
-                  echo "Sync PR for ${BRANCH} already exists."
+                if [[ "${HAS_PUSH_TOKEN}" == "true" ]]; then
+                  echo "::warning::RELEASE_PUSH_TOKEN push to main failed; falling back to sync PR + auto-merge."
                 else
-                  BODY="Auto version bump from the Release workflow after merge to main. Keeps Cargo.toml aligned with ${TAG}. Includes [skip release] so merging does not re-trigger release. Personal-repo branch protection blocks GITHUB_TOKEN pushes to main; optional secret RELEASE_PUSH_TOKEN (admin PAT) restores PromptComposer-style direct pushes."
-                  gh pr create \
-                    --base main \
-                    --head "${BRANCH}" \
-                    --title "chore: release ${TAG} [skip release]" \
-                    --body "${BODY}"
+                  echo "Using sync PR + auto-merge (branch protection / no RELEASE_PUSH_TOKEN)."
                 fi
+                open_sync_pr_with_automerge "${VERSION}" "${TAG}"
               fi
             fi
           elif [[ "${EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
