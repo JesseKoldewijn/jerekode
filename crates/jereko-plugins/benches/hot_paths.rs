@@ -1,6 +1,6 @@
 //! Criterion benchmark hooks for hot paths (see docs/perf-baseline.md).
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use jereko_plugins::{
     BunPluginHost, HookCall, InMemorySidecarPort, NativePluginHost, PluginOrchestrator,
     SidecarOutbound, SidecarPort,

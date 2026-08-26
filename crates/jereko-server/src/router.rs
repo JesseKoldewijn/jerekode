@@ -1,7 +1,7 @@
 use crate::adapters;
 use crate::extensions;
 use crate::state::AppState;
-use axum::{routing::get, Json, Router};
+use axum::{Json, Router, routing::get};
 
 /// Build the Axum router with v1 and v2 adapter routes.
 pub fn build_router(state: AppState) -> Router {

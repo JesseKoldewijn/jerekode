@@ -67,13 +67,13 @@ impl ConfigLoader {
             (&paths.project_opencode, ConfigLayer::Project),
             (&paths.project_tui, ConfigLayer::Project),
         ] {
-            if path.exists() {
-                if let Err(err) = loader.load_file(path, layer) {
-                    if layer == ConfigLayer::Global {
-                        tracing::warn!(path = %path.display(), %err, "skipping invalid global config");
-                    } else {
-                        return Err(err);
-                    }
+            if path.exists()
+                && let Err(err) = loader.load_file(path, layer)
+            {
+                if layer == ConfigLayer::Global {
+                    tracing::warn!(path = %path.display(), %err, "skipping invalid global config");
+                } else {
+                    return Err(err);
                 }
             }
         }

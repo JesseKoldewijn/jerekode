@@ -1,17 +1,17 @@
 use crate::adapters::normalized;
 use crate::adapters::v1::{
-    denormalize_create_session, denormalize_list_providers, denormalize_send_message,
-    normalize_create_session, normalize_send_message, V1CreateSessionRequest, V1ErrorResponse,
-    V1SendMessageRequest,
+    V1CreateSessionRequest, V1ErrorResponse, V1SendMessageRequest, denormalize_create_session,
+    denormalize_list_providers, denormalize_send_message, normalize_create_session,
+    normalize_send_message,
 };
 use crate::handlers::HandlerError;
 use crate::state::AppState;
 use axum::{
+    Json, Router,
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
-    Json, Router,
 };
 
 pub fn router() -> Router<AppState> {

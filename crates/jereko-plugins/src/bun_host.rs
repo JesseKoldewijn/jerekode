@@ -1,5 +1,5 @@
 use crate::error::PluginResult;
-use crate::host::{host_error, PluginHost};
+use crate::host::{PluginHost, host_error};
 use crate::sidecar::{SidecarOutbound, SidecarPort};
 use crate::types::{HookCall, HookResult, HostId, LoadedPlugin, PluginSpec};
 use async_trait::async_trait;

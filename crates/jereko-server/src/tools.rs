@@ -89,7 +89,7 @@ impl ToolExecutor {
                 return ToolResult {
                     ok: false,
                     output: "missing path".into(),
-                }
+                };
             }
         };
         match self
@@ -114,7 +114,7 @@ impl ToolExecutor {
                 return ToolResult {
                     ok: false,
                     output: "missing path".into(),
-                }
+                };
             }
         };
         let content = call
@@ -146,7 +146,7 @@ impl ToolExecutor {
                 return ToolResult {
                     ok: false,
                     output: "missing path".into(),
-                }
+                };
             }
         };
         let old = call
@@ -191,7 +191,7 @@ impl ToolExecutor {
                 return ToolResult {
                     ok: false,
                     output: "missing command".into(),
-                }
+                };
             }
         };
         // Safety note: bash runs in the project root with no network sandbox.
@@ -236,7 +236,7 @@ impl ToolExecutor {
                 return ToolResult {
                     ok: false,
                     output: "missing pattern".into(),
-                }
+                };
             }
         };
         let path = call
@@ -250,7 +250,7 @@ impl ToolExecutor {
                 return ToolResult {
                     ok: false,
                     output: e,
-                }
+                };
             }
         };
         let mut matches = Vec::new();

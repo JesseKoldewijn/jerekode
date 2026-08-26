@@ -1,6 +1,6 @@
 # Releases and PR builds
 
-How to cut a jereko release, download binaries, and trigger on-demand PR builds via `/build`.
+How jereko auto-releases on `main`, how to cut a manual/tag release, download binaries, and trigger on-demand PR builds via `/build`.
 
 Related workflows:
 
@@ -11,19 +11,33 @@ Related workflows:
 | PR Build (`/build`) | [`.github/workflows/pr-build.yml`](../.github/workflows/pr-build.yml) | **No** |
 
 Packaging helper: [`scripts/package-release.sh`](../scripts/package-release.sh).  
+Version bump helper: [`scripts/set-version.sh`](../scripts/set-version.sh).  
 Local install aliases: [`scripts/install.sh`](../scripts/install.sh) / [distribution.md](./distribution.md).
+
+## Auto-release on merge to `main` (PromptComposer-style)
+
+Every push/merge to `main` triggers the **Release** workflow (unless the commit message contains `[skip release]`):
+
+1. **Bump** `[workspace.package] version` to `0.1.<github.run_number>` via `scripts/set-version.sh`.
+2. **Commit & push** `chore: release v0.1.<n>` to `main` with `GITHUB_TOKEN` (GitHub does not re-trigger workflows on that token push).
+3. **Build** multi-platform `jereko` binaries (release profile).
+4. **Publish** a GitHub Release tagged `v0.1.<n>` with archives attached.
+
+This matches [PromptComposer](https://github.com/JesseKoldewijn/PromptComposer): release on every successful `main` merge with a monotonic patch from the workflow run number — not changeset/release-please/semantic-release.
+
+Humans and agents must still land code on `main` **only via pull request** (see [CONTRIBUTING.md](../CONTRIBUTING.md)). The release job’s version-bump push is the documented CI exception.
 
 ## Artifact layout
 
 | Kind | Archive / artifact name |
 |------|-------------------------|
-| Tagged release | `jereko-{version}-release-{os}-{arch}.tar.gz` / `.zip` |
+| Tagged / auto release | `jereko-{version}-release-{os}-{arch}.tar.gz` / `.zip` |
 | PR build | `jereko-pr{N}-{profile}-{os}-{arch}` (workflow artifact + matching archive) |
 
 Examples:
 
 ```text
-jereko-0.1.0-release-linux-x64.tar.gz
+jereko-0.1.42-release-linux-x64.tar.gz
 jereko-pr42-release-linux-x64.tar.gz
 jereko-pr42-debug-macos-arm64.tar.gz
 jereko-pr42-debug-windows-x64.zip
@@ -39,23 +53,19 @@ Version sources:
 
 | Trigger | Version / naming |
 |---------|------------------|
+| Push/merge to `main` | `0.1.<run_number>` (auto bump + tag) |
 | Tag `v1.2.3` | `1.2.3` (warn if Cargo.toml differs) |
 | Release `workflow_dispatch` | Input, or `workspace.package.version` |
 | PR `/build` | Label `0.0.0-pr.{N}.{shortsha}`; artifacts use `jereko-pr{N}-{profile}-…` |
 
-Keep `Cargo.toml` `[workspace.package] version` aligned with the tag you push.
+## Manual / tag releases
 
-## Cutting a release
+Tag and push still work (kept alongside auto-release):
 
-1. Bump `[workspace.package] version` in the root `Cargo.toml` (commit on `main`).
-2. Tag and push:
-
-   ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
-
-3. The **Release** workflow builds the matrix (`cargo build --release`), uploads workflow artifacts, and publishes a GitHub Release with archives attached.
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
 
 Or: **Actions → Release → Run workflow** (optional version override). Publishes tag `v{version}`.
 

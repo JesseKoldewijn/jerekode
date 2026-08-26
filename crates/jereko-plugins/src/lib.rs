@@ -16,8 +16,8 @@ pub use host::PluginHost;
 pub use native_host::NativePluginHost;
 pub use orchestrator::PluginOrchestrator;
 pub use sidecar::{
-    run_sidecar_loop, BunProcessSidecarPort, InMemorySidecarPort, SidecarInbound, SidecarOutbound,
-    SidecarPort,
+    BunProcessSidecarPort, InMemorySidecarPort, SidecarInbound, SidecarOutbound, SidecarPort,
+    run_sidecar_loop,
 };
 pub use tui::render_stub_frame;
 pub use types::{HookCall, HookResult, HostId, LoadedPlugin, PluginSpec};

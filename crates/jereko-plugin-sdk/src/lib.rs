@@ -47,7 +47,7 @@ pub fn encode_output(value: &serde_json::Value) -> *const std::ffi::c_char {
 #[macro_export]
 macro_rules! export_plugin {
     ($name:expr, $version:expr, $handler:expr) => {
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         pub extern "C" fn jereko_plugin_info() -> $crate::PluginInfo {
             $crate::PluginInfo {
                 abi_version: $crate::ABI_VERSION,
@@ -56,7 +56,7 @@ macro_rules! export_plugin {
             }
         }
 
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         #[allow(clippy::not_unsafe_ptr_arg_deref)]
         pub extern "C" fn jereko_plugin_invoke(
             hook: *const std::ffi::c_char,

@@ -2,8 +2,8 @@
 
 use crate::error::ProviderResult;
 use crate::provider::{
-    env_api_key, CompletionRequest, CompletionResponse, ModelInfo, Provider, ProviderId,
-    SharedHttpClient,
+    CompletionRequest, CompletionResponse, ModelInfo, Provider, ProviderId, SharedHttpClient,
+    env_api_key,
 };
 use async_trait::async_trait;
 use jereko_core::MessageRole;

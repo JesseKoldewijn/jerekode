@@ -21,6 +21,10 @@ Supporting directories:
 | `docs/` | Architecture, conformance, development, ADRs |
 | `.agents/skills/` | Installed agent skills (codebase-design, tdd, diagnosing-bugs, rust-best-practices) |
 
+## Contribution rule
+
+All code changes reach `main` **only via pull request**. Never push directly to `main`. Release CI may push a version bump after merge — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Domain Vocabulary
 
 Use these terms consistently (see [docs/architecture.md](docs/architecture.md) for full disambiguation):

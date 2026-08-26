@@ -2,9 +2,9 @@
 
 #[cfg(feature = "native-tui")]
 mod imp {
+    use ratatui::Terminal;
     use ratatui::backend::TestBackend;
     use ratatui::widgets::{Block, Borders, Paragraph};
-    use ratatui::Terminal;
 
     /// Render a minimal status frame (test-backend; no real tty required).
     pub fn render_stub_frame(title: &str) -> String {
