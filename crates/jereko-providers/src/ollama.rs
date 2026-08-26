@@ -2,8 +2,10 @@
 
 use crate::error::ProviderResult;
 use crate::provider::{
-    CompletionRequest, CompletionResponse, ModelInfo, Provider, ProviderId, SharedHttpClient,
+    CompletionChunk, CompletionRequest, CompletionResponse, ModelInfo, Provider, ProviderId,
+    SharedHttpClient,
 };
+use crate::stream::parse_ollama_ndjson;
 use async_trait::async_trait;
 use jereko_core::MessageRole;
 
@@ -99,6 +101,41 @@ impl Provider for OllamaProvider {
             model: request.model,
             finish_reason: Some("stop".into()),
         })
+    }
+
+    async fn complete_stream(
+        &self,
+        request: CompletionRequest,
+    ) -> ProviderResult<Vec<CompletionChunk>> {
+        let url = format!("{}/api/chat", self.base_url.trim_end_matches('/'));
+        let messages: Vec<serde_json::Value> = request
+            .messages
+            .iter()
+            .map(|m| {
+                let role = match m.role {
+                    MessageRole::System => "system",
+                    MessageRole::User => "user",
+                    MessageRole::Assistant => "assistant",
+                    MessageRole::Tool => "tool",
+                };
+                serde_json::json!({"role": role, "content": m.content})
+            })
+            .collect();
+        let body = serde_json::json!({
+            "model": request.model,
+            "messages": messages,
+            "stream": true,
+        });
+        let text = self
+            .http
+            .request_text(
+                "POST",
+                &url,
+                &[("Content-Type", "application/json".into())],
+                Some(body),
+            )
+            .await?;
+        parse_ollama_ndjson(&text, &request.model)
     }
 
     async fn health_check(&self) -> ProviderResult<()> {

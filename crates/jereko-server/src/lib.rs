@@ -11,6 +11,7 @@ pub mod handlers;
 pub mod persistence;
 pub mod router;
 pub mod session_store;
+pub mod sse;
 pub mod state;
 pub mod tools;
 

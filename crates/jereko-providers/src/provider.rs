@@ -45,6 +45,15 @@ pub struct CompletionResponse {
     pub finish_reason: Option<String>,
 }
 
+/// One incremental piece of a streaming completion.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CompletionChunk {
+    pub delta: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub finish_reason: Option<String>,
+    pub model: String,
+}
+
 /// Trait implemented by each LLM provider adapter.
 #[async_trait]
 pub trait Provider: Send + Sync {
@@ -55,6 +64,19 @@ pub trait Provider: Send + Sync {
     async fn list_models(&self) -> ProviderResult<Vec<ModelInfo>>;
 
     async fn complete(&self, request: CompletionRequest) -> ProviderResult<CompletionResponse>;
+
+    /// Streaming completion seam. Default wraps [`Self::complete`] as a single chunk.
+    async fn complete_stream(
+        &self,
+        request: CompletionRequest,
+    ) -> ProviderResult<Vec<CompletionChunk>> {
+        let response = self.complete(request).await?;
+        Ok(vec![CompletionChunk {
+            delta: response.content,
+            finish_reason: response.finish_reason,
+            model: response.model,
+        }])
+    }
 
     async fn health_check(&self) -> ProviderResult<()> {
         Ok(())
@@ -115,6 +137,15 @@ pub trait HttpClient: Send + Sync {
         headers: &[(&str, String)],
         body: Option<serde_json::Value>,
     ) -> ProviderResult<serde_json::Value>;
+
+    /// Raw response body (SSE / NDJSON streams).
+    async fn request_text(
+        &self,
+        method: &str,
+        url: &str,
+        headers: &[(&str, String)],
+        body: Option<serde_json::Value>,
+    ) -> ProviderResult<String>;
 }
 
 /// Default reqwest-backed HTTP client.
@@ -131,15 +162,14 @@ impl ReqwestHttpClient {
     }
 }
 
-#[async_trait]
-impl HttpClient for ReqwestHttpClient {
-    async fn request_json(
+impl ReqwestHttpClient {
+    async fn send_raw(
         &self,
         method: &str,
         url: &str,
         headers: &[(&str, String)],
         body: Option<serde_json::Value>,
-    ) -> ProviderResult<serde_json::Value> {
+    ) -> ProviderResult<(reqwest::StatusCode, String)> {
         let mut req = match method {
             "GET" => self.client.get(url),
             "POST" => self.client.post(url),
@@ -171,6 +201,20 @@ impl HttpClient for ReqwestHttpClient {
                 provider: "http".into(),
                 message: e.to_string(),
             })?;
+        Ok((status, text))
+    }
+}
+
+#[async_trait]
+impl HttpClient for ReqwestHttpClient {
+    async fn request_json(
+        &self,
+        method: &str,
+        url: &str,
+        headers: &[(&str, String)],
+        body: Option<serde_json::Value>,
+    ) -> ProviderResult<serde_json::Value> {
+        let (status, text) = self.send_raw(method, url, headers, body).await?;
         if !status.is_success() {
             return Err(ProviderError::ProviderFailure {
                 provider: "http".into(),
@@ -181,6 +225,23 @@ impl HttpClient for ReqwestHttpClient {
             provider: "http".into(),
             message: format!("invalid JSON: {e}"),
         })
+    }
+
+    async fn request_text(
+        &self,
+        method: &str,
+        url: &str,
+        headers: &[(&str, String)],
+        body: Option<serde_json::Value>,
+    ) -> ProviderResult<String> {
+        let (status, text) = self.send_raw(method, url, headers, body).await?;
+        if !status.is_success() {
+            return Err(ProviderError::ProviderFailure {
+                provider: "http".into(),
+                message: format!("HTTP {status}: {text}"),
+            });
+        }
+        Ok(text)
     }
 }
 

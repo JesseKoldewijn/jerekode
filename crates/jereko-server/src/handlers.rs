@@ -2,7 +2,7 @@ use crate::adapters::normalized;
 use crate::session_store::SessionStorePort;
 use crate::tools::{ToolCall, ToolExecutor, ToolResult};
 use jereko_core::{Message, MessageRole};
-use jereko_providers::{CompletionRequest, ProviderRegistry, resolve};
+use jereko_providers::{CompletionChunk, CompletionRequest, ProviderRegistry, resolve};
 use std::sync::Arc;
 
 pub struct HandlerContext {
@@ -11,6 +11,12 @@ pub struct HandlerContext {
     pub default_provider: Option<String>,
     pub default_model: Option<String>,
     pub tools: ToolExecutor,
+}
+
+pub struct StreamMessageResult {
+    pub chunks: Vec<CompletionChunk>,
+    pub session: jereko_core::Session,
+    pub assistant_message: Message,
 }
 
 impl HandlerContext {
@@ -53,6 +59,19 @@ impl HandlerContext {
         session_id: &str,
         content: String,
     ) -> Result<normalized::SendMessageResponse, HandlerError> {
+        let streamed = self.send_message_stream(session_id, content).await?;
+        Ok(normalized::SendMessageResponse {
+            session: streamed.session,
+            assistant_message: streamed.assistant_message,
+        })
+    }
+
+    /// Stream a completion via `Provider::complete_stream`, persist the assembled assistant message.
+    pub async fn send_message_stream(
+        &self,
+        session_id: &str,
+        content: String,
+    ) -> Result<StreamMessageResult, HandlerError> {
         let id = jereko_core::SessionId(session_id.to_string());
         let mut session = self
             .sessions
@@ -73,15 +92,15 @@ impl HandlerContext {
             content: content.clone(),
             provider: None,
         };
-        session.messages.push(user_message.clone());
+        session.messages.push(user_message);
 
         let model = self
             .default_model
             .clone()
             .unwrap_or_else(|| "stub-model".into());
 
-        let completion = provider
-            .complete(CompletionRequest {
+        let chunks = provider
+            .complete_stream(CompletionRequest {
                 model,
                 messages: session.messages.clone(),
                 max_tokens: None,
@@ -89,15 +108,17 @@ impl HandlerContext {
             .await
             .map_err(|e| HandlerError::Provider(e.to_string()))?;
 
+        let content: String = chunks.iter().map(|c| c.delta.as_str()).collect();
         let assistant_message = Message {
             role: MessageRole::Assistant,
-            content: completion.content.clone(),
+            content,
             provider: Some(provider_id),
         };
         session.messages.push(assistant_message.clone());
         self.sessions.update(session.clone());
 
-        Ok(normalized::SendMessageResponse {
+        Ok(StreamMessageResult {
+            chunks,
             session,
             assistant_message,
         })

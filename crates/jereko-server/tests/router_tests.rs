@@ -89,6 +89,64 @@ async fn v2_session_lifecycle_via_router() {
 }
 
 #[tokio::test]
+async fn v2_message_stream_returns_sse() {
+    let app = build_router(AppState::default());
+
+    let create = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v2/sessions")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    load_json("v2/create_session_request.json").to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create.status(), StatusCode::CREATED);
+    let create_body = create.into_body().collect().await.unwrap().to_bytes();
+    let session: Value = serde_json::from_slice(&create_body).unwrap();
+    let session_id = session["session"]["id"].as_str().unwrap();
+
+    let stream = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/v2/sessions/{session_id}/messages/stream"))
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    load_json("v2/send_message_stream_request.json").to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(stream.status(), StatusCode::OK);
+    let ctype = stream
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    assert!(ctype.contains("text/event-stream"));
+    let body = String::from_utf8(
+        stream
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .to_vec(),
+    )
+    .unwrap();
+    assert!(body.contains("event: chunk"));
+    assert!(body.contains("event: done"));
+    assert!(body.contains("stub:anthropic"));
+}
+
+#[tokio::test]
 async fn list_providers_returns_stubs() {
     let app = build_router(AppState::default());
     let response = app
