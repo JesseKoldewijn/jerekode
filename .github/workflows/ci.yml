@@ -19,6 +19,11 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.5"
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -35,6 +40,9 @@ jobs:
 
       - name: Clippy
         run: cargo clippy --all-targets --all-features --locked -- -D warnings
+
+      - name: Build test native plugin
+        run: cargo build -p jereko-test-native-plugin --locked
 
       - name: Test
         run: cargo test --workspace --locked

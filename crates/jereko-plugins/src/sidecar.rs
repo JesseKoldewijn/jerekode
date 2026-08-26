@@ -278,10 +278,18 @@ mod tests {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../sidecar/src/index.ts")
     }
 
+    fn require_or_skip(reason: &str) {
+        // GitHub Actions sets CI=true. Fail hard there; allow local soft-skip.
+        if std::env::var_os("CI").is_some() {
+            panic!("{reason}");
+        }
+        eprintln!("skipping: {reason}");
+    }
+
     #[tokio::test]
     async fn bun_process_init_ready_and_shutdown() {
         if !bun_available() {
-            eprintln!("skipping bun_process_init_ready_and_shutdown: bun not on PATH");
+            require_or_skip("bun_process_init_ready_and_shutdown requires bun on PATH");
             return;
         }
 
