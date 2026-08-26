@@ -2,9 +2,10 @@
 
 use crate::error::ProviderResult;
 use crate::provider::{
-    CompletionRequest, CompletionResponse, ModelInfo, Provider, ProviderId, SharedHttpClient,
-    env_api_key,
+    CompletionChunk, CompletionRequest, CompletionResponse, ModelInfo, Provider, ProviderId,
+    SharedHttpClient, env_api_key,
 };
+use crate::stream::parse_anthropic_sse;
 use async_trait::async_trait;
 use jereko_core::MessageRole;
 
@@ -120,6 +121,57 @@ impl Provider for AnthropicProvider {
             model: request.model,
             finish_reason: finish,
         })
+    }
+
+    async fn complete_stream(
+        &self,
+        request: CompletionRequest,
+    ) -> ProviderResult<Vec<CompletionChunk>> {
+        let key = env_api_key(&self.api_key_env)?;
+        let url = format!("{}/messages", self.base_url.trim_end_matches('/'));
+
+        let mut system = None;
+        let mut messages = Vec::new();
+        for m in &request.messages {
+            match m.role {
+                MessageRole::System => system = Some(m.content.clone()),
+                MessageRole::User => {
+                    messages.push(serde_json::json!({"role": "user", "content": m.content}))
+                }
+                MessageRole::Assistant => {
+                    messages.push(serde_json::json!({"role": "assistant", "content": m.content}))
+                }
+                MessageRole::Tool => {
+                    messages.push(serde_json::json!({"role": "user", "content": m.content}))
+                }
+            }
+        }
+
+        let mut body = serde_json::json!({
+            "model": request.model,
+            "messages": messages,
+            "max_tokens": request.max_tokens.unwrap_or(1024),
+            "stream": true,
+        });
+        if let Some(system) = system {
+            body["system"] = serde_json::json!(system);
+        }
+
+        let text = self
+            .http
+            .request_text(
+                "POST",
+                &url,
+                &[
+                    ("x-api-key", key),
+                    ("anthropic-version", "2023-06-01".into()),
+                    ("Content-Type", "application/json".into()),
+                    ("Accept", "text/event-stream".into()),
+                ],
+                Some(body),
+            )
+            .await?;
+        parse_anthropic_sse(&text, &request.model)
     }
 
     async fn health_check(&self) -> ProviderResult<()> {

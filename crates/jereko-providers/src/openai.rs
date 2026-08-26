@@ -2,9 +2,10 @@
 
 use crate::error::ProviderResult;
 use crate::provider::{
-    CompletionRequest, CompletionResponse, ModelInfo, Provider, ProviderId, SharedHttpClient,
-    env_api_key,
+    CompletionChunk, CompletionRequest, CompletionResponse, ModelInfo, Provider, ProviderId,
+    SharedHttpClient, env_api_key,
 };
+use crate::stream::parse_openai_sse;
 use async_trait::async_trait;
 use jereko_core::MessageRole;
 
@@ -125,6 +126,49 @@ impl Provider for OpenAiProvider {
             model: request.model,
             finish_reason: finish,
         })
+    }
+
+    async fn complete_stream(
+        &self,
+        request: CompletionRequest,
+    ) -> ProviderResult<Vec<CompletionChunk>> {
+        let key = env_api_key(&self.api_key_env)?;
+        let url = format!("{}/chat/completions", self.base_url.trim_end_matches('/'));
+        let messages: Vec<serde_json::Value> = request
+            .messages
+            .iter()
+            .map(|m| {
+                let role = match m.role {
+                    MessageRole::System => "system",
+                    MessageRole::User => "user",
+                    MessageRole::Assistant => "assistant",
+                    MessageRole::Tool => "tool",
+                };
+                serde_json::json!({"role": role, "content": m.content})
+            })
+            .collect();
+        let mut body = serde_json::json!({
+            "model": request.model,
+            "messages": messages,
+            "stream": true,
+        });
+        if let Some(max) = request.max_tokens {
+            body["max_tokens"] = serde_json::json!(max);
+        }
+        let text = self
+            .http
+            .request_text(
+                "POST",
+                &url,
+                &[
+                    ("Authorization", format!("Bearer {key}")),
+                    ("Content-Type", "application/json".into()),
+                    ("Accept", "text/event-stream".into()),
+                ],
+                Some(body),
+            )
+            .await?;
+        parse_openai_sse(&text, &request.model)
     }
 
     async fn health_check(&self) -> ProviderResult<()> {
