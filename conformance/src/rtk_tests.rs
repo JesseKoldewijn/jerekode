@@ -135,10 +135,7 @@ async fn rtk_bun_process_rewrites_git_status_from_fixture() {
     let process = BunProcessSidecarPort::spawn(entry.to_string_lossy().into_owned())
         .await
         .expect("spawn bun sidecar");
-    process
-        .wait_startup_ready()
-        .await
-        .expect("startup ready");
+    process.wait_startup_ready().await.expect("startup ready");
 
     let bun = Arc::new(BunPluginHost::new(process.clone()));
     let mut orch = PluginOrchestrator::new(vec![bun]);
@@ -191,10 +188,7 @@ async fn rtk_bun_process_and_native_agree_on_git_status_rewrite() {
     let process = BunProcessSidecarPort::spawn(entry.to_string_lossy().into_owned())
         .await
         .expect("spawn bun sidecar");
-    process
-        .wait_startup_ready()
-        .await
-        .expect("startup ready");
+    process.wait_startup_ready().await.expect("startup ready");
 
     let bun = Arc::new(BunPluginHost::new(process.clone()));
     let native = Arc::new(NativePluginHost::with_library_path(lib.to_string_lossy()));

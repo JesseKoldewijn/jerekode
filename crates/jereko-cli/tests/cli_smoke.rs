@@ -62,13 +62,7 @@ fn cli_version_prints_package_version() {
 async fn cli_serve_health_and_v1_v2_session_smoke() {
     let port = pick_port();
     let child = Command::new(jereko_bin())
-        .args([
-            "serve",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            &port.to_string(),
-        ])
+        .args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
