@@ -8,6 +8,7 @@ cd "$ROOT"
 
 OUT_DIR="${COVERAGE_OUT_DIR:-target/coverage}"
 mkdir -p "$OUT_DIR"
+OUT_DIR="$(cd "$OUT_DIR" && pwd)"
 
 COMPARE_BRANCH="${COMPARE_BRANCH:-origin/main}"
 DIFF_FAIL_UNDER="${DIFF_COVERAGE_FAIL_UNDER:-80}"
