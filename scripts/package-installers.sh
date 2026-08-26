@@ -29,6 +29,7 @@ if [[ ! -f "$BINARY" ]]; then
 fi
 
 mkdir -p "$OUT_DIR"
+OUT_DIR="$(cd "$OUT_DIR" && pwd)"
 STAGING="$(mktemp -d)"
 trap 'rm -rf "$STAGING"' EXIT
 
@@ -193,7 +194,8 @@ package_windows() {
     return 0
   fi
   NSIS_OUT="${OUT_DIR}/jereko-${VERSION}-release-windows-${ARCH}-setup.exe"
-  "$NSIS" /V2 \
+  # Git Bash converts /V2 to a path under Program Files/Git; exclude NSIS /D defines too.
+  MSYS2_ARG_CONV_EXCL='*' "$NSIS" /V2 \
     /DVERSION="$VERSION" \
     /DBINARY="${STAGING}/jereko.exe" \
     /DOUTFILE="$NSIS_OUT" \
