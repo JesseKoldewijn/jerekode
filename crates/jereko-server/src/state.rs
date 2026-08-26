@@ -4,9 +4,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::handlers::HandlerContext;
-use crate::tools::ToolExecutor;
 use crate::persistence::SqliteSessionStore;
 use crate::session_store::{SessionStore, SessionStorePort};
+use crate::tools::ToolExecutor;
 
 /// Shared application state passed to HTTP handlers.
 #[derive(Clone)]
