@@ -22,6 +22,7 @@ Requires **Bun >= 1.1** (CI pins `1.2.5`).
 | `session_start` | `session_id` | Begin interactive session |
 | `session_message` | `session_id`, `content` | User input |
 | `tui_render` | `frame` | Terminal frame update |
+| `invoke_hook` | `request_id`, `plugin`, `hook`, `payload` | Dispatch a plugin hook and await `hook_result` |
 | `shutdown` | — | Graceful teardown |
 
 ### Sidecar → Rust
@@ -31,8 +32,11 @@ Requires **Bun >= 1.1** (CI pins `1.2.5`).
 | `ready` | — | Sidecar initialized |
 | `tui_render` | `frame` | Terminal frame update |
 | `plugin_event` | `plugin`, `event` | Plugin lifecycle/event hook |
+| `hook_result` | `request_id`, `plugin`, `output` | Result of `invoke_hook` |
 | `error` | `message` | Fatal or recoverable error |
 | `log` | `level`, `message` | Diagnostic log line |
+
+On `init`, the sidecar dynamically `import()`s each plugin path/package. Bare package names that fail to resolve fall back to a built-in echo plugin (non-stub hooks) so CI fixtures stay deterministic.
 
 ## Running
 

@@ -74,6 +74,9 @@ async fn e2e_config_session_plugin_flow() {
         bun_result.output["status"],
         bun_expected["output"]["status"]
     );
+    assert_eq!(bun_result.output["stub"], false);
+    assert_eq!(bun_result.output["transformed"], "hello");
+    assert_eq!(bun_result.output["host"], "bun");
 
     // Native without real dylib still returns stub shape (path missing)
     let native_result = results.iter().find(|r| r.plugin.contains("tools")).unwrap();

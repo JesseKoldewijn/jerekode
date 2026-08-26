@@ -1,17 +1,50 @@
-use crate::error::PluginResult;
+use crate::error::{PluginError, PluginResult};
 use crate::host::{PluginHost, host_error};
-use crate::sidecar::{SidecarOutbound, SidecarPort};
+use crate::sidecar::{SidecarInbound, SidecarOutbound, SidecarPort};
 use crate::types::{HookCall, HookResult, HostId, LoadedPlugin, PluginSpec};
 use async_trait::async_trait;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 pub struct BunPluginHost {
     port: Arc<dyn SidecarPort>,
+    next_request_id: AtomicU64,
 }
 
 impl BunPluginHost {
     pub fn new(port: Arc<dyn SidecarPort>) -> Self {
-        Self { port }
+        Self {
+            port,
+            next_request_id: AtomicU64::new(1),
+        }
+    }
+
+    async fn wait_hook_result(
+        &self,
+        request_id: &str,
+    ) -> PluginResult<(String, serde_json::Value)> {
+        loop {
+            match self.port.recv().await? {
+                SidecarInbound::HookResult {
+                    request_id: id,
+                    plugin,
+                    output,
+                } if id == request_id => {
+                    return Ok((plugin, output));
+                }
+                SidecarInbound::Log { level, message } => {
+                    tracing::debug!(%level, %message, "sidecar log during hook");
+                }
+                SidecarInbound::Ready => {}
+                SidecarInbound::Error { message } => {
+                    return Err(PluginError::Sidecar(message));
+                }
+                SidecarInbound::PluginEvent { .. } | SidecarInbound::TuiRender { .. } => {}
+                SidecarInbound::HookResult { .. } => {
+                    // Unrelated / out-of-order result — ignore for this wait.
+                }
+            }
+        }
     }
 }
 
@@ -35,13 +68,28 @@ impl PluginHost for BunPluginHost {
         if hook.hook == "tui.render" {
             self.port
                 .send(SidecarOutbound::TuiRender {
-                    frame: hook.payload,
+                    frame: hook.payload.clone(),
                 })
                 .await?;
         }
+
+        let request_id = self
+            .next_request_id
+            .fetch_add(1, Ordering::Relaxed)
+            .to_string();
+        self.port
+            .send(SidecarOutbound::InvokeHook {
+                request_id: request_id.clone(),
+                plugin: plugin.spec.name.clone(),
+                hook: hook.hook,
+                payload: hook.payload,
+            })
+            .await?;
+
+        let (plugin_name, output) = self.wait_hook_result(&request_id).await?;
         Ok(HookResult {
-            plugin: plugin.spec.name.clone(),
-            output: serde_json::json!({"status": "ok"}),
+            plugin: plugin_name,
+            output,
         })
     }
 

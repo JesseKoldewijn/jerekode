@@ -12,11 +12,11 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 
 | ID | Slice | Status | PR |
 |----|-------|--------|-----|
-| R0 | Release pipeline green on main (Actions PR perms + sync resilience) | In progress | #5 synced; #6 harden; #7 sync 0.1.6 |
+| R0 | Release pipeline green on main (Actions PR perms + sync resilience) | Done | #5–#13; v0.1.9 |
 | P0a | CI hard-gates: Bun IPC + native dylib (no soft-skip) | Done | #8 |
-| P0b | Wire tools into HTTP `/v1|/v2/tools/execute` | In progress | this PR |
-| P1a | Provider streaming seam (`complete_stream` / SSE) | Pending | — |
-| P1b | Bun sidecar loads/runs real plugins + hook fixtures | Pending | — |
+| P0b | Wire tools into HTTP `/v1|/v2/tools/execute` | Done | #12 |
+| P1a | Provider streaming seam (`complete_stream` / SSE) | Pending | #14 |
+| P1b | Bun sidecar loads/runs real plugins + hook fixtures | In progress | this PR |
 | P2a | MCP depth beyond list_tools | Pending | — |
 | P2b | LSP depth beyond initialize stub | Pending | — |
 | P2c | portable-pty OS I/O | Pending | — |
@@ -36,7 +36,7 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 |------|---------|-------------------|
 | Bun IPC | Real spawn; Rust test soft-skips without Bun; CI rust job has no Bun | Hard-fail integration test in CI |
 | Native plugins | libloading works; test soft-skips if dylib missing | Prebuild test cdylib in CI; hard-fail |
-| Sidecar plugins | Echo/log only — does not load plugin modules | Load config plugins; dispatch hooks; fixture parity |
+| Sidecar plugins | Dynamic `import()` + `invoke_hook` / `hook_result`; fixture echo plugin | Growing OpenCode-compatible hook surface |
 | Tools | `read`/`write`/`edit`/`bash`/`grep` library only | Wired into session/message agent loop + fixtures |
 | Providers | OpenAI / Anthropic / Ollama request-response | Streaming + growing matrix toward 75+ |
 | MCP / LSP / PTY | Status seams + stubs | Real protocol depth (call_tool, JSON-RPC methods, OS PTY) |
