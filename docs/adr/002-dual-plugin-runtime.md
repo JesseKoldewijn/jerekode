@@ -6,7 +6,7 @@
 
 ## Decision
 
-Jereko plugins are loaded and dispatched through a **PluginOrchestrator** in Rust that coordinates multiple **PluginHost** implementations. **BunPluginHost** (default for unqualified plugin strings) and **NativePluginHost** (explicit dylib config) run **together** in an ordered hook chain. **WasmPluginHost** is an optional third host for untrusted plugins in Phase 4.
+Jereko plugins are loaded and dispatched through a **PluginOrchestrator** in Rust that coordinates multiple **PluginHost** implementations. **BunPluginHost** (default for unqualified plugin strings) and **NativePluginHost** (explicit dylib config) run **together** in an ordered hook chain. **WasmPluginHost** is an optional third host for sandboxed plugins (initial load/`jereko_hook` support shipped; deeper sandbox policy remains incremental).
 
 ## Background
 
@@ -41,7 +41,7 @@ This ADR **extends** ADR 001 Decision 3: `SidecarPort` becomes the transport lay
                                               │  (sidecar/)          │
                                               └──────────────────────┘
 
-Phase 4 (optional):
+Also:
 ┌──────────────────┐
 │  WasmPluginHost  │
 │  sandboxed       │
@@ -50,7 +50,7 @@ Phase 4 (optional):
 
 ### 1. PluginOrchestrator (Rust)
 
-Central coordinator living in the Rust core (likely `jereko-server` or a dedicated `jereko-plugins` crate):
+Central coordinator living in the **`jereko-plugins`** crate:
 
 - **Unified hook registry** — all hook types (server tools, providers, transforms, HTTP routes, etc.) registered in one place regardless of host
 - **Load order** — deterministic ordering across internal, native, and Bun plugins (see below)
@@ -64,7 +64,7 @@ Central coordinator living in the Rust core (likely `jereko-server` or a dedicat
 Generalizes the `SidecarPort` concept. Each host implements `PluginHost`:
 
 ```rust
-// Conceptual — not yet implemented
+// Implemented in `jereko-plugins` (shape simplified for the ADR).
 pub trait PluginHost: Send + Sync {
     fn host_id(&self) -> HostId;
     async fn load(&self, spec: &PluginSpec) -> Result<LoadedPlugin, PluginError>;
@@ -77,7 +77,7 @@ pub trait PluginHost: Send + Sync {
 |------|----------------|-----------|
 | `BunPluginHost` | Default for unqualified strings | `SidecarPort` → Bun process |
 | `NativePluginHost` | Explicit `{ "native": "..." }` config | In-process dylib via stable C ABI |
-| `WasmPluginHost` | Explicit `{ "wasm": "..." }` config | WASM runtime sandbox (Phase 4) |
+| `WasmPluginHost` | Explicit `{ "wasm": "..." }` config | WASM runtime (`jereko_hook` ABI) |
 
 ### 3. BunPluginHost — default path
 
@@ -91,12 +91,12 @@ pub trait PluginHost: Send + Sync {
 - Loads plugins as **dynamic libraries** (`.so` / `.dylib` / `.dll`) via a **stable C ABI** defined in `jereko_plugin.h`
 - **Server hooks first** (Phase 2.5): tools, providers, transforms
 - Requires **explicit config** — never loaded implicitly from an unqualified string
-- Planned Rust SDK crate: `jereko-plugin-sdk` (see [development.md](../development.md))
+- Rust SDK crate: **`jereko-plugin-sdk`** (see [development.md](../development.md))
 
-### 5. WasmPluginHost — untrusted plugins (Phase 4)
+### 5. WasmPluginHost — sandboxed plugins
 
-- Optional third host for **untrusted** or user-supplied plugins
-- Sandboxed WASM runtime; same hook surface as native via WASM imports/exports
+- Optional third host for **sandboxed** or user-supplied plugins
+- WASM runtime with `jereko_hook` export (host fallback when absent); deeper isolation policy is incremental
 - Explicit `{ "wasm": "./path/to/plugin.wasm" }` config only
 
 ### 6. Both hosts active together
@@ -115,7 +115,7 @@ Plugin entries in `opencode.json` (and related config) resolve to a host by form
 |--------------|------|-------|
 | `"@acme/server-plugin"` | **Bun** (default) | Unqualified string → BunPluginHost |
 | `{ "native": "./path/to/plugin.so" }` | **Native** | Explicit dylib path |
-| `{ "wasm": "./path/to/plugin.wasm" }` | **WASM** | Phase 4; explicit path |
+| `{ "wasm": "./path/to/plugin.wasm" }` | **WASM** | Explicit path; `jereko_hook` ABI |
 
 Priority and ordering modifiers (when supported) apply within and across hosts; the orchestrator merges the final dispatch list.
 
@@ -154,7 +154,7 @@ Rationale: built-in behavior is always available; native plugins are opt-in and 
 |------|-------------|---------|
 | **Bun** | Isolated sidecar process | Default for unqualified strings; process boundary contains failures |
 | **Native** | Trusted, in-process | **Requires explicit config**; never auto-loaded |
-| **WASM** | Untrusted, sandboxed | Explicit config only; Phase 4 |
+| **WASM** | Sandboxed | Explicit config only |
 
 Native plugins run in-process with full process privileges — hence explicit opt-in. WASM is the path for untrusted third-party code.
 

@@ -39,6 +39,7 @@ Jereko is an AI coding agent runtime built as a **Rust core + Bun sidecar** arch
 | `jereko-server` | Axum HTTP server, v1/v2 adapters, tools, extensions, policy |
 | `jereko-cli` | CLI entry point (`serve`, `run`, `version`) |
 | `jereko-providers` | Provider trait, registry, streaming HTTP adapters |
+| `jereko-plugins` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
 | `jereko-plugin-sdk` | Native plugin C ABI / Rust helpers |
 | `conformance` | Owned fixture-driven compatibility tests |
 
@@ -178,7 +179,9 @@ Full details: [development.md](./development.md).
 
 ## Future Distribution and Integration
 
-Documented for later productization (not blocking parity):
+Release packaging (installers, changelog quality, version reset, full vs native-only builds): [roadmap-releases.md](./roadmap-releases.md) and [ADR 003](./adr/003-release-packaging-and-changelogs.md).
+
+Also documented for later productization (not blocking parity):
 
 - **Pinokio / Gepeto launchers** — optional 1-click install
 - **Cursor SDK** — `jereko serve` as an agent-consumable HTTP API
@@ -196,6 +199,7 @@ See [conformance.md](./conformance.md).
 
 - [ADR 001: Architecture Decisions](./adr/001-architecture-decisions.md)
 - [ADR 002: Dual Plugin Runtime Architecture](./adr/002-dual-plugin-runtime.md)
+- [ADR 003: Release Packaging, Changelogs, and Distribution Variants](./adr/003-release-packaging-and-changelogs.md)
 
 ## Ongoing work
 
