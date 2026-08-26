@@ -6,7 +6,7 @@ Start here for a navigable map of the repository. Human-oriented docs live in [d
 
 Jereko is a **working** OpenCode-compatible AI coding agent runtime: Rust core, Bun plugin sidecar, dual plugin hosts (ADR 002), owned conformance fixtures, and a green release pipeline on `main`.
 
-Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.md](docs/roadmap-parity.md). Further growth (more providers, richer MCP/LSP/WASM surfaces) is incremental, not foundation scaffolding.
+Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.md](docs/roadmap-parity.md). Further growth (more providers, richer MCP/LSP/WASM surfaces) is incremental, not foundation scaffolding. **Active forward plan:** release packaging / changelogs / version reset — [docs/roadmap-releases.md](docs/roadmap-releases.md).
 
 ## Crate Map
 

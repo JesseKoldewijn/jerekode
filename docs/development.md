@@ -64,4 +64,4 @@ Follow [.agents/skills/tdd/SKILL.md](../.agents/skills/tdd/SKILL.md):
 
 ## Releases
 
-See [releases.md](./releases.md). Local packaging: `scripts/package-release.sh`.
+See [releases.md](./releases.md) for current auto-release and `/build`. Local packaging: `scripts/package-release.sh`. Upcoming packaging / version reset: [roadmap-releases.md](./roadmap-releases.md).

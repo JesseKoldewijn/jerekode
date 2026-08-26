@@ -8,7 +8,8 @@ See [docs/architecture.md](docs/architecture.md) for system design, adapter laye
 
 Conformance: [docs/conformance.md](docs/conformance.md).  
 Orientation: [CONTEXT.md](CONTEXT.md), [AGENTS.md](AGENTS.md), [docs/development.md](docs/development.md), [docs/adr/](docs/adr/).  
-Parity board: [docs/roadmap-parity.md](docs/roadmap-parity.md).
+Parity checklist (complete): [docs/roadmap-parity.md](docs/roadmap-parity.md).  
+Packaging plan: [docs/roadmap-releases.md](docs/roadmap-releases.md).
 
 ## Project Structure
 

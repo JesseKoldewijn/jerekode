@@ -1,4 +1,4 @@
-# Performance Baseline Hooks (Phase 5)
+# Performance Baseline Hooks
 
 Jereko defines performance measurement seams and ships Criterion benches for plugin hot paths (`cargo bench -p jereko-plugins`).
 

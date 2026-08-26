@@ -88,4 +88,5 @@ CI jobs **must hard-fail** when Bun IPC or native dylib loading regresses. Soft-
 
 - [architecture.md](./architecture.md)
 - [development.md](./development.md)
-- [roadmap-parity.md](./roadmap-parity.md)
+- [roadmap-parity.md](./roadmap-parity.md) (closed parity checklist)
+- [roadmap-releases.md](./roadmap-releases.md) (active packaging plan)

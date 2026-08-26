@@ -160,15 +160,17 @@ Native plugins run in-process with full process privileges — hence explicit op
 
 ## Phasing
 
-| Phase | Scope |
-|-------|-------|
-| **2** | `PluginOrchestrator` + **BunPluginHost only**; `SidecarPort` feeds BunPluginHost; server plugin routes via IPC |
-| **2.5** | **NativePluginHost** — server hooks (tools, providers, transforms); `jereko_plugin.h` C ABI; `jereko-plugin-sdk` crate |
-| **3** | Bun TUI plugins via sidecar; `jereko run` |
-| **4** | **WasmPluginHost** for untrusted plugins |
-| **5** | Native TUI plugins; `TuiPluginHost` trait + optional bridge |
+Historical delivery order (foundation scopes below are **shipped** on `main`; deepen via fixtures as needed):
 
-Phase 2 ships the orchestrator abstraction even with only one host — this avoids retrofitting the dispatch layer when native arrives in 2.5.
+| Phase | Scope | Status |
+|-------|-------|--------|
+| **2** | `PluginOrchestrator` + **BunPluginHost**; `SidecarPort` feeds BunPluginHost; server plugin routes via IPC | Done |
+| **2.5** | **NativePluginHost** — server hooks; `jereko_plugin.h` C ABI; `jereko-plugin-sdk` crate | Done |
+| **3** | Bun TUI plugins via sidecar; `jereko run` | Done (bootstrap + real plugin load) |
+| **4** | **WasmPluginHost** for untrusted plugins | Done (`jereko_hook` ABI; deepen WASI as needed) |
+| **5** | Native TUI plugins / interactive MVP | Partial (ratatui MVP via `native-tui`; Bun remains default) |
+
+Phase 2 shipped the orchestrator abstraction even with a Bun-first host — that avoided retrofitting dispatch when native arrived in 2.5.
 
 ## Conformance Testing
 
@@ -193,7 +195,7 @@ Example seam tests:
 - `SidecarPort` is scoped to `BunPluginHost`; new code should not depend on `SidecarPort` directly except inside that host
 - Phase 2.5 adds `jereko_plugin.h` and SDK crate without changing orchestrator dispatch semantics
 - Config parser must distinguish unqualified strings (Bun) from `{ "native": ... }` / `{ "wasm": ... }` objects
-- TUI remains Bun-only until Phase 5; document this clearly to avoid confusion
+- Bun remains the default TUI; optional `native-tui` is an MVP, not a Bun replacement
 
 ## Related Documents
 
