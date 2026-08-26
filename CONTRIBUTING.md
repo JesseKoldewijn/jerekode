@@ -12,7 +12,7 @@ Thanks for contributing. Please read [CONTEXT.md](CONTEXT.md), [AGENTS.md](AGENT
 
 ### Exception: trusted CI release automation
 
-The **Release** workflow (`.github/workflows/release.yml`) may push a version-bump commit to `main` after a successful merge, matching the PromptComposer pattern (`0.1.<run_number>`). That is the only intended direct write to `main`.
+The **Release** workflow (`.github/workflows/release.yml`) bumps `0.1.<run_number>` after a successful merge (PromptComposer-style). On protected `main`, it opens a `release-sync` PR (`release/sync-0.1.<n>`), enables **auto-merge (squash)**, and publishes from the bumped commit in the same run. Commit/PR title include `[skip release]` so the sync merge does not start another release. Optional secret `RELEASE_PUSH_TOKEN` (admin PAT) restores a direct push to `main`.
 
 - Prefer PRs even for automation when practical.
 - Humans and agents must never push to `main` directly; branch protection should block them.
@@ -29,7 +29,8 @@ Enable under **Settings → Branches → Branch protection rules** (or Rulesets)
 | Require conversation resolution | Optional but encouraged |
 | Do not allow force pushes | **On** |
 | Do not allow deletions | **On** |
-| Allow specified actors to bypass | Only if needed so **GitHub Actions** can push release version bumps |
+| Allow auto-merge | **On** — used by release sync PRs |
+| Allow specified actors to bypass | Org plans only — personal repos: sync PR + auto-merge or `RELEASE_PUSH_TOKEN` |
 
 If the repository plan does not allow required status checks, still require PRs and disallow force pushes/deletions.
 

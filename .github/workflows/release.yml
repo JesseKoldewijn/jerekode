@@ -5,6 +5,11 @@ name: Release
 # Also supports tag push (v*) and workflow_dispatch.
 # PR builds live in pr-build.yml and never create releases.
 # Include [skip release] in a commit message to skip the main-push path.
+#
+# With branch protection (require PR), the default path is:
+#   bump on release/sync-0.1.N → open labeled sync PR → enable auto-merge →
+#   build/publish from the bumped commit (does not wait for the sync PR).
+# Optional secret RELEASE_PUSH_TOKEN (admin PAT) restores a direct push to main.
 
 on:
   push:
@@ -14,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version without leading v (default: workspace.package.version from Cargo.toml)
+        description: "Version without leading v (default: workspace.package.version from Cargo.toml)"
         required: false
         type: string
 
@@ -24,6 +29,7 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -31,6 +37,7 @@ env:
 jobs:
   prepare:
     name: Resolve / bump version
+    # Loop prevention: sync-PR squash/merges include [skip release] in the commit message.
     if: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' || !contains(github.event.head_commit.message, '[skip release]') }}
     runs-on: ubuntu-22.04
     outputs:
@@ -44,7 +51,7 @@ jobs:
           # On main auto-release, check out main so the version bump can push.
           # GITHUB_TOKEN pushes do not retrigger workflows.
           ref: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'main' || github.sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Resolve or bump version
@@ -55,6 +62,8 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           GITHUB_REF: ${{ github.ref }}
           RUN_NUMBER: ${{ github.run_number }}
+          GH_TOKEN: ${{ secrets.RELEASE_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+          HAS_PUSH_TOKEN: ${{ secrets.RELEASE_PUSH_TOKEN != '' }}
         run: |
           set -euo pipefail
           chmod +x scripts/set-version.sh
@@ -67,6 +76,48 @@ jobs:
                 gsub(/"/, "", $3); print $3; exit
               }
             ' Cargo.toml
+          }
+
+          ensure_release_sync_label() {
+            gh label create release-sync \
+              --description "Auto version-bump sync from Release workflow" \
+              --color 0E8A16 \
+              2>/dev/null || true
+          }
+
+          open_sync_pr_with_automerge() {
+            local version="$1"
+            local tag="$2"
+            local branch="release/sync-${version}"
+
+            if ! git push --force-with-lease origin "HEAD:refs/heads/${branch}"; then
+              echo "::error::Failed to push ${branch}; cannot publish without a reachable commit."
+              exit 1
+            fi
+
+            ensure_release_sync_label
+
+            local pr_url=""
+            if pr_url="$(gh pr view "${branch}" --json url -q .url 2>/dev/null)"; then
+              echo "Sync PR for ${branch} already exists: ${pr_url}"
+            else
+              local body
+              body="Auto version bump from the Release workflow after merge to main (label \`release-sync\`). Keeps Cargo.toml aligned with ${tag}. Commit/title include \`[skip release]\` so merging does not start another release. Auto-merge (squash) is enabled; merges when required checks pass. Build/publish in this run uses the bumped commit and does not wait for the sync PR."
+              pr_url="$(gh pr create \
+                --base main \
+                --head "${branch}" \
+                --title "chore: release ${tag} [skip release]" \
+                --label release-sync \
+                --body "${body}")"
+              echo "Opened sync PR: ${pr_url}"
+            fi
+
+            # Enable auto-merge once required checks (rust, bun-sidecar) are green.
+            if gh pr merge --auto --squash "${branch}"; then
+              echo "Enabled auto-merge (squash) for ${branch}."
+            else
+              echo "::warning::Could not enable auto-merge for ${branch}. Merge manually after checks pass."
+            fi
           }
 
           CARGO_VERSION="$(read_cargo_version)"
@@ -88,8 +139,19 @@ jobs:
               echo "Version already ${VERSION}; reusing HEAD"
             else
               git add Cargo.toml Cargo.lock
-              git commit -m "chore: release ${TAG}"
-              git push origin HEAD:main
+              # [skip release] so a sync-PR squash/merge does not re-trigger Release.
+              git commit -m "chore: release ${TAG} [skip release]"
+
+              if [[ "${HAS_PUSH_TOKEN}" == "true" ]] && git push origin HEAD:main; then
+                echo "Pushed version bump to main via RELEASE_PUSH_TOKEN (PromptComposer-style)."
+              else
+                if [[ "${HAS_PUSH_TOKEN}" == "true" ]]; then
+                  echo "::warning::RELEASE_PUSH_TOKEN push to main failed; falling back to sync PR + auto-merge."
+                else
+                  echo "Using sync PR + auto-merge (branch protection / no RELEASE_PUSH_TOKEN)."
+                fi
+                open_sync_pr_with_automerge "${VERSION}" "${TAG}"
+              fi
             fi
           elif [[ "${EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
             TAG="${GITHUB_REF_NAME}"
@@ -125,7 +187,7 @@ jobs:
           - runner: ubuntu-22.04
             target_os: linux
             arch: x64
-          - runner: macos-13
+          - runner: macos-15-intel
             target_os: macos
             arch: x64
           - runner: macos-14
