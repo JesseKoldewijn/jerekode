@@ -29,8 +29,12 @@ jerekode/
 
 ## Prerequisites
 
-- [Rust](https://rustup.rs/) (2021 edition, stable)
+- [Rust](https://rustup.rs/) (edition 2024, stable; MSRV 1.85+)
 - [Bun](https://bun.sh/) (for sidecar, Phase 2+)
+
+## Contributing
+
+All changes land on `main` **only via pull request**. Never push directly to `main`. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Build
 
@@ -110,4 +114,4 @@ See [sidecar/README.md](sidecar/README.md) for the IPC contract.
 
 ## License
 
-MIT OR Apache-2.0
+[MIT](LICENSE) © 2026 Jesse Koldewijn

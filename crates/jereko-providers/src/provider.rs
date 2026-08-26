@@ -147,7 +147,7 @@ impl HttpClient for ReqwestHttpClient {
                 return Err(ProviderError::ProviderFailure {
                     provider: "http".into(),
                     message: format!("unsupported method {other}"),
-                })
+                });
             }
         };
         for (k, v) in headers {

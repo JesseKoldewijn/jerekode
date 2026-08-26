@@ -3,12 +3,12 @@
 use jereko_core::{Session, SessionId, SessionStatus};
 use jereko_server::adapters::normalized;
 use jereko_server::adapters::v1::{
-    denormalize_create_session, denormalize_send_message, normalize_create_session,
-    V1CreateSessionRequest,
+    V1CreateSessionRequest, denormalize_create_session, denormalize_send_message,
+    normalize_create_session,
 };
 use jereko_server::adapters::v2::{
-    denormalize_create_session as v2_denorm_create, normalize_create_session as v2_norm_create,
-    V2CreateSessionRequest,
+    V2CreateSessionRequest, denormalize_create_session as v2_denorm_create,
+    normalize_create_session as v2_norm_create,
 };
 use std::fs;
 use std::path::PathBuf;

@@ -1,7 +1,7 @@
 use crate::adapters::normalized;
 use crate::session_store::SessionStorePort;
 use jereko_core::{Message, MessageRole};
-use jereko_providers::{resolve, CompletionRequest, ProviderRegistry};
+use jereko_providers::{CompletionRequest, ProviderRegistry, resolve};
 use std::sync::Arc;
 
 pub struct HandlerContext {

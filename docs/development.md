@@ -4,7 +4,7 @@ Rust engineering standards and build commands for Jereko contributors and agents
 
 ## Prerequisites
 
-- [Rust](https://rustup.rs/) (2021 edition, stable)
+- [Rust](https://rustup.rs/) (edition 2024, stable; MSRV 1.85+)
 - [Bun](https://bun.sh/) (for sidecar, Phase 2+)
 
 ## Build Commands

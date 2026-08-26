@@ -1,21 +1,25 @@
 name: Release
 
-# Tag push (v*) or manual dispatch → multi-platform jereko binaries → GitHub Release.
+# Auto-release on every push/merge to main (PromptComposer-style): bump to
+# 0.1.<run_number>, commit, build multi-platform binaries, publish GitHub Release.
+# Also supports tag push (v*) and workflow_dispatch.
 # PR builds live in pr-build.yml and never create releases.
+# Include [skip release] in a commit message to skip the main-push path.
 
 on:
   push:
+    branches: [main]
     tags:
       - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: "Version without leading v (default: workspace.package.version from Cargo.toml)"
+        description: Version without leading v (default: workspace.package.version from Cargo.toml)
         required: false
         type: string
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'main' || github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -26,22 +30,36 @@ env:
 
 jobs:
   prepare:
-    name: Resolve version
+    name: Resolve / bump version
+    if: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' || !contains(github.event.head_commit.message, '[skip release]') }}
     runs-on: ubuntu-22.04
     outputs:
       version: ${{ steps.ver.outputs.version }}
       tag: ${{ steps.ver.outputs.tag }}
+      sha: ${{ steps.ver.outputs.sha }}
+      short_sha: ${{ steps.ver.outputs.short_sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # On main auto-release, check out main so the version bump can push.
+          # GITHUB_TOKEN pushes do not retrigger workflows.
+          ref: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'main' || github.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - name: Resolve version from tag or Cargo.toml
+      - name: Resolve or bump version
         id: ver
         shell: bash
         env:
           INPUT_VERSION: ${{ inputs.version }}
+          EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          CARGO_VERSION="$(
+          chmod +x scripts/set-version.sh
+
+          read_cargo_version() {
             awk '
               $0 == "[workspace.package]" { in_pkg=1; next }
               in_pkg && /^\[/ { in_pkg=0 }
@@ -49,13 +67,31 @@ jobs:
                 gsub(/"/, "", $3); print $3; exit
               }
             ' Cargo.toml
-          )"
+          }
+
+          CARGO_VERSION="$(read_cargo_version)"
           if [[ -z "${CARGO_VERSION}" ]]; then
             echo "Could not read workspace.package.version from Cargo.toml" >&2
             exit 1
           fi
 
-          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+          if [[ "${EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/heads/main ]]; then
+            # PromptComposer-style: 0.1.<run_number> on every main merge.
+            VERSION="0.1.${RUN_NUMBER}"
+            TAG="v${VERSION}"
+            ./scripts/set-version.sh "${VERSION}"
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+            if git diff --quiet; then
+              echo "Version already ${VERSION}; reusing HEAD"
+            else
+              git add Cargo.toml Cargo.lock
+              git commit -m "chore: release ${TAG}"
+              git push origin HEAD:main
+            fi
+          elif [[ "${EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
             TAG="${GITHUB_REF_NAME}"
             VERSION="${TAG#v}"
             if [[ "${VERSION}" != "${CARGO_VERSION}" ]]; then
@@ -69,9 +105,12 @@ jobs:
             TAG="v${VERSION}"
           fi
 
+          SHA="$(git rev-parse HEAD)"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "Release version=${VERSION} tag=${TAG} (Cargo.toml=${CARGO_VERSION})"
+          echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Release version=${VERSION} tag=${TAG} sha=${SHA}"
 
   build:
     name: Build ${{ matrix.target_os }}-${{ matrix.arch }}
@@ -97,6 +136,8 @@ jobs:
             arch: x64
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -144,6 +185,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           fetch-depth: 0
 
       - name: Download build artifacts
@@ -161,6 +203,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
+          target_commitish: ${{ needs.prepare.outputs.sha }}
           name: jereko ${{ needs.prepare.outputs.version }}
           generate_release_notes: true
           draft: false
@@ -168,7 +211,7 @@ jobs:
           files: dist/*
           fail_on_unmatched_files: true
           body: |
-            Release **jereko ${{ needs.prepare.outputs.version }}**.
+            Release **jereko ${{ needs.prepare.outputs.version }}** at `${{ needs.prepare.outputs.sha }}` (`${{ needs.prepare.outputs.short_sha }}`).
 
             ### Artifacts
             Archives are named `jereko-{version}-release-{os}-{arch}` (`.tar.gz` on Unix, `.zip` on Windows) and include the `jereko` binary plus README/sidecar notes.
@@ -179,5 +222,7 @@ jobs:
             - windows x64
 
             Bun sidecar sources are **not** bundled — see `sidecar/README.md` and [docs/releases.md](docs/releases.md).
+
+            Version `0.1.<n>` increases on every successful `main` auto-release (same idea as PromptComposer) so upgrades stay monotonic. Include `[skip release]` in a merge commit message to skip publishing.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

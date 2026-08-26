@@ -2,7 +2,7 @@
 
 use crate::session_store::SessionStorePort;
 use jereko_core::{Session, SessionId};
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -25,11 +25,11 @@ pub struct SqliteSessionStore {
 impl SqliteSessionStore {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, String> {
         let path = path.as_ref().to_path_buf();
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|e| format!("create sqlite parent dir: {e}"))?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("create sqlite parent dir: {e}"))?;
         }
         let conn = Connection::open(&path).map_err(|e| format!("open sqlite: {e}"))?;
         conn.execute_batch(SCHEMA)

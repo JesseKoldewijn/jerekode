@@ -3,7 +3,7 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use http_body_util::BodyExt;
-use jereko_server::{build_router, AppState};
+use jereko_server::{AppState, build_router};
 use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;

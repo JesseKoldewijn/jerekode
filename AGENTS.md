@@ -8,6 +8,13 @@ Brief orientation for AI agents working in this repository.
 2. Check [docs/adr/](docs/adr/) for architectural decisions in the area you are changing.
 3. Follow installed skills in [.agents/skills/](.agents/skills/) for the task at hand.
 
+## Git: pull requests only
+
+- **Never** push commits directly to `main` (agents, developers, maintainers).
+- All changes land on `main` **only via pull request merge**.
+- Exception: the trusted **Release** CI workflow may push a version-bump commit to `main` after a merge (see [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/releases.md](docs/releases.md)).
+- Include `[skip release]` in a merge commit message to skip auto-release.
+
 ## Key Docs
 
 | Document | Purpose |

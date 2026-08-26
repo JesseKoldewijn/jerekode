@@ -12,8 +12,8 @@ pub use error::{ProviderError, ProviderResult};
 pub use ollama::OllamaProvider;
 pub use openai::OpenAiProvider;
 pub use provider::{
-    env_api_key, resolve, CompletionRequest, CompletionResponse, HttpClient, ModelInfo, Provider,
-    ProviderId, ReqwestHttpClient, SharedHttpClient, StubProvider,
+    CompletionRequest, CompletionResponse, HttpClient, ModelInfo, Provider, ProviderId,
+    ReqwestHttpClient, SharedHttpClient, StubProvider, env_api_key, resolve,
 };
 pub use registry::ProviderRegistry;
 
@@ -61,7 +61,10 @@ mod http_tests {
             .mount(&server)
             .await;
 
-        std::env::set_var("OPENAI_API_KEY", "test-key");
+        // SAFETY: single-threaded test; env mutation is scoped to this test.
+        unsafe {
+            std::env::set_var("OPENAI_API_KEY", "test-key");
+        }
         let http = Arc::new(ReqwestHttpClient::new());
         let provider = OpenAiProvider::new(http).with_base_url(format!("{}/v1", server.uri()));
         let response = provider
@@ -77,7 +80,9 @@ mod http_tests {
             .await
             .unwrap();
         assert_eq!(response.content, "hello from openai");
-        std::env::remove_var("OPENAI_API_KEY");
+        unsafe {
+            std::env::remove_var("OPENAI_API_KEY");
+        }
     }
 
     #[tokio::test]
@@ -92,7 +97,10 @@ mod http_tests {
             .mount(&server)
             .await;
 
-        std::env::set_var("ANTHROPIC_API_KEY", "test-key");
+        // SAFETY: single-threaded test; env mutation is scoped to this test.
+        unsafe {
+            std::env::set_var("ANTHROPIC_API_KEY", "test-key");
+        }
         let http = Arc::new(ReqwestHttpClient::new());
         let provider = AnthropicProvider::new(http).with_base_url(format!("{}/v1", server.uri()));
         let response = provider
@@ -108,7 +116,9 @@ mod http_tests {
             .await
             .unwrap();
         assert_eq!(response.content, "hello from anthropic");
-        std::env::remove_var("ANTHROPIC_API_KEY");
+        unsafe {
+            std::env::remove_var("ANTHROPIC_API_KEY");
+        }
     }
 
     #[tokio::test]
