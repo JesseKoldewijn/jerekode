@@ -41,7 +41,9 @@ pub async fn execute(args: RunArgs) -> anyhow::Result<()> {
         .and_then(|s| s.entry.clone())
         .unwrap_or_else(|| "sidecar/src/index.ts".into());
 
-    let port: Arc<dyn SidecarPort> = BunProcessSidecarPort::spawn(sidecar_entry).await?;
+    let process = BunProcessSidecarPort::spawn(sidecar_entry).await?;
+    process.wait_startup_ready().await?;
+    let port: Arc<dyn SidecarPort> = process;
     let bun = Arc::new(BunPluginHost::new(port.clone()));
     let native = Arc::new(NativePluginHost::new());
     let wasm = Arc::new(WasmPluginHost::new());
@@ -68,9 +70,8 @@ pub async fn execute(args: RunArgs) -> anyhow::Result<()> {
         })
         .await?;
 
-    jereko_plugins::run_sidecar_loop(port.as_ref()).await?;
-
-    // Graceful teardown when the run loop exits (e.g. after ready handshake in short runs).
+    // Startup Ready was drained before load; Init Ready is consumed inside BunPluginHost::load.
+    // Interactive TUI is optional (`native-tui`); default path shuts down after bootstrap.
     let _ = port.send(SidecarOutbound::Shutdown).await;
 
     Ok(())

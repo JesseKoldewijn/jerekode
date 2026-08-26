@@ -26,7 +26,9 @@ Tests live at **pre-agreed seams** — public interfaces where behavior is obser
 | PluginOrchestrator | hook dispatch | Integration | ordered chain across hosts |
 | `tool.execute.before` | server tools + plugins | Integration | bash command mutation before execute |
 | NativePluginHost | dylib / C ABI | Integration | test cdylib; CI hard-gate |
-| `@jerekode/rtk` | packages/rtk | Unit + conformance | shared rules; OpenCode2 + native |
+| First-party plugins | `packages/*` + native | **True e2e** | real Bun process + real native dylib; shared fixtures; CI hard-gate |
+| `@jerekode/rtk` | packages/rtk | Unit + true e2e | shared rules; OpenCode2 path + native cdylib |
+| CLI runtime | `jereko` binary | Smoke e2e | `version` + `serve` health / v1+v2 session create |
 | WasmPluginHost | WASM hook ABI | Unit | `jereko_hook` fixture module |
 | Tools / policy | `ToolExecutor` | Unit + router | `/tools/execute` fixtures |
 | Extensions | MCP / LSP / PTY | Unit + router | call_tool, hover, pty I/O |
@@ -77,7 +79,30 @@ Spawn `jereko serve` (or bind helper) and exercise fixtures over the network sta
 
 ### Layer 4: Sidecar / Native CI Gates
 
-CI jobs **must hard-fail** when Bun IPC or native dylib loading regresses. Soft-skips are forbidden.
+CI jobs **must hard-fail** when Bun IPC or native dylib loading regresses. Soft-skips are forbidden in CI (`CI` env set).
+
+### Layer 5: First-party (in-house) plugin true e2e
+
+Plugins that ship in this repo (`packages/*` and their native crates) **must** prove behavior with **real hosts**, not in-memory fakes:
+
+| Requirement | Detail |
+|-------------|--------|
+| Bun | `BunProcessSidecarPort` + sidecar entry; load the package by path (or workspace name); invoke the production hook |
+| Native | Load the built cdylib via `NativePluginHost`; same fixture payload/expected as Bun |
+| Fixtures | Host-agnostic JSON under `conformance/fixtures/`; expected values are independent of implementation |
+| Dual agree | At least one test asserts Bun process and native produce the same command mutation |
+| CI | Hard-fail if bun/dylib missing when `CI` is set; table-path only (no optional binaries on `PATH`) |
+
+`InMemorySidecarPort` remains for orchestrator wiring tests. It **must not** fake product-specific rewrite logic.
+
+### Layer 6: CLI runtime smoke
+
+Spawn the real `jereko` binary (`CARGO_BIN_EXE_jereko`):
+
+- `jereko version` — exits 0; prints package version
+- `jereko serve` — `/health` ok; create session on **v1** and **v2**
+
+These live in `crates/jereko-cli/tests/cli_smoke.rs` and run under `cargo test --workspace`.
 
 ## Fixture Rules
 
