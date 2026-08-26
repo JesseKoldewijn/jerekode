@@ -39,6 +39,24 @@ jobs:
       - name: Test
         run: cargo test --workspace --locked
 
-  # Future: bun sidecar check (Phase 2+)
-  # - Install Bun, run `cd sidecar && bun install && bun test`
-  # - Validate JSON-line IPC contract against SidecarPort test adapter
+  bun-sidecar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.5"
+
+      - name: Install sidecar dependencies
+        working-directory: sidecar
+        run: bun install
+
+      - name: Typecheck sidecar
+        working-directory: sidecar
+        run: bun run check
+
+      - name: Test sidecar
+        working-directory: sidecar
+        run: bun test

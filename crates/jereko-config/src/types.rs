@@ -30,6 +30,11 @@ pub struct OpenCodeConfig {
     /// Plugin configuration (resolved by PluginOrchestrator).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub plugins: Vec<PluginEntry>,
+
+    /// Optional SQLite path for durable session storage.
+    /// When unset, the server uses an in-memory session store.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_db: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]

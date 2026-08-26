@@ -1,7 +1,8 @@
 use clap::Args;
 use jereko_config::{CliOverrides, ConfigLoader};
 use jereko_plugins::{
-    BunPluginHost, BunProcessSidecarPort, NativePluginHost, PluginOrchestrator, SidecarPort,
+    BunPluginHost, BunProcessSidecarPort, NativePluginHost, PluginOrchestrator, SidecarOutbound,
+    SidecarPort, WasmPluginHost,
 };
 use std::sync::Arc;
 
@@ -40,11 +41,12 @@ pub async fn execute(args: RunArgs) -> anyhow::Result<()> {
         .and_then(|s| s.entry.clone())
         .unwrap_or_else(|| "sidecar/src/index.ts".into());
 
-    let port: Arc<dyn SidecarPort> = Arc::new(BunProcessSidecarPort::new(sidecar_entry));
+    let port: Arc<dyn SidecarPort> = BunProcessSidecarPort::spawn(sidecar_entry).await?;
     let bun = Arc::new(BunPluginHost::new(port.clone()));
-    let native = Arc::new(NativePluginHost::new(""));
+    let native = Arc::new(NativePluginHost::new());
+    let wasm = Arc::new(WasmPluginHost::new());
 
-    let mut orchestrator = PluginOrchestrator::new(vec![native, bun]);
+    let mut orchestrator = PluginOrchestrator::new(vec![native, bun, wasm]);
     orchestrator
         .load_from_config(loader.opencode().plugins.as_slice())
         .await?;
@@ -67,5 +69,9 @@ pub async fn execute(args: RunArgs) -> anyhow::Result<()> {
         .await?;
 
     jereko_plugins::run_sidecar_loop(port.as_ref()).await?;
+
+    // Graceful teardown when the run loop exits (e.g. after ready handshake in short runs).
+    let _ = port.send(SidecarOutbound::Shutdown).await;
+
     Ok(())
 }

@@ -11,6 +11,7 @@ axum = { workspace = true }
 jereko-config = { workspace = true }
 jereko-core = { workspace = true }
 jereko-providers = { workspace = true }
+rusqlite = { version = "0.32", features = ["bundled"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -20,5 +21,6 @@ tracing = { workspace = true }
 [dev-dependencies]
 http-body-util = "0.1"
 serde_json = { workspace = true }
+tempfile = "3"
 tokio = { workspace = true }
 tower = { version = "0.5", features = ["util"] }

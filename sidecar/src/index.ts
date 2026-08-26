@@ -2,12 +2,13 @@
  * Jereko Bun Sidecar — Plugin Host Entry Point
  *
  * JSON-line IPC over stdio (one message per line).
+ * Field names use snake_case to match Rust serde (`rename_all = "snake_case"`).
  */
 
 export type SidecarOutbound =
   | { type: "init"; config: Record<string, unknown>; plugins: string[] }
-  | { type: "session_start"; sessionId: string }
-  | { type: "session_message"; sessionId: string; content: string }
+  | { type: "session_start"; session_id: string }
+  | { type: "session_message"; session_id: string; content: string }
   | { type: "tui_render"; frame: Record<string, unknown> }
   | { type: "shutdown" };
 
@@ -34,13 +35,13 @@ function handleOutbound(msg: SidecarOutbound): void {
       emit({ type: "ready" });
       break;
     case "session_start":
-      emit({ type: "log", level: "info", message: `session ${msg.sessionId} started` });
+      emit({ type: "log", level: "info", message: `session ${msg.session_id} started` });
       break;
     case "session_message":
       emit({
         type: "plugin_event",
         plugin: "sidecar",
-        event: { sessionId: msg.sessionId, content: msg.content },
+        event: { session_id: msg.session_id, content: msg.content },
       });
       break;
     case "tui_render":

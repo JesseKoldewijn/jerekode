@@ -2,7 +2,18 @@ use jereko_core::{Session, SessionId};
 use std::collections::HashMap;
 use std::sync::RwLock;
 
-/// In-memory session store (Phase 1). SQLite persistence stub in Phase 4.
+/// Session persistence seam — in-memory and SQLite adapters.
+pub trait SessionStorePort: Send + Sync {
+    fn insert(&self, session: Session) -> SessionId;
+    fn get(&self, id: &SessionId) -> Option<Session>;
+    fn update(&self, session: Session) -> bool;
+    fn len(&self) -> usize;
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+/// In-memory session store (default for tests and ephemeral serve).
 #[derive(Debug, Default)]
 pub struct SessionStore {
     inner: RwLock<HashMap<String, Session>>,
@@ -12,8 +23,10 @@ impl SessionStore {
     pub fn new() -> Self {
         Self::default()
     }
+}
 
-    pub fn insert(&self, session: Session) -> SessionId {
+impl SessionStorePort for SessionStore {
+    fn insert(&self, session: Session) -> SessionId {
         let id = session.id.clone();
         self.inner
             .write()
@@ -22,7 +35,7 @@ impl SessionStore {
         id
     }
 
-    pub fn get(&self, id: &SessionId) -> Option<Session> {
+    fn get(&self, id: &SessionId) -> Option<Session> {
         self.inner
             .read()
             .expect("session store lock poisoned")
@@ -30,7 +43,7 @@ impl SessionStore {
             .cloned()
     }
 
-    pub fn update(&self, session: Session) -> bool {
+    fn update(&self, session: Session) -> bool {
         self.inner
             .write()
             .expect("session store lock poisoned")
@@ -38,15 +51,11 @@ impl SessionStore {
             .is_some()
     }
 
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         self.inner
             .read()
             .expect("session store lock poisoned")
             .len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
     }
 }
 

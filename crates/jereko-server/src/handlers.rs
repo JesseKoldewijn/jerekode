@@ -1,11 +1,11 @@
 use crate::adapters::normalized;
-use crate::session_store::SessionStore;
+use crate::session_store::SessionStorePort;
 use jereko_core::{Message, MessageRole};
 use jereko_providers::{resolve, CompletionRequest, ProviderRegistry};
 use std::sync::Arc;
 
 pub struct HandlerContext {
-    pub sessions: Arc<SessionStore>,
+    pub sessions: Arc<dyn SessionStorePort>,
     pub providers: Arc<ProviderRegistry>,
     pub default_provider: Option<String>,
     pub default_model: Option<String>,
