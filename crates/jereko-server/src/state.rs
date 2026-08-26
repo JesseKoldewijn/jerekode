@@ -3,6 +3,7 @@ use jereko_providers::ProviderRegistry;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use crate::extensions::ExtensionHosts;
 use crate::handlers::HandlerContext;
 use crate::persistence::SqliteSessionStore;
 use crate::session_store::{SessionStore, SessionStorePort};
@@ -12,6 +13,7 @@ use crate::tools::ToolExecutor;
 #[derive(Clone)]
 pub struct AppState {
     pub ctx: Arc<HandlerContext>,
+    pub extensions: ExtensionHosts,
 }
 
 impl AppState {
@@ -56,6 +58,7 @@ impl AppState {
                 default_model: config.model.clone(),
                 tools: ToolExecutor::new(project_root).with_bash(true),
             }),
+            extensions: ExtensionHosts::new(),
         }
     }
 

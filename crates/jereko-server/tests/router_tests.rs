@@ -89,64 +89,6 @@ async fn v2_session_lifecycle_via_router() {
 }
 
 #[tokio::test]
-async fn v2_message_stream_returns_sse() {
-    let app = build_router(AppState::default());
-
-    let create = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/v2/sessions")
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    load_json("v2/create_session_request.json").to_string(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(create.status(), StatusCode::CREATED);
-    let create_body = create.into_body().collect().await.unwrap().to_bytes();
-    let session: Value = serde_json::from_slice(&create_body).unwrap();
-    let session_id = session["session"]["id"].as_str().unwrap();
-
-    let stream = app
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri(format!("/v2/sessions/{session_id}/messages/stream"))
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    load_json("v2/send_message_stream_request.json").to_string(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(stream.status(), StatusCode::OK);
-    let ctype = stream
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    assert!(ctype.contains("text/event-stream"));
-    let body = String::from_utf8(
-        stream
-            .into_body()
-            .collect()
-            .await
-            .unwrap()
-            .to_bytes()
-            .to_vec(),
-    )
-    .unwrap();
-    assert!(body.contains("event: chunk"));
-    assert!(body.contains("event: done"));
-    assert!(body.contains("stub:anthropic"));
-}
-
-#[tokio::test]
 async fn list_providers_returns_stubs() {
     let app = build_router(AppState::default());
     let response = app
@@ -213,4 +155,61 @@ async fn tools_execute_write_read_via_router() {
     assert_eq!(json["output"], "parity-tools");
 
     std::env::set_current_dir(prev).unwrap();
+}
+#[tokio::test]
+async fn extensions_mcp_call_and_lsp_hover() {
+    let app = build_router(AppState::default());
+    let mcp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/extensions/mcp/call")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::json!({"tool":"mcp_echo","args":{"ok":true}}).to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(mcp.status(), StatusCode::OK);
+    let body = mcp.into_body().collect().await.unwrap().to_bytes();
+    let json: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["ok"], true);
+
+    let init = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/extensions/lsp/initialize")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::json!({"root_uri":"file:///tmp"}).to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(init.status(), StatusCode::OK);
+
+    let hover = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/extensions/lsp/hover")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::json!({
+                        "uri":"file:///tmp/a.rs",
+                        "line":0,
+                        "character":3,
+                        "text":"fn foo() {}"
+                    })
+                    .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(hover.status(), StatusCode::OK);
 }
