@@ -19,13 +19,15 @@ Local install aliases: [`scripts/install.sh`](../scripts/install.sh) / [distribu
 Every push/merge to `main` triggers the **Release** workflow (unless the commit message contains `[skip release]`):
 
 1. **Bump** `[workspace.package] version` to `0.1.<github.run_number>` via `scripts/set-version.sh`.
-2. **Commit & push** `chore: release v0.1.<n>` to `main` with `GITHUB_TOKEN` (GitHub does not re-trigger workflows on that token push).
+2. **Commit** `chore: release v0.1.<n> [skip release]`, then:
+   - **Prefer** push to `main` (PromptComposer-style) when allowed — `GITHUB_TOKEN`, or optional secret `RELEASE_PUSH_TOKEN` (admin PAT) when “require PR” blocks the bot.
+   - **Otherwise** soft-fail that push, **push a sync branch** (uploads the bump commit), open a **sync PR** so `Cargo.toml` can land on `main` without re-triggering release, and continue (the publish job creates the tag).
 3. **Build** multi-platform `jereko` binaries (release profile).
 4. **Publish** a GitHub Release tagged `v0.1.<n>` with archives attached.
 
-This matches [PromptComposer](https://github.com/JesseKoldewijn/PromptComposer): release on every successful `main` merge with a monotonic patch from the workflow run number — not changeset/release-please/semantic-release.
+This matches [PromptComposer](https://github.com/JesseKoldewijn/PromptComposer): release on every successful `main` merge with a monotonic patch from the workflow run number — not changeset/release-please/semantic-release. PromptComposer can push directly because `main` is unprotected there; this repo keeps PR-only protection and falls back to tag + sync PR (or `RELEASE_PUSH_TOKEN`).
 
-Humans and agents must still land code on `main` **only via pull request** (see [CONTRIBUTING.md](../CONTRIBUTING.md)). The release job’s version-bump push is the documented CI exception.
+Humans and agents must still land code on `main` **only via pull request** (see [CONTRIBUTING.md](../CONTRIBUTING.md)). The release job’s version-bump write is the documented CI exception.
 
 ## Artifact layout
 
@@ -76,7 +78,7 @@ Release builds always use the **release** Cargo profile.
 | OS | Arch | Runner | Status |
 |----|------|--------|--------|
 | Linux | x64 | `ubuntu-22.04` | Built |
-| macOS | x64 | `macos-13` | Built |
+| macOS | x64 | `macos-15-intel` | Built |
 | macOS | arm64 | `macos-14` | Built |
 | Windows | x64 | `windows-latest` | Built |
 | Linux | arm64 | — | **Skipped** — no free GHA linux-arm64 runner |

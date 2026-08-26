@@ -5,6 +5,11 @@ name: Release
 # Also supports tag push (v*) and workflow_dispatch.
 # PR builds live in pr-build.yml and never create releases.
 # Include [skip release] in a commit message to skip the main-push path.
+#
+# Version bump on main: prefer direct push (PromptComposer). On personal repos
+# with "require PR" protection, GITHUB_TOKEN cannot bypass — we soft-fail that
+# push, publish via tag (objects uploaded with the tag), and open a sync PR.
+# Optional repo secret RELEASE_PUSH_TOKEN (admin PAT) restores direct main push.
 
 on:
   push:
@@ -14,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version without leading v (default: workspace.package.version from Cargo.toml)
+        description: "Version without leading v (default: workspace.package.version from Cargo.toml)"
         required: false
         type: string
 
@@ -24,6 +29,7 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -44,7 +50,7 @@ jobs:
           # On main auto-release, check out main so the version bump can push.
           # GITHUB_TOKEN pushes do not retrigger workflows.
           ref: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'main' || github.sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Resolve or bump version
@@ -55,6 +61,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           GITHUB_REF: ${{ github.ref }}
           RUN_NUMBER: ${{ github.run_number }}
+          GH_TOKEN: ${{ secrets.RELEASE_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           chmod +x scripts/set-version.sh
@@ -88,8 +95,32 @@ jobs:
               echo "Version already ${VERSION}; reusing HEAD"
             else
               git add Cargo.toml Cargo.lock
-              git commit -m "chore: release ${TAG}"
-              git push origin HEAD:main
+              # [skip release] so a sync-PR squash/merge does not re-trigger Release.
+              git commit -m "chore: release ${TAG} [skip release]"
+
+              if git push origin HEAD:main; then
+                echo "Pushed version bump to main (PromptComposer-style)."
+              else
+                echo "::warning::Direct push to main was blocked by branch protection."
+                echo "::warning::Publishing via branch + sync PR (tag created at publish). For PromptComposer-style direct pushes, add secret RELEASE_PUSH_TOKEN (admin PAT) or allow an Actions bypass where the plan supports it."
+                # Upload bump commit objects via a branch (avoid pushing the tag here —
+                # tag pushes also trigger this workflow). softprops creates the tag later.
+                BRANCH="chore/release-${VERSION}"
+                if ! git push --force-with-lease origin "HEAD:refs/heads/${BRANCH}"; then
+                  echo "::error::Failed to push ${BRANCH}; cannot publish without a reachable commit."
+                  exit 1
+                fi
+                if gh pr view "${BRANCH}" --json number >/dev/null 2>&1; then
+                  echo "Sync PR for ${BRANCH} already exists."
+                else
+                  BODY="Auto version bump from the Release workflow after merge to main. Keeps Cargo.toml aligned with ${TAG}. Includes [skip release] so merging does not re-trigger release. Personal-repo branch protection blocks GITHUB_TOKEN pushes to main; optional secret RELEASE_PUSH_TOKEN (admin PAT) restores PromptComposer-style direct pushes."
+                  gh pr create \
+                    --base main \
+                    --head "${BRANCH}" \
+                    --title "chore: release ${TAG} [skip release]" \
+                    --body "${BODY}"
+                fi
+              fi
             fi
           elif [[ "${EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
             TAG="${GITHUB_REF_NAME}"
@@ -125,7 +156,7 @@ jobs:
           - runner: ubuntu-22.04
             target_os: linux
             arch: x64
-          - runner: macos-13
+          - runner: macos-15-intel
             target_os: macos
             arch: x64
           - runner: macos-14
