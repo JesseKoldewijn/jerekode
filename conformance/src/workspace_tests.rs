@@ -9,7 +9,7 @@ use jereko_server::{AppState, build_router};
 fn workspace_crates_link() {
     let _session = Session::new();
     let registry = ProviderRegistry::with_stubs();
-    assert_eq!(registry.len(), 3);
+    assert_eq!(registry.len(), 5);
 
     let loader = ConfigLoader::new();
     assert_eq!(loader.loaded_layers(), &[ConfigLayer::Default]);
