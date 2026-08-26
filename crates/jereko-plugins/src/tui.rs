@@ -1,6 +1,7 @@
 //! Optional native TUI path behind the `native-tui` feature.
 
 #[cfg(feature = "native-tui")]
+#[allow(clippy::collapsible_if)]
 mod imp {
     use crossterm::ExecutableCommand;
     use crossterm::event::{self, Event, KeyCode, KeyEventKind};
