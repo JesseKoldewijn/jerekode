@@ -7,7 +7,7 @@ Brief orientation for AI agents working in this repository.
 1. Read [CONTEXT.md](CONTEXT.md) — crate map, vocabulary, current capability snapshot.
 2. Check [docs/adr/](docs/adr/) for architectural decisions in the area you are changing.
 3. Follow installed skills in [.agents/skills/](.agents/skills/) for the task at hand.
-4. Check [docs/roadmap-parity.md](docs/roadmap-parity.md) before starting large parity work.
+4. Parity board is closed ([docs/roadmap-parity.md](docs/roadmap-parity.md)); for packaging / releases work use [docs/roadmap-releases.md](docs/roadmap-releases.md) and [ADR 003](docs/adr/003-release-packaging-and-changelogs.md).
 
 ## Git: pull requests only
 

@@ -2,7 +2,8 @@
 
 Phased plan for trustworthy changelogs, a clean version line, installers, and optional Bun-free builds. Decision record: [ADR 003](./adr/003-release-packaging-and-changelogs.md). Operational how-to today: [releases.md](./releases.md).
 
-**This document is planning.** Destructive wipe and dual-build implementation are **not** started until maintainers approve and follow-up PRs land.
+**Status:** Active forward plan (parity board closed).
+**This document is planning.** Destructive wipe and dual-build Cargo features are **planned, not implemented**. Do not check wipe / dual-build items until they land. A few P0/P1 checklist rows below are already true in repo (static release body; archive naming) and are marked done.
 
 ## Goals
 
@@ -32,7 +33,7 @@ Do **not** publish installer matrices onto `v0.1.*` history you plan to delete. 
 - [ ] Turn off unfiltered `generate_release_notes: true` **or** drive notes via API with explicit `previous_tag_name`.
 - [ ] Add `.github/release.yml` exclusions: label `release-sync`, authors `github-actions[bot]` / bots, and ideally titles matching `[skip release]`.
 - [ ] Post-filter or omit **New Contributors** until stable.
-- [ ] Keep a short static body (artifacts, platforms, Bun sidecar note) like PromptComposer’s install blurb.
+- [x] Keep a short static body (artifacts, platforms, Bun sidecar note) like PromptComposer’s install blurb. *(present in `release.yml`; still prepended to unfiltered auto notes)*
 - [ ] Temporarily pause auto-release or require `[skip release]` during the wipe PR window.
 
 ### P0b — Version reset and history purge (destructive — confirm first)
@@ -59,7 +60,7 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 ## P1 — Multi-arch binaries and naming
 
-- [ ] Keep stem `jereko-{version}-release-{os}-{arch}`; document arch tags (`x64`, `arm64`).
+- [x] Keep stem `jereko-{version}-release-{os}-{arch}`; document arch tags (`x64`, `arm64`). *(shipped in `package-release.sh` / `release.yml`; documented in [releases.md](./releases.md))*
 - [ ] Linux/Windows arm64 when free GHA runners (or self-hosted/qemu) exist.
 - [ ] Optional: first **native-only** artifacts for **linux-x64** and **windows-x64** only (`…-native-release-…`) to prove the Cargo feature without doubling full matrix cost.
 - [ ] CI: `os × arch × variant` documented; fail-fast false; cache keys include variant.
@@ -103,8 +104,8 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 | Phase | Dual-build work |
 |-------|-----------------|
-| P0 | Document only; no matrix change required for wipe |
-| P1 | Introduce `bun-sidecar` feature; optional native-only artifacts on 1–2 platforms |
+| P0 | Document only; no matrix change required for wipe (**feature not implemented yet**) |
+| P1 | Introduce `bun-sidecar` feature; optional native-only artifacts on 1–2 platforms (**planned**) |
 | P2 | Installers for **full**; native-only remains archive or slim installer |
 | P3+ | Native-only in brew/winget/Nix as separate formulae/packages if useful |
 
@@ -154,4 +155,5 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 - [ADR 002](./adr/002-dual-plugin-runtime.md) — Bun / native / WASM hosts
 - [ADR 003](./adr/003-release-packaging-and-changelogs.md) — packaging, changelogs, wipe, dual-build
 - PromptComposer release workflow (Tauri NSIS/deb/AppImage + custom body, no GitHub auto notes)
+
 

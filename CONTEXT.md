@@ -70,7 +70,8 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | Release | Auto-release on `main` merge (`0.1.<run_number>` today); archives only — see [roadmap-releases.md](docs/roadmap-releases.md) |
 
 Historical phase notes and foundation archive: [docs/roadmap-remaining.md](docs/roadmap-remaining.md).  
-Active parity board: [docs/roadmap-parity.md](docs/roadmap-parity.md).
+Closed parity checklist: [docs/roadmap-parity.md](docs/roadmap-parity.md).  
+Active forward plan: [docs/roadmap-releases.md](docs/roadmap-releases.md).
 
 ## Key docs
 
@@ -80,9 +81,9 @@ Active parity board: [docs/roadmap-parity.md](docs/roadmap-parity.md).
 | [docs/conformance.md](docs/conformance.md) | Test seams, fixture rules, TDD policy |
 | [docs/development.md](docs/development.md) | Rust standards, build commands |
 | [docs/releases.md](docs/releases.md) | Auto-release, `/build`, artifacts |
-| [docs/roadmap-parity.md](docs/roadmap-parity.md) | True OpenCode parity progress board |
+| [docs/roadmap-parity.md](docs/roadmap-parity.md) | Closed parity checklist (R0–P3e) |
 | [docs/roadmap-remaining.md](docs/roadmap-remaining.md) | Historical foundation P0–P3 archive |
-| [docs/roadmap-releases.md](docs/roadmap-releases.md) | Release packaging, changelogs, version reset plan |
+| [docs/roadmap-releases.md](docs/roadmap-releases.md) | Active packaging / changelog / version-reset plan |
 
 ## Architecture Decisions
 

@@ -12,7 +12,7 @@ Thanks for contributing. Please read [CONTEXT.md](CONTEXT.md), [AGENTS.md](AGENT
 
 ### Exception: trusted CI release automation
 
-The **Release** workflow (`.github/workflows/release.yml`) bumps `0.1.<run_number>` after a successful merge (PromptComposer-style). On protected `main`, it opens a `release-sync` PR (`release/sync-0.1.<n>`), enables **auto-merge (squash)**, and publishes from the bumped commit in the same run. Commit/PR title include `[skip release]` so the sync merge does not start another release. Optional secret `RELEASE_PUSH_TOKEN` (admin PAT) restores a direct push to `main`. Planned cutover (version reset, changelog fix, installers): [docs/roadmap-releases.md](docs/roadmap-releases.md) / [ADR 003](docs/adr/003-release-packaging-and-changelogs.md).
+The **Release** workflow (`.github/workflows/release.yml`) bumps `0.1.<run_number>` after a successful merge (PromptComposer-style). On protected `main`, it opens a `release-sync` PR (`release/sync-0.1.<n>`), enables **auto-merge (squash)**, and publishes from the bumped commit in the same run. Commit/PR title include `[skip release]` so the sync merge does not start another release. Optional secret `RELEASE_PUSH_TOKEN` (admin PAT) restores a direct push to `main`. Planned cutover (version reset / release wipe, changelog fix, installers, dual-build) is **not executed yet** — track in [docs/roadmap-releases.md](docs/roadmap-releases.md) / [ADR 003](docs/adr/003-release-packaging-and-changelogs.md).
 
 - Prefer PRs even for automation when practical.
 - Humans and agents must never push to `main` directly; branch protection should block them.
