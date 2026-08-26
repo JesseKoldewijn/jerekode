@@ -18,7 +18,7 @@ Local install aliases: [`scripts/install.sh`](../scripts/install.sh) / [distribu
 
 Every push/merge to `main` triggers the **Release** workflow (unless the commit message contains `[skip release]`):
 
-1. **Bump** `[workspace.package] version` to `0.0.<github.run_number>` via `scripts/set-version.sh` (cutover seed on `main` is `0.0.1`; run numbers may skip after wipe).
+1. **Bump** `[workspace.package] version` to next `0.0.<N+1>` from Cargo.toml via `scripts/set-version.sh` (cutover seed on `main` is `0.0.1`; each main auto-release increments the patch after the wipe seed).
 2. **Commit** `chore: release v0.0.<n> [skip release]`, then land it on `main`:
    - **Default (protected `main`):** push branch `release/sync-0.0.<n>`, open a PR labeled `release-sync`, enable **auto-merge (squash)**. It merges when required checks (`rust`, `bun-sidecar`) pass. This run’s build/publish uses the bumped commit immediately and does **not** wait for that merge.
    - **Optional:** secret `RELEASE_PUSH_TOKEN` (admin PAT) pushes the bump straight to `main` (PromptComposer-style) and skips the sync PR.
@@ -43,7 +43,7 @@ The workflow runs `gh pr merge --auto --squash` on the sync PR.
 | Label `release-sync` | Marks automation PRs in the UI |
 | Branch `release/sync-*` | Stable head name for retries / `gh pr view` |
 
-This matches [PromptComposer](https://github.com/JesseKoldewijn/PromptComposer): release on every successful `main` merge with a monotonic patch from the workflow run number — not changeset/release-please/semantic-release. PromptComposer pushes bumps directly because its `main` is unprotected; this repo keeps PR-only protection and uses sync PR + auto-merge (or `RELEASE_PUSH_TOKEN`).
+This matches [PromptComposer](https://github.com/JesseKoldewijn/PromptComposer): release on every successful `main` merge with a sequential `0.0` patch from Cargo.toml — not changeset/release-please/semantic-release. PromptComposer pushes bumps directly because its `main` is unprotected; this repo keeps PR-only protection and uses sync PR + auto-merge (or `RELEASE_PUSH_TOKEN`). Opening a new sync PR closes superseded open `release-sync` PRs. Opening a new sync PR closes superseded open `release-sync` PRs.
 
 Humans and agents must still land code on `main` **only via pull request** (see [CONTRIBUTING.md](../CONTRIBUTING.md)). The release job’s version-bump write is the documented CI exception.
 
@@ -73,7 +73,7 @@ Version sources:
 
 | Trigger | Version / naming |
 |---------|------------------|
-| Push/merge to `main` | `0.0.<run_number>` (auto bump + tag) |
+| Push/merge to `main` | `0.0.<N+1>` (sequential patch) (auto bump + tag) |
 | Tag `v1.2.3` | `1.2.3` (warn if Cargo.toml differs) |
 | Release `workflow_dispatch` | Input, or `workspace.package.version` |
 | PR `/build` | Label `0.0.0-pr.{N}.{shortsha}`; artifacts use `jereko-pr{N}-{profile}-…` |

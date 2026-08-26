@@ -1,14 +1,14 @@
 name: Release
 
 # Auto-release on every push/merge to main (PromptComposer-style): bump to
-# 0.0.<run_number>, commit, build multi-platform binaries, publish GitHub Release.
-# Workspace seed after history wipe is 0.0.1; subsequent run numbers may skip.
+# 0.0.<N+1> (next patch from Cargo.toml), commit, build, publish GitHub Release.
+# Workspace seed after history wipe is 0.0.1; each main release increments the patch.
 # Also supports tag push (v*) and workflow_dispatch.
 # PR builds live in pr-build.yml and never create releases.
 # Include [skip release] in a commit message to skip the main-push path.
 #
 # With branch protection (require PR), the default path is:
-#   bump on release/sync-0.0.N → open labeled sync PR → enable auto-merge →
+#   bump on release/sync-0.0.N → close older sync PRs → open labeled sync PR → auto-merge →
 #   build/publish from the bumped commit (does not wait for the sync PR).
 # Optional secret RELEASE_PUSH_TOKEN (admin PAT) restores a direct push to main.
 #
@@ -65,7 +65,6 @@ jobs:
           INPUT_VERSION: ${{ inputs.version }}
           EVENT_NAME: ${{ github.event_name }}
           GITHUB_REF: ${{ github.ref }}
-          RUN_NUMBER: ${{ github.run_number }}
           GH_TOKEN: ${{ secrets.RELEASE_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
           HAS_PUSH_TOKEN: ${{ secrets.RELEASE_PUSH_TOKEN != '' }}
         run: |
@@ -85,10 +84,23 @@ jobs:
               2>/dev/null || true
           }
 
+
+          close_superseded_sync_prs() {
+            local keep_branch="$1"
+            local nums
+            nums="$(gh pr list --state open --label release-sync --json number,headRefName               --jq ".[] | select(.headRefName != \"${keep_branch}\") | .number" 2>/dev/null || true)"
+            while read -r num; do
+              [[ -z "${num}" ]] && continue
+              gh pr close "${num}" --comment "Superseded by \`${keep_branch}\` (newer auto-release sync)."                 || echo "::warning::Could not close superseded sync PR #${num}"
+            done <<< "${nums}"
+          }
+
           open_sync_pr_with_automerge() {
             local version="$1"
             local tag="$2"
             local branch="release/sync-${version}"
+
+            close_superseded_sync_prs "${branch}"
 
             if ! git push --force-with-lease origin "HEAD:refs/heads/${branch}"; then
               echo "::error::Failed to push ${branch}; cannot publish without a reachable commit."
@@ -133,8 +145,21 @@ jobs:
           fi
 
           if [[ "${EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/heads/main ]]; then
-            # PromptComposer-style: 0.0.<run_number> on every main merge (post wipe).
-            VERSION="0.0.${RUN_NUMBER}"
+            # Post-wipe scheme: stay on 0.0.x and increment patch from Cargo.toml.
+            # Do not use github.run_number — it survives the version wipe and
+            # produced jumps like 0.0.1 → 0.0.22+.
+            if [[ "${CARGO_VERSION}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              MAJOR="${BASH_REMATCH[1]}"
+              MINOR="${BASH_REMATCH[2]}"
+              PATCH="${BASH_REMATCH[3]}"
+            else
+              echo "Unexpected Cargo.toml version '${CARGO_VERSION}' (want X.Y.Z)" >&2
+              exit 1
+            fi
+            if [[ "${MAJOR}.${MINOR}" != "0.0" ]]; then
+              echo "::warning::Expected 0.0.x line after wipe; got ${CARGO_VERSION}. Still bumping patch only."
+            fi
+            VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
             TAG="v${VERSION}"
             ./scripts/set-version.sh "${VERSION}"
 
@@ -299,7 +324,7 @@ jobs:
 
           Bun sidecar sources are **not** bundled — see \`sidecar/README.md\` and [docs/releases.md](docs/releases.md).
 
-          Version \`0.0.<n>\` increases on every successful \`main\` auto-release (PromptComposer-style; cutover seed was \`0.0.1\`). Include \`[skip release]\` in a merge commit message to skip publishing.
+          Version \`0.0.<n>\` increments the patch on every successful \`main\` auto-release (seed after wipe: \`0.0.1\` → \`0.0.2\` → …). Include \`[skip release]\` in a merge commit message to skip publishing.
           EOF
           # Strip the common leading indent from the heredoc above.
           sed -i -E 's/^[[:space:]]{10}//' /tmp/release-notes.md
