@@ -65,6 +65,24 @@ export function createBuiltinPlugin(name: string): LoadedPluginModule {
         stub: false,
         status: "ok",
       }),
+      "tool.execute.before": (payload) => {
+        const command =
+          typeof payload.command === "string"
+            ? payload.command
+            : typeof (payload.args as { command?: string } | undefined)?.command === "string"
+              ? (payload.args as { command: string }).command
+              : "";
+        return {
+          host: "bun",
+          hook: "tool.execute.before",
+          tool: payload.tool ?? "bash",
+          command,
+          args: { command },
+          rewritten: false,
+          stub: false,
+          status: "ok",
+        };
+      },
       "tui.render": (payload) => ({
         host: "bun",
         hook: "tui.render",

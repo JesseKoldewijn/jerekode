@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "prefix": "rtk",
+  "rewrites": [
+    { "match": "^git(\\s|$)", "mode": "prefix" },
+    { "match": "^gh(\\s|$)", "mode": "prefix" },
+    { "match": "^cargo(\\s|$)", "mode": "prefix" },
+    { "match": "^npm(\\s|$)", "mode": "prefix" },
+    { "match": "^pnpm(\\s|$)", "mode": "prefix" },
+    { "match": "^yarn(\\s|$)", "mode": "prefix" },
+    { "match": "^bun(\\s|$)", "mode": "prefix" },
+    { "match": "^ls(\\s|$)", "mode": "prefix" },
+    { "match": "^ll(\\s|$)", "mode": "prefix" },
+    { "match": "^tree(\\s|$)", "mode": "prefix" },
+    { "match": "^find(\\s|$)", "mode": "prefix" },
+    { "match": "^cat(\\s|$)", "mode": "prefix" },
+    { "match": "^grep(\\s|$)", "mode": "prefix" },
+    { "match": "^rg(\\s|$)", "mode": "prefix" },
+    { "match": "^diff(\\s|$)", "mode": "prefix" },
+    { "match": "^docker(\\s|$)", "mode": "prefix" },
+    { "match": "^kubectl(\\s|$)", "mode": "prefix" },
+    { "match": "^curl(\\s|$)", "mode": "prefix" },
+    { "match": "^wget(\\s|$)", "mode": "prefix" },
+    { "match": "^pytest(\\s|$)", "mode": "prefix" },
+    { "match": "^go(\\s|$)", "mode": "prefix" }
+  ]
+}

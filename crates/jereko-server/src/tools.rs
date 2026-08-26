@@ -31,6 +31,7 @@ pub struct ToolResult {
 ///
 /// Bash is intentionally constrained: commands run with the project as cwd.
 /// Callers should treat this as a privileged seam and apply policy upstream.
+#[derive(Clone)]
 pub struct ToolExecutor {
     root: PathBuf,
     policy: ToolPolicy,

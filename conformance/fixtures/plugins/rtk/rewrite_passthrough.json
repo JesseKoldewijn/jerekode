@@ -1,0 +1,10 @@
+{
+  "hook": "tool.execute.before",
+  "payload": {
+    "tool": "bash",
+    "command": "echo hello",
+    "args": { "command": "echo hello" }
+  },
+  "expected_command": "echo hello",
+  "notes": "Unknown commands pass through unchanged"
+}

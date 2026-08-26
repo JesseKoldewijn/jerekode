@@ -1,0 +1,20 @@
+{
+  "name": "@jerekode/root",
+  "version": "0.0.1",
+  "private": true,
+  "license": "MIT",
+  "description": "Jereko Bun workspaces root (sidecar + packages)",
+  "workspaces": [
+    "packages/*",
+    "sidecar"
+  ],
+  "scripts": {
+    "check": "bun run --filter '@jerekode/*' check",
+    "test": "bun run --filter '@jerekode/*' test",
+    "test:rtk": "bun test ./packages/rtk",
+    "test:sidecar": "bun test ./sidecar"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}

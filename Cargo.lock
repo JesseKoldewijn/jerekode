@@ -1664,6 +1664,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "jereko-rtk-plugin"
+version = "0.0.1"
+dependencies = [
+ "jereko-plugin-sdk",
+ "regex",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "jereko-server"
 version = "0.0.1"
 dependencies = [
@@ -1671,6 +1681,7 @@ dependencies = [
  "http-body-util",
  "jereko-config",
  "jereko-core",
+ "jereko-plugins",
  "jereko-providers",
  "portable-pty",
  "rusqlite",

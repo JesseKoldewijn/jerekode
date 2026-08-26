@@ -1,9 +1,13 @@
 use crate::adapters::normalized;
 use crate::session_store::SessionStorePort;
-use crate::tools::{ToolCall, ToolExecutor, ToolResult};
+use crate::tools::{ToolCall, ToolExecutor, ToolName, ToolResult};
 use jereko_core::{Message, MessageRole};
+use jereko_plugins::{
+    HookCall, PluginOrchestrator, TOOL_EXECUTE_BEFORE, apply_command_mutations, set_command_arg,
+};
 use jereko_providers::{CompletionChunk, CompletionRequest, ProviderRegistry, resolve};
 use std::sync::Arc;
+use tokio::sync::RwLock;
 
 pub struct HandlerContext {
     pub sessions: Arc<dyn SessionStorePort>,
@@ -11,6 +15,8 @@ pub struct HandlerContext {
     pub default_provider: Option<String>,
     pub default_model: Option<String>,
     pub tools: ToolExecutor,
+    /// Optional plugin orchestrator for `tool.execute.before` (and related hooks).
+    pub plugins: Option<Arc<RwLock<PluginOrchestrator>>>,
 }
 
 pub struct StreamMessageResult {
@@ -147,7 +153,33 @@ impl HandlerContext {
         })
     }
 
-    pub fn execute_tool(&self, call: ToolCall) -> ToolResult {
+    pub async fn execute_tool(&self, mut call: ToolCall) -> ToolResult {
+        if matches!(call.name, ToolName::Bash)
+            && let Some(plugins) = &self.plugins
+        {
+            let command = call
+                .args
+                .get("command")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let orch = plugins.read().await;
+            if let Ok(results) = orch
+                .dispatch_hook(HookCall {
+                    hook: TOOL_EXECUTE_BEFORE.into(),
+                    payload: serde_json::json!({
+                        "tool": "bash",
+                        "name": "bash",
+                        "command": command,
+                        "args": call.args.clone(),
+                    }),
+                })
+                .await
+            {
+                let next = apply_command_mutations(command, &results);
+                set_command_arg(&mut call.args, &next);
+            }
+        }
         self.tools.execute(&call)
     }
 

@@ -1,7 +1,9 @@
 use jereko_config::OpenCodeConfig;
+use jereko_plugins::PluginOrchestrator;
 use jereko_providers::ProviderRegistry;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 
 use crate::extensions::ExtensionHosts;
 use crate::handlers::HandlerContext;
@@ -57,8 +59,24 @@ impl AppState {
                 default_provider: config.provider.clone(),
                 default_model: config.model.clone(),
                 tools: ToolExecutor::new(project_root).with_bash(true),
+                plugins: None,
             }),
             extensions: ExtensionHosts::new(),
+        }
+    }
+
+    /// Attach a plugin orchestrator for tool hooks (e.g. `tool.execute.before`).
+    pub fn with_plugins(self, orchestrator: PluginOrchestrator) -> Self {
+        Self {
+            ctx: Arc::new(HandlerContext {
+                sessions: Arc::clone(&self.ctx.sessions),
+                providers: Arc::clone(&self.ctx.providers),
+                default_provider: self.ctx.default_provider.clone(),
+                default_model: self.ctx.default_model.clone(),
+                tools: self.ctx.tools.clone(),
+                plugins: Some(Arc::new(RwLock::new(orchestrator))),
+            }),
+            extensions: self.extensions,
         }
     }
 

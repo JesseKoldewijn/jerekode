@@ -8,6 +8,7 @@ members = [
     "crates/jereko-plugins",
     "crates/jereko-plugin-sdk",
     "crates/jereko-test-native-plugin",
+    "packages/rtk/native",
     "conformance",
 ]
 resolver = "2"

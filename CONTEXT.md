@@ -20,11 +20,14 @@ Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.
 | `jereko-plugins` | `crates/jereko-plugins/` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
 | `jereko-plugin-sdk` | `crates/jereko-plugin-sdk/` | Native plugin C ABI / Rust SDK |
 | `jereko-conformance` | `conformance/` | Owned fixture-driven compatibility tests |
+| `jereko-rtk-plugin` | `packages/rtk/native/` | Native RTK adapter cdylib |
 
 Supporting directories:
 
 | Path | Role |
 |------|------|
+| `packages/` | Bun workspace packages (first-party plugins such as `@jerekode/rtk`) |
+| `packages/rtk/` | RTK OpenCode2 + native dual adapter ([ADR 004](docs/adr/004-rtk-dual-adapter.md)) |
 | `sidecar/` | Bun plugin host (TUI + server plugins); JSON-line IPC with Rust core |
 | `docs/` | Architecture, conformance, development, ADRs, roadmaps |
 | `.agents/skills/` | Installed agent skills (codebase-design, tdd, diagnosing-bugs, rust-best-practices) |
@@ -64,6 +67,7 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | Tools | read/write/edit/grep/bash via `/tools/execute` + sandbox policy |
 | Bun plugins | Real sidecar spawn, dynamic import, `invoke_hook`; CI hard-gates |
 | Native plugins | libloading + test cdylib; CI hard-gates |
+| RTK adapter | `@jerekode/rtk` OpenCode2 + `jereko-rtk-plugin` native ([ADR 004](docs/adr/004-rtk-dual-adapter.md)) |
 | WASM | Module load + `jereko_hook` ABI |
 | MCP / LSP / PTY | call_tool, initialize/hover, portable-pty I/O |
 | TUI | Bun `jereko run` default; optional `native-tui` interactive MVP |
@@ -87,7 +91,7 @@ Active forward plan: [docs/roadmap-releases.md](docs/roadmap-releases.md).
 
 ## Architecture Decisions
 
-Recorded in [docs/adr/](docs/adr/). Start with [001-architecture-decisions.md](docs/adr/001-architecture-decisions.md). Plugin runtime strategy: [002-dual-plugin-runtime.md](docs/adr/002-dual-plugin-runtime.md). Release packaging: [003-release-packaging-and-changelogs.md](docs/adr/003-release-packaging-and-changelogs.md).
+Recorded in [docs/adr/](docs/adr/). Start with [001-architecture-decisions.md](docs/adr/001-architecture-decisions.md). Plugin runtime: [002-dual-plugin-runtime.md](docs/adr/002-dual-plugin-runtime.md). Release packaging: [003-release-packaging-and-changelogs.md](docs/adr/003-release-packaging-and-changelogs.md). RTK dual adapter: [004-rtk-dual-adapter.md](docs/adr/004-rtk-dual-adapter.md).
 
 ## Agent Skills
 
