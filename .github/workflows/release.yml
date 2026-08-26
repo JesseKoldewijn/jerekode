@@ -298,6 +298,11 @@ jobs:
           sudo apt-get install -y gettext-base
           docker pull archlinux:latest || true
 
+      - name: Install packaging tools (Windows)
+        if: matrix.target_os == 'windows'
+        shell: pwsh
+        run: choco install nsis -y --no-progress
+
       - name: Build release binary
         shell: bash
         run: cargo build --release -p jereko-cli --locked
