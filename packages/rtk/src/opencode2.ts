@@ -2,7 +2,7 @@
  * OpenCode2 / Bun plugin entry — hooks `tool.execute.before` like upstream RTK.
  */
 
-import { applyToolExecuteBefore } from "./rewrite.ts";
+import { applyToolExecuteBefore } from "./rewrite";
 
 export const name = "@jerekode/rtk";
 

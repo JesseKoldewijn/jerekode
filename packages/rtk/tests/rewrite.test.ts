@@ -3,7 +3,7 @@ import {
   alreadyRtk,
   applyToolExecuteBefore,
   rewriteWithTable,
-} from "../src/rewrite.ts";
+} from "../src/rewrite";
 
 describe("rewriteWithTable", () => {
   test("prefixes git status", () => {
