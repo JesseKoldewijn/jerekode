@@ -1,0 +1,7 @@
+{
+  "name": "write",
+  "args": {
+    "path": "tool_probe.txt",
+    "content": "parity-tools"
+  }
+}

@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::handlers::HandlerContext;
+use crate::tools::ToolExecutor;
 use crate::persistence::SqliteSessionStore;
 use crate::session_store::{SessionStore, SessionStorePort};
 
@@ -46,12 +47,14 @@ impl AppState {
         sessions: Arc<dyn SessionStorePort>,
         providers: Arc<ProviderRegistry>,
     ) -> Self {
+        let project_root = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
         Self {
             ctx: Arc::new(HandlerContext {
                 sessions,
                 providers,
                 default_provider: config.provider.clone(),
                 default_model: config.model.clone(),
+                tools: ToolExecutor::new(project_root).with_bash(true),
             }),
         }
     }

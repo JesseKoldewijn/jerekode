@@ -112,3 +112,47 @@ async fn list_providers_returns_stubs() {
     assert!(ids.contains(&"openai"));
     assert!(ids.contains(&"anthropic"));
 }
+
+#[tokio::test]
+async fn tools_execute_write_read_via_router() {
+    let dir = tempfile::TempDir::new().unwrap();
+    // ToolExecutor uses process cwd; run relative writes inside temp by changing cwd.
+    let prev = std::env::current_dir().unwrap();
+    std::env::set_current_dir(dir.path()).unwrap();
+
+    let app = build_router(AppState::default());
+    let write_body = load_json("tools/execute_write_request.json");
+    let write = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/tools/execute")
+                .header("content-type", "application/json")
+                .body(Body::from(write_body.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(write.status(), StatusCode::OK);
+
+    let read_body = load_json("tools/execute_read_request.json");
+    let read = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v2/tools/execute")
+                .header("content-type", "application/json")
+                .body(Body::from(read_body.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(read.status(), StatusCode::OK);
+    let body = read.into_body().collect().await.unwrap().to_bytes();
+    let json: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["ok"], true);
+    assert_eq!(json["output"], "parity-tools");
+
+    std::env::set_current_dir(prev).unwrap();
+}
