@@ -59,7 +59,7 @@ jobs:
           fetch-depth: 0
 
       - name: Resolve or bump version
-        id: ve
+        id: ver
         shell: bash
         env:
           INPUT_VERSION: ${{ inputs.version }}
