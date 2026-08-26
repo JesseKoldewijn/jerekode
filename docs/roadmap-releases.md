@@ -154,3 +154,4 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 - [ADR 002](./adr/002-dual-plugin-runtime.md) — Bun / native / WASM hosts
 - [ADR 003](./adr/003-release-packaging-and-changelogs.md) — packaging, changelogs, wipe, dual-build
 - PromptComposer release workflow (Tauri NSIS/deb/AppImage + custom body, no GitHub auto notes)
+
