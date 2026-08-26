@@ -102,6 +102,12 @@ bun run start
 
 See [sidecar/README.md](sidecar/README.md) for the IPC contract.
 
+## Releases & PR builds
+
+- Cut a tagged release or run the Release workflow: [docs/releases.md](docs/releases.md)
+- On a PR, comment `/build` (or `/build debug`) to upload multi-platform workflow artifacts — **no** GitHub Release
+- Install / alias helpers: [docs/distribution.md](docs/distribution.md)
+
 ## License
 
 MIT OR Apache-2.0

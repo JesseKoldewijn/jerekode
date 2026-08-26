@@ -55,9 +55,13 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | **4** | WasmPluginHost, MCP/LSP/PTY stubs, SQLite persistence stub | Partial (stubs) |
 | **5** | Native TUI plugins; perf baseline hooks; `native-tui` feature flag | Documented stubs |
 
+**What's next:** Scaffolding for Phases 0–5 is complete; remaining implementation work is prioritized in [docs/roadmap-remaining.md](docs/roadmap-remaining.md) (P0: Bun spawn + CI + SQLite → P1: native plugins → P2: providers/tools → P3: WASM/TUI/perf/dist).
+
 Detailed design: [docs/architecture.md](docs/architecture.md).  
 Testing approach: [docs/conformance.md](docs/conformance.md).  
-Engineering standards: [docs/development.md](docs/development.md).
+Engineering standards: [docs/development.md](docs/development.md).  
+Releases & `/build`: [docs/releases.md](docs/releases.md).  
+Remaining work: [docs/roadmap-remaining.md](docs/roadmap-remaining.md).
 
 ## Architecture Decisions
 

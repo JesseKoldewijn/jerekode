@@ -1,0 +1,336 @@
+name: PR Build
+
+# Triggered by a `/build` comment on a PR, or by workflow_dispatch with a PR number.
+# Builds archives for the PR head SHA and uploads workflow artifacts.
+# Does NOT create a GitHub Release.
+#
+# Slash commands (documented in docs/releases.md):
+#   /build              → release profile (default)
+#   /build release      → release
+#   /build debug        → debug
+#   /build profile=debug | /build --profile debug
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to build
+        required: true
+        type: string
+      profile:
+        description: Cargo build profile
+        required: false
+        type: choice
+        options:
+          - release
+          - debug
+        default: release
+
+concurrency:
+  # workflow_dispatch can run release+debug in parallel; slash builds cancel prior slash builds on the same PR.
+  group: pr-build-${{ github.event.issue.number || inputs.pr_number }}-${{ inputs.profile || 'comment' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  gate:
+    name: Resolve PR head
+    if: |
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '/build')) ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    outputs:
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+      sha: ${{ steps.resolve.outputs.sha }}
+      short_sha: ${{ steps.resolve.outputs.short_sha }}
+      head_repo: ${{ steps.resolve.outputs.head_repo }}
+      version: ${{ steps.resolve.outputs.version }}
+      profile: ${{ steps.resolve.outputs.profile }}
+      marker: ${{ steps.resolve.outputs.marker }}
+      run_url: ${{ steps.resolve.outputs.run_url }}
+    steps:
+      - name: Resolve PR metadata and profile
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          INPUT_PR: ${{ inputs.pr_number }}
+          INPUT_PROFILE: ${{ inputs.profile }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            PR_NUMBER="${INPUT_PR}"
+            PROFILE="${INPUT_PROFILE:-release}"
+          else
+            PR_NUMBER="${ISSUE_NUMBER}"
+            BODY="${COMMENT_BODY}"
+            PROFILE="release"
+            # Preferred explicit forms first, then positional /build debug|release.
+            if echo "${BODY}" | grep -qiE '(^|[[:space:]])\/build[[:space:]]+(--profile[=[:space:]]+|profile=)debug([[:space:]]|$)'; then
+              PROFILE="debug"
+            elif echo "${BODY}" | grep -qiE '(^|[[:space:]])\/build[[:space:]]+(--profile[=[:space:]]+|profile=)release([[:space:]]|$)'; then
+              PROFILE="release"
+            elif echo "${BODY}" | grep -qiE '(^|[[:space:]])\/build[[:space:]]+debug([[:space:]]|$)'; then
+              PROFILE="debug"
+            elif echo "${BODY}" | grep -qiE '(^|[[:space:]])\/build[[:space:]]+release([[:space:]]|$)'; then
+              PROFILE="release"
+            fi
+          fi
+
+          case "${PROFILE}" in
+            release|debug) ;;
+            *)
+              echo "Unsupported profile: ${PROFILE} (expected release|debug)" >&2
+              exit 1
+              ;;
+          esac
+
+          META="$(gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}" \
+            --jq '{sha:.head.sha, repo:.head.repo.full_name, number:.number}')"
+          SHA="$(echo "${META}" | jq -r .sha)"
+          HEAD_REPO="$(echo "${META}" | jq -r .repo)"
+          SHORT_SHA="$(echo "${SHA}" | cut -c1-7)"
+          VERSION="0.0.0-pr.${PR_NUMBER}.${SHORT_SHA}"
+          RUN_URL="${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+          MARKER="<!-- jereko-pr-build-sticky:${PROFILE} -->"
+
+          {
+            echo "pr_number=${PR_NUMBER}"
+            echo "sha=${SHA}"
+            echo "short_sha=${SHORT_SHA}"
+            echo "head_repo=${HEAD_REPO}"
+            echo "version=${VERSION}"
+            echo "profile=${PROFILE}"
+            echo "marker=${MARKER}"
+            echo "run_url=${RUN_URL}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Building PR #${PR_NUMBER} @ ${SHA} (${HEAD_REPO}) profile=${PROFILE} version=${VERSION}"
+
+  notify-started:
+    name: Comment build started
+    needs: gate
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Upsert sticky started comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.gate.outputs.pr_number }}
+          SHA: ${{ needs.gate.outputs.sha }}
+          SHORT_SHA: ${{ needs.gate.outputs.short_sha }}
+          VERSION: ${{ needs.gate.outputs.version }}
+          PROFILE: ${{ needs.gate.outputs.profile }}
+          RUN_URL: ${{ needs.gate.outputs.run_url }}
+          MARKER: ${{ needs.gate.outputs.marker }}
+        run: |
+          set -euo pipefail
+          BODY="$(cat <<EOF
+          ${MARKER}
+          ### 🛠️ jereko PR build started
+
+          Building **\`${VERSION}\`** (**${PROFILE}** profile) from \`${SHORT_SHA}\` (\`${SHA}\`).
+
+          **In-progress run:** [${RUN_URL}](${RUN_URL})
+
+          Artifact names will look like \`jereko-pr${PR_NUMBER}-${PROFILE}-{os}-{arch}\`.
+          Artifacts upload when the matrix finishes. This does **not** create a GitHub Release.
+          EOF
+          )"
+          BODY="$(printf '%s\n' "${BODY}" | sed 's/^          //')"
+
+          EXISTING="$(gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            --paginate \
+            --jq ".[] | select(.body | contains(\"${MARKER}\")) | .id" \
+            | head -n1 || true)"
+
+          if [[ -n "${EXISTING}" ]]; then
+            gh api -X PATCH "repos/${REPOSITORY}/issues/comments/${EXISTING}" \
+              -f body="${BODY}"
+            echo "Updated sticky comment ${EXISTING}"
+          else
+            gh api -X POST "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" \
+              -f body="${BODY}"
+            echo "Posted sticky started comment"
+          fi
+
+  build:
+    name: Build ${{ needs.gate.outputs.profile }} ${{ matrix.target_os }}-${{ matrix.arch }}
+    needs: [gate, notify-started]
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            target_os: linux
+            arch: x64
+          - runner: macos-13
+            target_os: macos
+            arch: x64
+          - runner: macos-14
+            target_os: macos
+            arch: arm64
+          - runner: windows-latest
+            target_os: windows
+            arch: x64
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.gate.outputs.head_repo }}
+          ref: ${{ needs.gate.outputs.sha }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: pr-build-${{ needs.gate.outputs.profile }}-${{ matrix.target_os }}-${{ matrix.arch }}
+          cache-on-failure: true
+
+      - name: Build binary (${{ needs.gate.outputs.profile }})
+        shell: bash
+        env:
+          PROFILE: ${{ needs.gate.outputs.profile }}
+        run: |
+          set -euo pipefail
+          if [[ "${PROFILE}" == "release" ]]; then
+            cargo build --release -p jereko-cli --locked
+          else
+            cargo build -p jereko-cli --locked
+          fi
+
+      - name: Package artifact
+        shell: bash
+        env:
+          PROFILE: ${{ needs.gate.outputs.profile }}
+          PR_NUMBER: ${{ needs.gate.outputs.pr_number }}
+          TARGET_OS: ${{ matrix.target_os }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/package-release.sh
+          if [[ "${PROFILE}" == "release" ]]; then
+            TARGET_DIR="release"
+          else
+            TARGET_DIR="debug"
+          fi
+          if [[ "${TARGET_OS}" == "windows" ]]; then
+            BIN="target/${TARGET_DIR}/jereko.exe"
+          else
+            BIN="target/${TARGET_DIR}/jereko"
+          fi
+          STEM="jereko-pr${PR_NUMBER}-${PROFILE}-${TARGET_OS}-${ARCH}"
+          mkdir -p dist
+          ./scripts/package-release.sh "${STEM}" "${BIN}" dist "${PROFILE}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jereko-pr${{ needs.gate.outputs.pr_number }}-${{ needs.gate.outputs.profile }}-${{ matrix.target_os }}-${{ matrix.arch }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  notify-finished:
+    name: Comment build finished
+    needs: [gate, build]
+    if: always() && needs.gate.result == 'success'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Upsert sticky finished comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.gate.outputs.pr_number }}
+          SHA: ${{ needs.gate.outputs.sha }}
+          SHORT_SHA: ${{ needs.gate.outputs.short_sha }}
+          VERSION: ${{ needs.gate.outputs.version }}
+          PROFILE: ${{ needs.gate.outputs.profile }}
+          RUN_URL: ${{ needs.gate.outputs.run_url }}
+          RUN_ID: ${{ github.run_id }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          MARKER: ${{ needs.gate.outputs.marker }}
+        run: |
+          set -euo pipefail
+          ARTIFACTS_URL="${RUN_URL}#artifacts"
+
+          ARTIFACT_LINES=""
+          if [[ "${BUILD_RESULT}" == "success" ]]; then
+            while IFS=$'\t' read -r name size _id; do
+              [[ -z "${name}" ]] && continue
+              ARTIFACT_LINES+="- **\`${name}\`** (${size} bytes) — [download from run artifacts](${ARTIFACTS_URL})"$'\n'
+            done < <(gh api "repos/${REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
+              --jq '.artifacts[] | [.name, (.size_in_bytes|tostring), (.id|tostring)] | @tsv' \
+              || true)
+
+            if [[ -z "${ARTIFACT_LINES}" ]]; then
+              ARTIFACT_LINES="- (no artifacts listed yet — open the run page shortly)"$'\n'
+            fi
+
+            BODY="$(cat <<EOF
+          ${MARKER}
+          ### ✅ jereko PR build finished
+
+          Built **\`${VERSION}\`** (**${PROFILE}** profile) from \`${SHORT_SHA}\` (\`${SHA}\`).
+
+          **Run:** [${RUN_URL}](${RUN_URL})
+          **Artifacts:** [${ARTIFACTS_URL}](${ARTIFACTS_URL})
+
+          #### Build assets (\`${PROFILE}\`)
+
+          ${ARTIFACT_LINES}
+          Naming: \`jereko-pr${PR_NUMBER}-${PROFILE}-{os}-{arch}\`
+          Platforms: \`linux-x64\`, \`macos-x64\`, \`macos-arm64\`, \`windows-x64\`.
+
+          > PR builds upload **workflow artifacts only**. No GitHub Release is created.
+          EOF
+          )"
+          else
+            BODY="$(cat <<EOF
+          ${MARKER}
+          ### ❌ jereko PR build failed
+
+          Build of **\`${VERSION}\`** (**${PROFILE}** profile) from \`${SHORT_SHA}\` (\`${SHA}\`) finished with status **\`${BUILD_RESULT}\`**.
+
+          **Run:** [${RUN_URL}](${RUN_URL})
+
+          Inspect the matrix jobs on the run page. No GitHub Release is created for PR builds.
+          EOF
+          )"
+          fi
+
+          BODY="$(printf '%s\n' "${BODY}" | sed 's/^          //')"
+
+          EXISTING="$(gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            --paginate \
+            --jq ".[] | select(.body | contains(\"${MARKER}\")) | .id" \
+            | head -n1 || true)"
+
+          if [[ -n "${EXISTING}" ]]; then
+            gh api -X PATCH "repos/${REPOSITORY}/issues/comments/${EXISTING}" \
+              -f body="${BODY}"
+            echo "Updated sticky comment ${EXISTING} (finished)"
+          else
+            gh api -X POST "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" \
+              -f body="${BODY}"
+            echo "Posted finished comment"
+          fi
