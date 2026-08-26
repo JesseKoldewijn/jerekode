@@ -1,6 +1,7 @@
 //! Provider registry designed for 75+ providers with plugin-ready extension points.
 
 mod anthropic;
+mod compat;
 mod error;
 mod ollama;
 mod openai;
@@ -9,6 +10,7 @@ mod registry;
 mod stream;
 
 pub use anthropic::AnthropicProvider;
+pub use compat::{groq_provider, openrouter_provider};
 pub use error::{ProviderError, ProviderResult};
 pub use ollama::OllamaProvider;
 pub use openai::OpenAiProvider;

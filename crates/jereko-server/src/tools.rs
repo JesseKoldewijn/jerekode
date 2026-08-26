@@ -1,5 +1,6 @@
 //! Core agent tools: read, write, edit, bash, grep.
 
+use crate::policy::ToolPolicy;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -32,20 +33,29 @@ pub struct ToolResult {
 /// Callers should treat this as a privileged seam and apply policy upstream.
 pub struct ToolExecutor {
     root: PathBuf,
-    allow_bash: bool,
+    policy: ToolPolicy,
 }
 
 impl ToolExecutor {
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self {
             root: root.into(),
-            allow_bash: true,
+            policy: ToolPolicy::default(),
         }
     }
 
     pub fn with_bash(mut self, allow: bool) -> Self {
-        self.allow_bash = allow;
+        self.policy.allow_bash = allow;
         self
+    }
+
+    pub fn with_policy(mut self, policy: ToolPolicy) -> Self {
+        self.policy = policy;
+        self
+    }
+
+    pub fn policy(&self) -> &ToolPolicy {
+        &self.policy
     }
 
     pub fn execute(&self, call: &ToolCall) -> ToolResult {
@@ -78,6 +88,9 @@ impl ToolExecutor {
         };
         if !canonical.starts_with(&canonical_root) {
             return Err(format!("path escapes project root: {rel}"));
+        }
+        if self.policy.path_denied(rel) {
+            return Err(format!("path denied by policy: {rel}"));
         }
         Ok(canonical)
     }
@@ -179,7 +192,7 @@ impl ToolExecutor {
     }
 
     fn bash(&self, call: &ToolCall) -> ToolResult {
-        if !self.allow_bash {
+        if !self.policy.allow_bash {
             return ToolResult {
                 ok: false,
                 output: "bash disabled by policy".into(),
