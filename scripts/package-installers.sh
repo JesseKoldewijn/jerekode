@@ -31,7 +31,35 @@ fi
 mkdir -p "$OUT_DIR"
 OUT_DIR="$(cd "$OUT_DIR" && pwd)"
 STAGING="$(mktemp -d)"
-trap 'rm -rf "$STAGING"' EXIT
+ARCH_STAGING=""
+trap 'cleanup_staging' EXIT
+
+cleanup_staging() {
+  if [[ -n "$ARCH_STAGING" && -d "$ARCH_STAGING" ]]; then
+    reclaim_arch_staging_ownership "$ARCH_STAGING"
+    rm -rf "$ARCH_STAGING"
+  fi
+  rm -rf "$STAGING"
+}
+
+reclaim_arch_staging_ownership() {
+  local dir="$1"
+  if command -v docker >/dev/null 2>&1; then
+    docker run --rm -v "${dir}:/build" archlinux:latest \
+      chown -R "$(id -u):$(id -g)" /build 2>/dev/null || true
+  fi
+}
+
+to_native_path() {
+  local p="$1"
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$p"
+  elif command -v wslpath >/dev/null 2>&1; then
+    wslpath -w "$p"
+  else
+    echo "$p"
+  fi
+}
 
 write_readme_files() {
   cat >"${STAGING}/README.txt" <<EOF
@@ -129,10 +157,11 @@ EOF
   ARCH=x86_64 "$APPIMAGETOOL" --appimage-extract-and-run "$APPDIR" \
     "${OUT_DIR}/jereko-${VERSION}-release-linux-${ARCH}.AppImage"
 
-  # Arch .pkg.tar.zst via Docker (makepkg on Arch Linux)
+  # Arch .pkg.tar.zst via Docker (makepkg on Arch Linux).
+  # Use a separate temp dir: makepkg leaves root-owned files that break STAGING trap cleanup.
   if command -v docker >/dev/null 2>&1; then
-    ARCH_PKG_DIR="${STAGING}/archpkg"
-    rm -rf "$ARCH_PKG_DIR"
+    ARCH_STAGING="$(mktemp -d)"
+    ARCH_PKG_DIR="${ARCH_STAGING}/archpkg"
     mkdir -p "$ARCH_PKG_DIR"
     cp packaging/arch/PKGBUILD "$ARCH_PKG_DIR/"
     cp "${STAGING}/jereko" "${STAGING}/README.txt" "${STAGING}/SIDECAR.txt" "$ARCH_PKG_DIR/"
@@ -153,6 +182,9 @@ EOF
     else
       echo "warning: Arch package build skipped or failed (docker/makepkg)" >&2
     fi
+    reclaim_arch_staging_ownership "$ARCH_STAGING"
+    rm -rf "$ARCH_STAGING"
+    ARCH_STAGING=""
   else
     echo "warning: docker not available; skipping Arch .pkg.tar.zst" >&2
   fi
@@ -194,11 +226,18 @@ package_windows() {
     return 0
   fi
   NSIS_OUT="${OUT_DIR}/jereko-${VERSION}-release-windows-${ARCH}-setup.exe"
+  NSIS_BINARY="$(to_native_path "${STAGING}/jereko.exe")"
+  NSIS_OUTFILE="$(to_native_path "$NSIS_OUT")"
+  if [[ ! -f "${STAGING}/jereko.exe" ]]; then
+    echo "error: staged binary missing: ${STAGING}/jereko.exe" >&2
+    exit 1
+  fi
   # Git Bash converts /V2 to a path under Program Files/Git; exclude NSIS /D defines too.
+  # NSIS needs Windows-native paths (cygpath -w); Git Bash /tmp/... is invisible to makensis.
   MSYS2_ARG_CONV_EXCL='*' "$NSIS" /V2 \
     /DVERSION="$VERSION" \
-    /DBINARY="${STAGING}/jereko.exe" \
-    /DOUTFILE="$NSIS_OUT" \
+    /DBINARY="$NSIS_BINARY" \
+    /DOUTFILE="$NSIS_OUTFILE" \
     packaging/nsis/jereko.nsi
   cp "$NSIS_OUT" "${OUT_DIR}/jereko-x64-setup.exe"
 }
