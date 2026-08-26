@@ -45,6 +45,10 @@ cargo bench -p jereko-core --bench hot_paths
 - Prefer small PRs that deepen one seam (fixture → impl → green CI).
 - Never soft-skip Bun IPC or native plugin CI gates.
 
+## CI
+
+PR and `main` pushes run `.github/workflows/ci.yml` jobs `rust` and `bun-sidecar` (required on `main`). No path filters — see [CONTRIBUTING.md](../CONTRIBUTING.md#ci-on-pull-requests).
+
 ## TDD at seams
 
 Follow [.agents/skills/tdd/SKILL.md](../.agents/skills/tdd/SKILL.md):

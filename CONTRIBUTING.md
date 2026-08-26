@@ -32,6 +32,18 @@ Enable under **Settings → Branches → Branch protection rules** (or Rulesets)
 | Allow auto-merge | **On** — used by release sync PRs |
 | Allow specified actors to bypass | Org plans only — personal repos: sync PR + auto-merge or `RELEASE_PUSH_TOKEN` |
 
+### CI on pull requests
+
+The **CI** workflow (`.github/workflows/ci.yml`) runs on every `pull_request` to `main`/`master` (and on pushes to those branches). There are **no** `paths` / `paths-ignore` filters — docs-only PRs still run `rust` and `bun-sidecar` so required checks are never left pending.
+
+| Trigger | Purpose |
+|---------|---------|
+| `pull_request` | Attaches `rust` / `bun-sidecar` to the PR (satisfies branch protection) |
+| `push` to `main`/`master` | Post-merge verification |
+| `workflow_dispatch` | Optional manual run on a branch; does **not** replace `pull_request` for merge gates |
+
+If a PR shows no check runs (for example during a [GitHub Actions](https://www.githubstatus.com/) outage): wait until Actions is healthy, then push an empty commit (`git commit --allow-empty -m "ci: retrigger pull_request checks"`) or use **Re-run all jobs** / re-request checks on the PR. Prefer that over `--admin` merge when possible.
+
 ### Required Actions permissions (release sync PRs)
 
 Under **Settings → Actions → General → Workflow permissions**:

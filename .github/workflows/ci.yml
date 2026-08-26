@@ -1,10 +1,28 @@
 name: CI
 
+# Required branch-protection checks: rust, bun-sidecar (job ids).
+# No paths/paths-ignore filters — every PR to main must run both jobs so
+# required checks are never left pending on docs-only changes.
+#
+# pull_request is what attaches checks to the PR. workflow_dispatch is optional
+# for manual re-runs on a branch; it does not replace pull_request for merge
+# gates. After a GitHub Actions outage, push an empty commit or re-request
+# checks once Actions is healthy (see CONTRIBUTING.md).
+
 on:
   push:
     branches: [main, master]
   pull_request:
+    branches: [main, master]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
