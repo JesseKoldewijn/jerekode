@@ -50,10 +50,7 @@ impl McpClient {
                 content: args,
             },
             "mcp_filesystem_list" => {
-                let path = args
-                    .get("path")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or(".");
+                let path = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
                 match std::fs::read_dir(path) {
                     Ok(rd) => {
                         let entries: Vec<String> = rd
@@ -173,7 +170,10 @@ impl LspClient {
     }
 
     /// Probe a language server over stdio with a single initialize JSON-RPC request.
-    pub fn jsonrpc_initialize_probe(command: &str, args: &[&str]) -> Result<serde_json::Value, String> {
+    pub fn jsonrpc_initialize_probe(
+        command: &str,
+        args: &[&str],
+    ) -> Result<serde_json::Value, String> {
         let mut child = Command::new(command)
             .args(args)
             .stdin(Stdio::piped())
@@ -330,7 +330,9 @@ impl PtyManager {
         }
         session.buffer.push_str(data);
         // Echo shell-like acknowledgement for write path tests.
-        session.buffer.push_str(&format!("\n# wrote {} bytes\n", data.len()));
+        session
+            .buffer
+            .push_str(&format!("\n# wrote {} bytes\n", data.len()));
         PtyIoResult {
             ok: true,
             data: format!("wrote {}", data.len()),

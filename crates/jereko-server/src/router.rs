@@ -1,6 +1,4 @@
-use crate::extensions::{
-    self, LspHoverResult, McpToolResult, PtyIoResult,
-};
+use crate::extensions::{self, LspHoverResult, McpToolResult, PtyIoResult};
 use crate::state::AppState;
 use axum::{
     Json, Router,

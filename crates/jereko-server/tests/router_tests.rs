@@ -185,7 +185,9 @@ async fn extensions_mcp_call_and_lsp_hover() {
                 .method("POST")
                 .uri("/extensions/lsp/initialize")
                 .header("content-type", "application/json")
-                .body(Body::from(serde_json::json!({"root_uri":"file:///tmp"}).to_string()))
+                .body(Body::from(
+                    serde_json::json!({"root_uri":"file:///tmp"}).to_string(),
+                ))
                 .unwrap(),
         )
         .await
