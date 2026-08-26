@@ -79,11 +79,13 @@ mod http_tests {
 
         // SAFETY: single-threaded test; env mutation is scoped to this test.
         unsafe {
-            std::env::set_var("OPENAI_API_KEY", "test-key");
+            std::env::set_var("OPENAI_API_KEY_COMPLETE_TEST", "test-key");
         }
         let http = Arc::new(ReqwestHttpClient::new());
-        let provider = OpenAiProvider::new(http).with_base_url(format!("{}/v1", server.uri()));
-        let response = provider
+        let provider = OpenAiProvider::new(http)
+            .with_base_url(format!("{}/v1", server.uri()))
+            .with_api_key_env("OPENAI_API_KEY_COMPLETE_TEST");
+        let response = provide
             .complete(CompletionRequest {
                 model: "gpt-4o-mini".into(),
                 messages: vec![Message {
@@ -97,7 +99,7 @@ mod http_tests {
             .unwrap();
         assert_eq!(response.content, "hello from openai");
         unsafe {
-            std::env::remove_var("OPENAI_API_KEY");
+            std::env::remove_var("OPENAI_API_KEY_COMPLETE_TEST");
         }
     }
 
@@ -119,11 +121,13 @@ data: [DONE]\n\n";
             .await;
 
         unsafe {
-            std::env::set_var("OPENAI_API_KEY", "test-key");
+            std::env::set_var("OPENAI_API_KEY_STREAM_TEST", "test-key");
         }
         let http = Arc::new(ReqwestHttpClient::new());
-        let provider = OpenAiProvider::new(http).with_base_url(format!("{}/v1", server.uri()));
-        let chunks = provider
+        let provider = OpenAiProvider::new(http)
+            .with_base_url(format!("{}/v1", server.uri()))
+            .with_api_key_env("OPENAI_API_KEY_STREAM_TEST");
+        let chunks = provide
             .complete_stream(CompletionRequest {
                 model: "gpt-4o-mini".into(),
                 messages: vec![Message {
@@ -142,7 +146,7 @@ data: [DONE]\n\n";
             Some("stop")
         );
         unsafe {
-            std::env::remove_var("OPENAI_API_KEY");
+            std::env::remove_var("OPENAI_API_KEY_STREAM_TEST");
         }
     }
 
@@ -164,7 +168,7 @@ data: [DONE]\n\n";
         }
         let http = Arc::new(ReqwestHttpClient::new());
         let provider = AnthropicProvider::new(http).with_base_url(format!("{}/v1", server.uri()));
-        let response = provider
+        let response = provide
             .complete(CompletionRequest {
                 model: "claude-3-5-haiku-latest".into(),
                 messages: vec![Message {
@@ -195,7 +199,7 @@ data: [DONE]\n\n";
 
         let http = Arc::new(ReqwestHttpClient::new());
         let provider = OllamaProvider::new(http).with_base_url(server.uri());
-        let response = provider
+        let response = provide
             .complete(CompletionRequest {
                 model: "llama3.2".into(),
                 messages: vec![Message {
@@ -222,7 +226,7 @@ data: [DONE]\n\n";
 
         let http = Arc::new(ReqwestHttpClient::new());
         let provider = OllamaProvider::new(http).with_base_url(server.uri());
-        let chunks = provider
+        let chunks = provide
             .complete_stream(CompletionRequest {
                 model: "llama3.2".into(),
                 messages: vec![Message {
@@ -263,7 +267,7 @@ data: [DONE]\n\n";
     #[tokio::test]
     async fn stub_complete_stream_single_chunk() {
         let provider = StubProvider::new("openai");
-        let chunks = provider
+        let chunks = provide
             .complete_stream(CompletionRequest {
                 model: "stub-model".into(),
                 messages: vec![Message {
