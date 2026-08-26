@@ -1,0 +1,17 @@
+[
+  {
+    "host": "native",
+    "plugin": "native-tools",
+    "output": {
+      "host": "native",
+      "hook": "before_transform",
+      "transformed": "hello",
+      "stub": false
+    }
+  },
+  {
+    "host": "bun",
+    "plugin": "@acme/server-plugin",
+    "output": { "status": "ok" }
+  }
+]

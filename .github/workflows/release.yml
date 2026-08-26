@@ -1,0 +1,183 @@
+name: Release
+
+# Tag push (v*) or manual dispatch → multi-platform jereko binaries → GitHub Release.
+# PR builds live in pr-build.yml and never create releases.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without leading v (default: workspace.package.version from Cargo.toml)"
+        required: false
+        type: string
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  prepare:
+    name: Resolve version
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      tag: ${{ steps.ver.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version from tag or Cargo.toml
+        id: ver
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          CARGO_VERSION="$(
+            awk '
+              $0 == "[workspace.package]" { in_pkg=1; next }
+              in_pkg && /^\[/ { in_pkg=0 }
+              in_pkg && /^version[[:space:]]*=/ {
+                gsub(/"/, "", $3); print $3; exit
+              }
+            ' Cargo.toml
+          )"
+          if [[ -z "${CARGO_VERSION}" ]]; then
+            echo "Could not read workspace.package.version from Cargo.toml" >&2
+            exit 1
+          fi
+
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+            VERSION="${TAG#v}"
+            if [[ "${VERSION}" != "${CARGO_VERSION}" ]]; then
+              echo "::warning::Tag ${TAG} version (${VERSION}) differs from Cargo.toml (${CARGO_VERSION}); using tag version for artifacts."
+            fi
+          elif [[ -n "${INPUT_VERSION}" ]]; then
+            VERSION="${INPUT_VERSION#v}"
+            TAG="v${VERSION}"
+          else
+            VERSION="${CARGO_VERSION}"
+            TAG="v${VERSION}"
+          fi
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Release version=${VERSION} tag=${TAG} (Cargo.toml=${CARGO_VERSION})"
+
+  build:
+    name: Build ${{ matrix.target_os }}-${{ matrix.arch }}
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Free GitHub-hosted runners. linux-arm64 and windows-arm64 are omitted
+          # (no free GHA runners); see docs/releases.md.
+          - runner: ubuntu-22.04
+            target_os: linux
+            arch: x64
+          - runner: macos-13
+            target_os: macos
+            arch: x64
+          - runner: macos-14
+            target_os: macos
+            arch: arm64
+          - runner: windows-latest
+            target_os: windows
+            arch: x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: release-${{ matrix.target_os }}-${{ matrix.arch }}
+          cache-on-failure: true
+
+      - name: Build release binary
+        shell: bash
+        run: cargo build --release -p jereko-cli --locked
+
+      - name: Package artifact
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TARGET_OS: ${{ matrix.target_os }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/package-release.sh
+          if [[ "${TARGET_OS}" == "windows" ]]; then
+            BIN="target/release/jereko.exe"
+          else
+            BIN="target/release/jereko"
+          fi
+          STEM="jereko-${VERSION}-release-${TARGET_OS}-${ARCH}"
+          mkdir -p dist
+          ./scripts/package-release.sh "${STEM}" "${BIN}" dist release
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jereko-${{ needs.prepare.outputs.version }}-release-${{ matrix.target_os }}-${{ matrix.arch }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish GitHub Release
+    needs: [prepare, build]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: jereko-${{ needs.prepare.outputs.version }}-release-*
+          path: dist
+          merge-multiple: true
+
+      - name: List release assets
+        shell: bash
+        run: ls -la dist
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: jereko ${{ needs.prepare.outputs.version }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(needs.prepare.outputs.version, '-') || contains(needs.prepare.outputs.version, 'alpha') || contains(needs.prepare.outputs.version, 'beta') || contains(needs.prepare.outputs.version, 'rc') }}
+          files: dist/*
+          fail_on_unmatched_files: true
+          body: |
+            Release **jereko ${{ needs.prepare.outputs.version }}**.
+
+            ### Artifacts
+            Archives are named `jereko-{version}-release-{os}-{arch}` (`.tar.gz` on Unix, `.zip` on Windows) and include the `jereko` binary plus README/sidecar notes.
+
+            ### Platforms
+            - linux x64
+            - macos x64 / arm64
+            - windows x64
+
+            Bun sidecar sources are **not** bundled — see `sidecar/README.md` and [docs/releases.md](docs/releases.md).
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

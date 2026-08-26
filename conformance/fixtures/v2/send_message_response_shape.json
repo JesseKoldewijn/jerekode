@@ -1,0 +1,12 @@
+{
+  "session": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "status": "active",
+    "messages": [
+      { "role": "user", "content": "Explain ownership in Rust in one sentence." },
+      { "role": "assistant", "content": "[stub:anthropic] received 1 messages", "provider": "anthropic" }
+    ],
+    "provider_id": "anthropic"
+  },
+  "content": "[stub:anthropic] received 1 messages"
+}

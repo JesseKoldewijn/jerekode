@@ -1,0 +1,20 @@
+{
+  "name": "@jerekode/sidecar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bun plugin host sidecar for Jereko TUI and server plugins",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "check": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  }
+}

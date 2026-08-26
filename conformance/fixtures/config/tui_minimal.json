@@ -1,0 +1,7 @@
+{
+  "theme": "dark",
+  "keymap": "default",
+  "sidecar": {
+    "entry": "sidecar/src/index.ts"
+  }
+}

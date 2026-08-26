@@ -1,0 +1,6 @@
+{
+  "hook": "before_transform",
+  "payload": { "input": "hello" },
+  "hosts": ["bun", "native"],
+  "notes": "Same input must yield host-tagged output; native fixture plugin sets stub=false"
+}
