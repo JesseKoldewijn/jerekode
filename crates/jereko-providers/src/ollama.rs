@@ -7,7 +7,6 @@ use crate::provider::{
 use async_trait::async_trait;
 use jereko_core::MessageRole;
 
-
 pub struct OllamaProvider {
     id: ProviderId,
     base_url: String,
