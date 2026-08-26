@@ -158,12 +158,15 @@ CI runs on every push and pull request (see [`.github/workflows/ci.yml`](../.git
 ```bash
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features --locked -- -D warnings
+cargo build -p jereko-test-native-plugin --locked
 cargo test --workspace --locked
 ```
 
-`Cargo.lock` is tracked — jereko is an application binary and CI uses `--locked` for reproducible builds.
+The `rust` job installs Bun `1.2.5` so the Bun IPC integration test is a hard gate (soft-skip only outside CI). The test native plugin cdylib is built before `cargo test` so the native host integration test is also a hard gate.
 
-Future (Phase 2+): Bun sidecar contract validation in CI.
+A separate `bun-sidecar` job runs `bun run check` and `bun test` under `sidecar/`.
+
+`Cargo.lock` is tracked — jereko is an application binary and CI uses `--locked` for reproducible builds.
 
 ## Compatibility Reference
 
