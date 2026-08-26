@@ -18,12 +18,13 @@ Local install aliases: [`scripts/install.sh`](../scripts/install.sh) / [distribu
 
 Every push/merge to `main` triggers the **Release** workflow (unless the commit message contains `[skip release]`):
 
-1. **Bump** `[workspace.package] version` to `0.1.<github.run_number>` via `scripts/set-version.sh`.
-2. **Commit** `chore: release v0.1.<n> [skip release]`, then land it on `main`:
-   - **Default (protected `main`):** push branch `release/sync-0.1.<n>`, open a PR labeled `release-sync`, enable **auto-merge (squash)**. It merges when required checks (`rust`, `bun-sidecar`) pass. This run’s build/publish uses the bumped commit immediately and does **not** wait for that merge.
+1. **Bump** `[workspace.package] version` to `0.0.<github.run_number>` via `scripts/set-version.sh` (cutover seed on `main` is `0.0.1`; run numbers may skip after wipe).
+2. **Commit** `chore: release v0.0.<n> [skip release]`, then land it on `main`:
+   - **Default (protected `main`):** push branch `release/sync-0.0.<n>`, open a PR labeled `release-sync`, enable **auto-merge (squash)**. It merges when required checks (`rust`, `bun-sidecar`) pass. This run’s build/publish uses the bumped commit immediately and does **not** wait for that merge.
    - **Optional:** secret `RELEASE_PUSH_TOKEN` (admin PAT) pushes the bump straight to `main` (PromptComposer-style) and skips the sync PR.
 3. **Build** multi-platform `jereko` binaries (release profile) from the bumped commit.
-4. **Publish** a GitHub Release tagged `v0.1.<n>` with archives attached.
+4. **Publish** a GitHub Release tagged `v0.0.<n>` with archives attached.
+5. **Notes:** static install/artifact body plus GitHub-generated notes **since the previous `v*` tag only**, filtered by [`.github/release.yml`](../.github/release.yml) and [`scripts/filter-release-notes.py`](../scripts/filter-release-notes.py) (drops `release-sync` / bots / `[skip release]` lines and the **New Contributors** section). `generate_release_notes` on softprops is **off**.
 
 ### Sync PR auto-merge & loop prevention
 
@@ -56,7 +57,7 @@ Humans and agents must still land code on `main` **only via pull request** (see 
 Examples:
 
 ```text
-jereko-0.1.42-release-linux-x64.tar.gz
+jereko-0.0.42-release-linux-x64.tar.gz
 jereko-pr42-release-linux-x64.tar.gz
 jereko-pr42-debug-macos-arm64.tar.gz
 jereko-pr42-debug-windows-x64.zip
@@ -72,7 +73,7 @@ Version sources:
 
 | Trigger | Version / naming |
 |---------|------------------|
-| Push/merge to `main` | `0.1.<run_number>` (auto bump + tag) |
+| Push/merge to `main` | `0.0.<run_number>` (auto bump + tag) |
 | Tag `v1.2.3` | `1.2.3` (warn if Cargo.toml differs) |
 | Release `workflow_dispatch` | Input, or `workspace.package.version` |
 | PR `/build` | Label `0.0.0-pr.{N}.{shortsha}`; artifacts use `jereko-pr{N}-{profile}-…` |
@@ -154,12 +155,10 @@ cargo build --release -p jereko-cli --locked
 ls /tmp/jereko-dist
 ```
 
-## Known issues / upcoming
+## Notes policy / upcoming packaging
 
-Current Releases use `softprops/action-gh-release` with `generate_release_notes: true`, which has been producing **unusable changelogs** and incorrect **New Contributors** sections. Assets today are **tarballs/zip only** (not installers). A planned **version reset to 0.0.1** (with purge of pre-reset `v0.1.*` tags/Releases), installer formats, and full vs native-only builds are documented in:
+Release bodies use a **static artifact blurb** plus **filtered** notes since the previous tag (see workflow + `.github/release.yml`). Assets today are **tarballs/zip only** (not installers). Installer formats and full vs native-only builds are tracked in:
 
-- [roadmap-releases.md](./roadmap-releases.md) — phased plan
-- [ADR 003](./adr/003-release-packaging-and-changelogs.md) — decisions and wipe procedure (**plan only** until explicitly approved)
-
-Do not treat current `0.1.<n>` Release bodies as the long-term notes format.
+- [roadmap-releases.md](./roadmap-releases.md) — phased plan (P0 version wipe + notes fix executed; installers later)
+- [ADR 003](./adr/003-release-packaging-and-changelogs.md) — packaging / changelog decisions
 

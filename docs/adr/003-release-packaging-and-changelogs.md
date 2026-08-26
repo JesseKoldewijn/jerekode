@@ -1,13 +1,13 @@
 # ADR 003: Release Packaging, Changelogs, and Distribution Variants
 
-**Status:** Proposed  
+**Status:** Accepted (P0 notes fix + version wipe executed 2026-08-26)  
 **Date:** 2026-08-26  
-**Context:** Auto-release on `main` is producing unusable GitHub Release notes; assets are archives only; users want installers, a clean version reset, and optional Bun-free builds. Companion plan: [roadmap-releases.md](../roadmap-releases.md). Extends ADR 001 (binary `jereko`) and ADR 002 (plugin hosts).
+**Context:** Auto-release on `main` was producing unusable GitHub Release notes; assets are archives only; users want installers, a clean version reset, and optional Bun-free builds. Companion plan: [roadmap-releases.md](../roadmap-releases.md). Extends ADR 001 (binary `jereko`) and ADR 002 (plugin hosts).
 
 ## Decision (summary)
 
 1. **Stop trusting unfiltered GitHub auto notes** for published Releases. Prefer curated / filtered notes; keep auto-release cadence until a deliberate semver cutover.
-2. **Plan a destructive version reset** to **0.0.1** with purge of pre-reset GitHub Releases and `v0.1.*` tags (**execute only after explicit maintainer approval** — this ADR documents procedure; it does not authorize the wipe).
+2. **Destructive version reset** to **0.0.1** with purge of pre-reset GitHub Releases and `v0.1.*` tags (**executed** after explicit maintainer approval).
 3. **Ship installers** over time (Windows NSIS primary; macOS `.pkg`; Linux `.deb` + `.rpm` + AppImage; Homebrew/winget/AUR/Nix later; signing last).
 4. **Plan two distribution variants:** **full** (Bun sidecar path) and **native-only** (no Bun required). Implement behind Cargo features; do **not** invent a second product binary name for the default CLI.
 
@@ -20,12 +20,12 @@ Detailed phasing and open questions live in [roadmap-releases.md](../roadmap-rel
 | Piece | Today |
 |-------|--------|
 | Workflow | [`.github/workflows/release.yml`](../../.github/workflows/release.yml) |
-| Version on `main` push | `0.1.<github.run_number>` via `scripts/set-version.sh` |
+| Version on `main` push | `0.0.<github.run_number>` via `scripts/set-version.sh` (was `0.1.*` pre-wipe) |
 | Sync to protected `main` | Branch `release/sync-*`, label `release-sync`, squash auto-merge with `[skip release]` |
-| Publish | `softprops/action-gh-release@v2` with **`generate_release_notes: true`** plus a static body prepended |
+| Publish | `softprops/action-gh-release@v2` with **`generate_release_notes: false`**; body = static blurb + filtered notes via API `previous_tag_name` + `scripts/filter-release-notes.py` |
 | Assets | `scripts/package-release.sh` → `jereko-{ver}-release-{os}-{arch}.tar.gz` / `.zip` (binary + README + SIDECAR notes) |
 | Platforms built | linux-x64, macos-x64, macos-arm64, windows-x64 (no free GHA linux/windows arm64) |
-| Changelog config | **No** `.github/release.yml` exclude rules |
+| Changelog config | [`.github/release.yml`](../../.github/release.yml) excludes `release-sync` + bot authors |
 
 ### PromptComposer comparison
 
@@ -98,7 +98,7 @@ Do **not** resume `0.1.<run_number>` after wipe — it reuses the deleted tag na
 
 ## Version reset and release history purge
 
-**Status:** Planned only — **do not execute** until a maintainer explicitly confirms.
+**Status:** Executed 2026-08-26 (maintainer-approved). Pre-reset `v0.1.*` Releases/tags purged; workspace seed `0.0.1`; auto-release scheme `0.0.<run_number>` + filtered notes.
 
 ### Goals
 
