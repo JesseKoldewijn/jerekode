@@ -25,6 +25,12 @@ pub enum SidecarOutbound {
     TuiRender {
         frame: serde_json::Value,
     },
+    InvokeHook {
+        request_id: String,
+        plugin: String,
+        hook: String,
+        payload: serde_json::Value,
+    },
     Shutdown,
 }
 
@@ -39,6 +45,11 @@ pub enum SidecarInbound {
     PluginEvent {
         plugin: String,
         event: serde_json::Value,
+    },
+    HookResult {
+        request_id: String,
+        plugin: String,
+        output: serde_json::Value,
     },
     Error {
         message: String,
@@ -82,6 +93,30 @@ impl InMemorySidecarPort {
 #[async_trait::async_trait]
 impl SidecarPort for InMemorySidecarPort {
     async fn send(&self, message: SidecarOutbound) -> PluginResult<()> {
+        // Auto-respond to hook invokes so BunPluginHost request/response works in tests.
+        if let SidecarOutbound::InvokeHook {
+            request_id,
+            plugin,
+            hook,
+            payload,
+        } = &message
+        {
+            let transformed = payload
+                .get("input")
+                .cloned()
+                .unwrap_or_else(|| payload.clone());
+            self.inbound.lock().await.push(SidecarInbound::HookResult {
+                request_id: request_id.clone(),
+                plugin: plugin.clone(),
+                output: serde_json::json!({
+                    "host": "bun",
+                    "hook": hook,
+                    "transformed": transformed,
+                    "stub": false,
+                    "status": "ok",
+                }),
+            });
+        }
         self.outbound.lock().await.push(message);
         Ok(())
     }
@@ -320,6 +355,76 @@ mod tests {
         run_sidecar_loop(port.as_ref())
             .await
             .expect("wait for init ready");
+
+        port.send(SidecarOutbound::Shutdown)
+            .await
+            .expect("shutdown");
+    }
+
+    #[tokio::test]
+    async fn bun_process_loads_fixture_plugin_and_invokes_hook() {
+        if !bun_available() {
+            require_or_skip("bun_process_loads_fixture_plugin_and_invokes_hook requires bun");
+            return;
+        }
+
+        let entry = sidecar_entry();
+        let fixture =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../sidecar/fixtures/echo-plugin.ts");
+        assert!(fixture.exists(), "fixture plugin missing");
+
+        let port = BunProcessSidecarPort::spawn(entry.to_string_lossy().into_owned())
+            .await
+            .expect("spawn bun sidecar");
+
+        run_sidecar_loop(port.as_ref())
+            .await
+            .expect("wait for initial ready");
+
+        let plugin_path = fixture
+            .canonicalize()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        port.send(SidecarOutbound::Init {
+            config: serde_json::json!({}),
+            plugins: vec![plugin_path.clone()],
+        })
+        .await
+        .expect("send init");
+
+        run_sidecar_loop(port.as_ref())
+            .await
+            .expect("wait for init ready");
+
+        port.send(SidecarOutbound::InvokeHook {
+            request_id: "42".into(),
+            plugin: plugin_path,
+            hook: "before_transform".into(),
+            payload: serde_json::json!({"input": "parity"}),
+        })
+        .await
+        .expect("invoke hook");
+
+        let mut got = None;
+        for _ in 0..20 {
+            match port.recv().await.expect("recv") {
+                SidecarInbound::HookResult {
+                    request_id, output, ..
+                } if request_id == "42" => {
+                    got = Some(output);
+                    break;
+                }
+                SidecarInbound::Log { .. } | SidecarInbound::Ready => {}
+                other => {
+                    tracing::debug!("skip {:?}", other);
+                }
+            }
+        }
+        let output = got.expect("hook_result");
+        assert_eq!(output["stub"], false);
+        assert_eq!(output["transformed"], "parity");
+        assert_eq!(output["plugin"], "fixture-echo");
 
         port.send(SidecarOutbound::Shutdown)
             .await
