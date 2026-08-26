@@ -1,6 +1,8 @@
 # Jereko
 
-Jereko is an AI coding agent runtime with OpenCode API compatibility: a **Rust core** plus a **Bun plugin sidecar**, dual plugin hosts (Bun + native; WASM optional), and owned conformance fixtures.
+Jereko is a **Rust port of OpenCode** — an OpenCode-compatible AI coding agent runtime. Implementation is a **Rust core** plus a **Bun plugin sidecar**, with dual plugin hosts (Bun + native; WASM optional) and owned conformance fixtures.
+
+It is not a line-for-line fork and does not vendor upstream OpenCode source; compatibility is conformance-driven (owned fixtures at public seams).
 
 ## Architecture
 
