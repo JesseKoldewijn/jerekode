@@ -11,6 +11,7 @@ use jereko_core::MessageRole;
 
 pub struct OpenAiProvider {
     id: ProviderId,
+    display_name: String,
     base_url: String,
     api_key_env: String,
     http: SharedHttpClient,
@@ -20,6 +21,7 @@ impl OpenAiProvider {
     pub fn new(http: SharedHttpClient) -> Self {
         Self {
             id: ProviderId::new("openai"),
+            display_name: "OpenAI".into(),
             base_url: "https://api.openai.com/v1".into(),
             api_key_env: "OPENAI_API_KEY".into(),
             http,
@@ -35,6 +37,16 @@ impl OpenAiProvider {
         self.api_key_env = env.into();
         self
     }
+
+    pub fn with_id(mut self, id: impl Into<String>) -> Self {
+        self.id = ProviderId::new(id);
+        self
+    }
+
+    pub fn with_display_name(mut self, name: impl Into<String>) -> Self {
+        self.display_name = name.into();
+        self
+    }
 }
 
 #[async_trait]
@@ -44,7 +56,7 @@ impl Provider for OpenAiProvider {
     }
 
     fn display_name(&self) -> &str {
-        "OpenAI"
+        &self.display_name
     }
 
     async fn list_models(&self) -> ProviderResult<Vec<ModelInfo>> {

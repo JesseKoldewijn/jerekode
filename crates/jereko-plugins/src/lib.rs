@@ -19,6 +19,6 @@ pub use sidecar::{
     BunProcessSidecarPort, InMemorySidecarPort, SidecarInbound, SidecarOutbound, SidecarPort,
     run_sidecar_loop,
 };
-pub use tui::render_stub_frame;
+pub use tui::{render_stub_frame, run_interactive};
 pub use types::{HookCall, HookResult, HostId, LoadedPlugin, PluginSpec};
 pub use wasm_host::WasmPluginHost;

@@ -22,9 +22,9 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 | P2c | portable-pty OS I/O | In progress | this PR |
 | P2d | WASM WASI hook ABI | In progress | this PR |
 | P3a | HTTP v1/v2 surface expansion via fixtures | Pending | — |
-| P3b | More providers (incremental registry growth) | Pending | — |
-| P3c | Sandbox policy engine | Pending | — |
-| P3d | Native TUI interactive MVP (optional) | Pending | — |
+| P3b | More providers (incremental registry growth) | In progress | this PR |
+| P3c | Sandbox policy engine | In progress | this PR |
+| P3d | Native TUI interactive MVP (optional) | In progress | this PR |
 | P3e | Criterion nightly workflow | In progress | this PR |
 | DOC | Refactor all repo documentation for accuracy | Final step | — |
 
