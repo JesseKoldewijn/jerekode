@@ -1,6 +1,6 @@
 # Conformance Testing Strategy
 
-Jereko achieves OpenCode API compatibility through **conformance-test-driven development** without importing upstream source code.
+As a Rust port of OpenCode, Jereko achieves API compatibility through **conformance-test-driven development** without importing upstream source code.
 
 ## Why Not Fork-and-Merge?
 

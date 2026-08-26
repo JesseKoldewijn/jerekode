@@ -1,6 +1,6 @@
 # Jereko Architecture
 
-Jereko is an AI coding agent runtime built as a **Rust core + Bun sidecar** architecture. It targets OpenCode API compatibility without vendoring upstream source code.
+Jereko is a **Rust port of OpenCode**: an OpenCode-compatible AI coding agent runtime built as a **Rust core + Bun sidecar**. Compatibility is conformance-driven — this repository does not vendor upstream OpenCode source.
 
 ## System Overview
 
