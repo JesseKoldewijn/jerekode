@@ -16,9 +16,15 @@ Prefer `cargo +stable …` locally if your default rustc is a nightly mismatch w
 ```bash
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features --locked -- -D warnings
+cargo build -p jereko-test-native-plugin --locked
+cargo build -p jereko-rtk-plugin --locked
 cargo test --workspace --locked
 cargo build -p jereko-cli --release
 ```
+
+CLI runtime smoke (included in workspace tests): `jereko version` + `jereko serve` v1/v2 session create — see `crates/jereko-cli/tests/cli_smoke.rs`.
+
+First-party plugins (e.g. `@jerekode/rtk`) need **true e2e** against Bun process + native dylib — see [conformance.md](./conformance.md) Layer 5.
 
 Sidecar (matches CI `bun-sidecar` job):
 

@@ -103,10 +103,14 @@ pub async fn build_app_state(config: &OpenCodeConfig) -> ServerResult<AppState> 
     if needs_bun_host(&config.plugins) {
         let entry =
             std::env::var("JEREKO_SIDECAR_ENTRY").unwrap_or_else(|_| "sidecar/src/index.ts".into());
-        let port = BunProcessSidecarPort::spawn(entry)
+        let process = BunProcessSidecarPort::spawn(entry)
             .await
             .map_err(|e| ServerError::Serve(e.to_string()))?;
-        hosts.push(Arc::new(BunPluginHost::new(port)));
+        process
+            .wait_startup_ready()
+            .await
+            .map_err(|e| ServerError::Serve(e.to_string()))?;
+        hosts.push(Arc::new(BunPluginHost::new(process)));
     }
     hosts.push(Arc::new(NativePluginHost::new()));
     hosts.push(Arc::new(WasmPluginHost::default()));

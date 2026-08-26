@@ -24,5 +24,6 @@ Jereko’s HTTP `/tools/execute` path dispatches `tool.execute.before` through `
 ## Consequences
 
 - First-party example of dual-host plugins with host-agnostic conformance fixtures under `conformance/fixtures/plugins/rtk/`
+- **True e2e required:** Bun via `BunProcessSidecarPort` + path import of `packages/rtk`, and native via built `jereko-rtk-plugin` dylib, sharing the same fixtures (see [conformance.md](../conformance.md) Layer 5). In-memory stubs must not stand in for product rewrite proof.
 - Does not bundle the `rtk` binary into releases
 - Bash/shell rewrite only (same scope as upstream OpenCode RTK plugin)
