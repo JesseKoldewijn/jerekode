@@ -229,6 +229,10 @@ Architecture decisions are recorded in [docs/adr/](./adr/):
 - [ADR 001: Phase 0 Architecture Decisions](./adr/001-architecture-decisions.md)
 - [ADR 002: Dual Plugin Runtime Architecture](./adr/002-dual-plugin-runtime.md) — extends Decision 3 (Bun sidecar) with orchestrator and multi-host strategy
 
+## Remaining Work
+
+Production adapters for Bun spawn, SQLite sessions, native/WASM hosts, first providers, and core tools are in place. Incremental gaps (streaming, full MCP/LSP/PTY, WASI hooks, 75+ providers) are tracked in [roadmap-remaining.md](./roadmap-remaining.md).
+
 ## Upstream Reference
 
 OpenCode (the upstream project) is mentioned here solely as the behavioral compatibility reference. Jereko does not depend on, submodule, or vendor OpenCode code. Compatibility is validated through owned conformance tests.

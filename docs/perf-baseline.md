@@ -13,9 +13,17 @@ Jereko defines performance measurement seams without shipping a full benchmark s
 
 ## Future Work
 
-- Criterion benchmarks for adapter normalize/denormalize hot paths
 - Load tests against `jereko serve` with concurrent sessions
-- Sidecar spawn + IPC throughput with real Bun process
+- Sidecar spawn + IPC throughput with real Bun process (optional nightly)
+- Threshold gates in CI (optional)
+
+## Running benches
+
+```bash
+cargo bench -p jereko-plugins
+```
+
+Benches cover JSON hook round-trip, in-memory SidecarPort send/recv, and orchestrator dispatch.
 
 ## Native TUI Feature Flag
 
@@ -33,4 +41,4 @@ Build with:
 cargo build -p jereko-cli --features native-tui
 ```
 
-When enabled, the flag is reserved for Phase 5 `TuiPluginHost` bridge work — currently a no-op stub.
+When enabled, `jereko_plugins::render_stub_frame` draws a minimal ratatui frame (test backend). Bun remains the default interactive path.

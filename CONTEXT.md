@@ -49,13 +49,13 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | **0** | Workspace scaffolding, stubs, architecture foundations | Complete |
 | **0.5** | Agent context, ADRs, engineering standards, CI stub | Complete |
 | **1** | Config JSONC, HTTP adapter round-trips, fixture-driven conformance | Complete |
-| **2** | PluginOrchestrator + BunPluginHost, SidecarPort IPC, TUI via `jereko run`, plugin routes | Complete (stub transport) |
-| **2.5** | NativePluginHost — in-process dylib, server hooks (tools, providers, transforms) | Stub (C ABI header + load stub) |
-| **3** | Bun TUI plugins; full provider implementations | Stub (`tui.render` IPC + bootstrap) |
-| **4** | WasmPluginHost, MCP/LSP/PTY stubs, SQLite persistence stub | Partial (stubs) |
-| **5** | Native TUI plugins; perf baseline hooks; `native-tui` feature flag | Documented stubs |
+| **2** | PluginOrchestrator + BunPluginHost, SidecarPort IPC, TUI via `jereko run` | Complete (real Bun spawn) |
+| **2.5** | NativePluginHost — in-process dylib, server hooks | Complete (libloading + SDK + test cdylib) |
+| **3** | Bun TUI plugins; full provider implementations | Partial (OpenAI/Anthropic/Ollama + tools; TUI bootstrap via IPC) |
+| **4** | WasmPluginHost, MCP/LSP/PTY, SQLite persistence | Partial (SQLite real; WASM load; MCP/LSP/PTY seams) |
+| **5** | Native TUI plugins; perf baseline; `native-tui` feature | Partial (ratatui stub + Criterion benches) |
 
-**What's next:** Scaffolding for Phases 0–5 is complete; remaining implementation work is prioritized in [docs/roadmap-remaining.md](docs/roadmap-remaining.md) (P0: Bun spawn + CI + SQLite → P1: native plugins → P2: providers/tools → P3: WASM/TUI/perf/dist).
+**What's next:** Incremental depth only — see remaining gaps in [docs/roadmap-remaining.md](docs/roadmap-remaining.md) (streaming providers, full MCP/LSP/PTY protocols, WASI hook ABI, portable-pty, 75+ providers).
 
 Detailed design: [docs/architecture.md](docs/architecture.md).  
 Testing approach: [docs/conformance.md](docs/conformance.md).  

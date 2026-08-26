@@ -106,6 +106,7 @@ Native plugin authors will depend on `jereko-plugin-sdk` for safe Rust bindings 
 - Start with [CONTEXT.md](../CONTEXT.md) for crate map and vocabulary.
 - Check [docs/adr/](./adr/) before changing architectural decisions.
 - See [AGENTS.md](../AGENTS.md) for agent-specific orientation.
+- Remaining implementation priorities: [roadmap-remaining.md](./roadmap-remaining.md).
 
 ## CI
 
