@@ -2,11 +2,12 @@
 
 **Status:** Archive — foundation P0–P3 and parity R0–P3e are complete  
 **Date:** 2026-08-26  
-**Active board:** [roadmap-parity.md](./roadmap-parity.md)
+**Closed parity checklist:** [roadmap-parity.md](./roadmap-parity.md)  
+**Active forward plan:** [roadmap-releases.md](./roadmap-releases.md) (packaging, changelogs, version reset)
 
-This file preserves the historical foundation plan. Do not treat the “remaining gaps” sections below as current blockers — they were closed by subsequent parity PRs (#15–#28). Prefer the parity board for present-day status.
+This file preserves the historical foundation plan. Do not treat the "remaining gaps" / growth notes below as current blockers — foundation and documented parity slices were closed by PRs through #28–#30. Prefer the parity board for *what shipped*, and the releases roadmap for *what's next*.
 
-Related: [architecture.md](./architecture.md), [conformance.md](./conformance.md), [CONTEXT.md](../CONTEXT.md), [ADR 001](./adr/001-architecture-decisions.md), [ADR 002](./adr/002-dual-plugin-runtime.md).
+Related: [architecture.md](./architecture.md), [conformance.md](./conformance.md), [CONTEXT.md](../CONTEXT.md), [ADR 001](./adr/001-architecture-decisions.md), [ADR 002](./adr/002-dual-plugin-runtime.md), [ADR 003](./adr/003-release-packaging-and-changelogs.md).
 
 ---
 
@@ -27,7 +28,7 @@ Related: [architecture.md](./architecture.md), [conformance.md](./conformance.md
 | Tools | read/write/edit/bash/grep + sandbox policy |
 | TUI | Bun default; optional interactive `native-tui` |
 | Perf | Criterion benches + nightly workflow (not PR-gated) |
-| Release | Auto-release on `main` merge |
+| Release | Auto-release on `main` merge (archive assets; packaging plan separate) |
 
 ### Ongoing growth (not foundation blockers)
 
@@ -37,8 +38,9 @@ Related: [architecture.md](./architecture.md), [conformance.md](./conformance.md
 | Broader MCP/LSP methods | Happy-path depth shipped; expand with fixtures |
 | Richer WASI surface | Hook ABI shipped; deepen as needed |
 | Agent-loop tooling depth | `/tools/execute` + policy shipped |
+| Release packaging | Changelogs, version reset, installers — [roadmap-releases.md](./roadmap-releases.md) |
 
-No new ADR is required for deepening these seams.
+No new ADR is required for deepening existing seams. Packaging decisions: [ADR 003](./adr/003-release-packaging-and-changelogs.md).
 
 ---
 

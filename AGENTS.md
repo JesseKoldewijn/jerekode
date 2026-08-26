@@ -24,9 +24,10 @@ Brief orientation for AI agents working in this repository.
 | [docs/architecture.md](docs/architecture.md) | System design, seams, adapters |
 | [docs/conformance.md](docs/conformance.md) | Test seams, fixture rules, TDD policy |
 | [docs/development.md](docs/development.md) | Rust standards, build commands |
-| [docs/roadmap-parity.md](docs/roadmap-parity.md) | Parity progress board |
-| [docs/releases.md](docs/releases.md) | Auto-release and `/build` |
-| [docs/roadmap-releases.md](docs/roadmap-releases.md) | Packaging / changelog / version-reset plan |
+| [docs/roadmap-parity.md](docs/roadmap-parity.md) | Closed parity checklist (R0–P3e) |
+| [docs/roadmap-remaining.md](docs/roadmap-remaining.md) | Foundation archive (historical) |
+| [docs/releases.md](docs/releases.md) | Auto-release and `/build` (current ops) |
+| [docs/roadmap-releases.md](docs/roadmap-releases.md) | Active packaging / changelog / version-reset plan |
 
 ## Conformance Rules
 

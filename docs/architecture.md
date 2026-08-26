@@ -205,6 +205,8 @@ See [conformance.md](./conformance.md).
 
 Documented foundation and parity slices are complete — see [roadmap-parity.md](./roadmap-parity.md). Incremental growth (more providers, richer protocols) continues without new ADRs unless decisions change.
 
+**Active forward plan:** release packaging, changelogs, version reset, installers — [roadmap-releases.md](./roadmap-releases.md) / [ADR 003](./adr/003-release-packaging-and-changelogs.md).
+
 Historical foundation notes: [roadmap-remaining.md](./roadmap-remaining.md).
 
 ## Upstream Reference
