@@ -67,7 +67,8 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | Tools | read/write/edit/grep/bash via `/tools/execute` + sandbox policy |
 | Bun plugins | Real sidecar spawn, dynamic import, `invoke_hook`; CI hard-gates |
 | Native plugins | libloading + test cdylib; CI hard-gates |
-| RTK adapter | `@jerekode/rtk` OpenCode2 + `jereko-rtk-plugin` native ([ADR 004](docs/adr/004-rtk-dual-adapter.md)) |
+| RTK adapter | `@jerekode/rtk` OpenCode2 + `jereko-rtk-plugin` native; true Bun+native e2e ([ADR 004](docs/adr/004-rtk-dual-adapter.md)) |
+| CLI smoke | `jereko version` + `jereko serve` v1/v2 session create (binary e2e) |
 | WASM | Module load + `jereko_hook` ABI |
 | MCP / LSP / PTY | call_tool, initialize/hover, portable-pty I/O |
 | TUI | Bun `jereko run` default; optional `native-tui` interactive MVP |

@@ -1576,6 +1576,7 @@ dependencies = [
  "jereko-core",
  "jereko-plugins",
  "jereko-server",
+ "reqwest",
  "serde_json",
  "tokio",
  "tracing",

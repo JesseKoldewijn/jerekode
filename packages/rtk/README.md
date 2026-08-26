@@ -38,8 +38,10 @@ Bash/shell tool rewrite only (same limitation as upstream OpenCode RTK plugin). 
 
 ## Tests
 
+Unit (table path) plus **true e2e** (real Bun process sidecar + native dylib) in conformance — required for in-house plugins ([docs/conformance.md](../../docs/conformance.md) Layer 5).
+
 ```bash
 bun test ./packages/rtk
-cargo test -p jereko-rtk-plugin --locked
 cargo build -p jereko-rtk-plugin --locked
+cargo test -p jereko-conformance --locked -- rtk_
 ```

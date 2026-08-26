@@ -93,6 +93,10 @@ impl InMemorySidecarPort {
 #[async_trait::async_trait]
 impl SidecarPort for InMemorySidecarPort {
     async fn send(&self, message: SidecarOutbound) -> PluginResult<()> {
+        // Mirror process sidecar: Init loads plugins then emits Ready.
+        if let SidecarOutbound::Init { .. } = &message {
+            self.inbound.lock().await.push(SidecarInbound::Ready);
+        }
         // Auto-respond to hook invokes so BunPluginHost request/response works in tests.
         if let SidecarOutbound::InvokeHook {
             request_id,
@@ -101,6 +105,8 @@ impl SidecarPort for InMemorySidecarPort {
             payload,
         } = &message
         {
+            // Honest in-memory stub: passthrough only. Real Bun rewrite is proven via
+            // BunProcessSidecarPort + first-party plugin e2e (not this fake host).
             let output = if hook == "tool.execute.before" {
                 let command = payload
                     .get("command")
@@ -112,19 +118,14 @@ impl SidecarPort for InMemorySidecarPort {
                             .and_then(|v| v.as_str())
                     })
                     .unwrap_or("");
-                let rewritten = if command.starts_with("git") || command.starts_with("gh ") {
-                    format!("rtk {command}")
-                } else {
-                    command.to_string()
-                };
                 serde_json::json!({
                     "host": "bun",
                     "hook": hook,
                     "tool": "bash",
-                    "command": rewritten,
-                    "args": { "command": rewritten },
-                    "rewritten": rewritten != command,
-                    "stub": false,
+                    "command": command,
+                    "args": { "command": command },
+                    "rewritten": false,
+                    "stub": true,
                     "status": "ok",
                 })
             } else {
@@ -233,6 +234,22 @@ impl BunProcessSidecarPort {
             inbound_rx: Mutex::new(rx),
             child: Mutex::new(child),
         }))
+    }
+
+    /// Drain the startup `ready` emitted when the sidecar process boots.
+    pub async fn wait_startup_ready(self: &Arc<Self>) -> PluginResult<()> {
+        loop {
+            match self.recv().await? {
+                SidecarInbound::Ready => return Ok(()),
+                SidecarInbound::Log { level, message } => {
+                    tracing::debug!(%level, %message, "sidecar startup log");
+                }
+                SidecarInbound::Error { message } => {
+                    return Err(PluginError::Sidecar(message));
+                }
+                _ => {}
+            }
+        }
     }
 
     pub fn entry(&self) -> &str {

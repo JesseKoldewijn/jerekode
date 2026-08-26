@@ -19,6 +19,23 @@ impl BunPluginHost {
         }
     }
 
+    async fn wait_ready(&self) -> PluginResult<()> {
+        loop {
+            match self.port.recv().await? {
+                SidecarInbound::Ready => return Ok(()),
+                SidecarInbound::Log { level, message } => {
+                    tracing::debug!(%level, %message, "sidecar log while waiting for ready");
+                }
+                SidecarInbound::Error { message } => {
+                    return Err(PluginError::Sidecar(message));
+                }
+                SidecarInbound::PluginEvent { .. }
+                | SidecarInbound::TuiRender { .. }
+                | SidecarInbound::HookResult { .. } => {}
+            }
+        }
+    }
+
     async fn wait_hook_result(
         &self,
         request_id: &str,
@@ -61,6 +78,8 @@ impl PluginHost for BunPluginHost {
                 plugins: vec![spec.name.clone()],
             })
             .await?;
+        // Init finishes with Ready once plugins are loaded — wait so invoke is not raced.
+        self.wait_ready().await?;
         Ok(LoadedPlugin { spec: spec.clone() })
     }
 
