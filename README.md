@@ -20,7 +20,9 @@ jerekode/
 │   ├── jereko-server/        # HTTP server + v1/v2 adapters + tools/extensions
 │   ├── jereko-cli/           # CLI binary (jereko)
 │   ├── jereko-providers/     # Provider registry + streaming adapters
-│   └── jereko-plugin-sdk/    # Native plugin SDK / C ABI
+│   ├── jereko-plugins/       # PluginOrchestrator + Bun/native/WASM hosts
+│   ├── jereko-plugin-sdk/    # Native plugin SDK / C ABI
+│   └── jereko-test-native-plugin/  # Test cdylib for NativePluginHost CI
 ├── sidecar/                  # Bun plugin host (TUI + server plugins)
 ├── conformance/              # Owned fixture-driven compatibility tests
 └── docs/                     # Architecture, conformance, roadmaps, ADRs
@@ -62,10 +64,10 @@ cargo run -p jereko-cli -- serve
 cargo run -p jereko-cli -- run
 ```
 
-Optional interactive native TUI (feature-flagged):
+Optional native TUI helpers are behind the `native-tui` Cargo feature (ratatui MVP in `jereko-plugins`; Bun `jereko run` remains the default interactive path):
 
 ```bash
-cargo run -p jereko-cli --features native-tui -- run --native
+cargo build -p jereko-cli --features native-tui
 ```
 
 ## Binary Aliases
@@ -110,6 +112,12 @@ Extensions: `/extensions/mcp/*`, `/extensions/lsp/*`, PTY helpers.
 
 The Bun sidecar hosts TUI and JS/TS plugins over JSON-line IPC. CI hard-gates Bun IPC and native dylib loading — soft-skips are not allowed.
 
+## Releases & PR builds
+
+- Auto-release on merge to `main`, tags, and `/build` PR artifacts: [docs/releases.md](docs/releases.md)
+- Install / alias helpers: [docs/distribution.md](docs/distribution.md)
+- Upcoming packaging (installers, changelog fix, version reset, full vs native-only): [docs/roadmap-releases.md](docs/roadmap-releases.md)
+
 ## License
 
-MIT
+[MIT](LICENSE) © 2026 Jesse Koldewijn

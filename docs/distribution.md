@@ -48,3 +48,8 @@ cargo bench -p jereko-plugins
 ## CI releases
 
 See [releases.md](./releases.md) for tagged GitHub Releases and PR `/build` workflow artifacts.
+
+## Upcoming packaging
+
+Installer formats, version reset, changelog quality, and full vs native-only builds: [roadmap-releases.md](./roadmap-releases.md) / [ADR 003](./adr/003-release-packaging-and-changelogs.md).
+

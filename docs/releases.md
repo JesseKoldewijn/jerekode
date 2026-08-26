@@ -153,3 +153,13 @@ cargo build --release -p jereko-cli --locked
 ./scripts/package-release.sh jereko-0.0.0-local-release-linux-x64 target/release/jereko /tmp/jereko-dist release
 ls /tmp/jereko-dist
 ```
+
+## Known issues / upcoming
+
+Current Releases use `softprops/action-gh-release` with `generate_release_notes: true`, which has been producing **unusable changelogs** and incorrect **New Contributors** sections. Assets today are **tarballs/zip only** (not installers). A planned **version reset to 0.0.1** (with purge of pre-reset `v0.1.*` tags/Releases), installer formats, and full vs native-only builds are documented in:
+
+- [roadmap-releases.md](./roadmap-releases.md) — phased plan
+- [ADR 003](./adr/003-release-packaging-and-changelogs.md) — decisions and wipe procedure (**plan only** until explicitly approved)
+
+Do not treat current `0.1.<n>` Release bodies as the long-term notes format.
+

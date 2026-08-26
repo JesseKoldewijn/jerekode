@@ -1,6 +1,6 @@
 # Performance Baseline Hooks (Phase 5)
 
-Jereko defines performance measurement seams without shipping a full benchmark suite yet.
+Jereko defines performance measurement seams and ships Criterion benches for plugin hot paths (`cargo bench -p jereko-plugins`).
 
 ## Hooks
 
@@ -41,7 +41,7 @@ Build with:
 cargo build -p jereko-cli --features native-tui
 ```
 
-When enabled, `jereko_plugins::render_stub_frame` draws a minimal ratatui frame (test backend). Bun remains the default interactive path.
+When enabled, `jereko_plugins::render_stub_frame` / `run_interactive` provide a minimal ratatui path. Bun `jereko run` remains the default interactive path. There is no `jereko run --native` CLI flag today.
 
 
 ## Criterion nightly

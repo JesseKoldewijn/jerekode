@@ -6,7 +6,7 @@ The Jereko sidecar is a Bun/TypeScript process that hosts TUI and server plugins
 
 - **Plugin fidelity**: Existing OpenCode-compatible plugins expect Bun/Node APIs.
 - **Isolation**: Plugin crashes do not take down the Rust runtime.
-- **Default path**: Bun sidecar is the default TUI strategy. A native Rust TUI remains a documented future option only.
+- **Default path**: Bun sidecar is the default TUI strategy. An optional `native-tui` Cargo feature provides a ratatui MVP; it is not a Bun replacement.
 
 ## IPC Contract
 

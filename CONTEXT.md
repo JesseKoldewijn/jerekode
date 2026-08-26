@@ -17,6 +17,7 @@ Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.
 | `jereko-server` | `crates/jereko-server/` | Axum HTTP server, v1/v2 wire adapters, tools, extensions, policy |
 | `jereko-cli` | `crates/jereko-cli/` | CLI binary (`jereko`; aliases `opencode`, `opencode2`) |
 | `jereko-providers` | `crates/jereko-providers/` | `Provider` trait, registry, streaming, HTTP adapters |
+| `jereko-plugins` | `crates/jereko-plugins/` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
 | `jereko-plugin-sdk` | `crates/jereko-plugin-sdk/` | Native plugin C ABI / Rust SDK |
 | `jereko-conformance` | `conformance/` | Owned fixture-driven compatibility tests |
 
@@ -66,7 +67,7 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | WASM | Module load + `jereko_hook` ABI |
 | MCP / LSP / PTY | call_tool, initialize/hover, portable-pty I/O |
 | TUI | Bun `jereko run` default; optional `native-tui` interactive MVP |
-| Release | Auto-release on `main` merge; Criterion nightly workflow |
+| Release | Auto-release on `main` merge (`0.1.<run_number>` today); archives only — see [roadmap-releases.md](docs/roadmap-releases.md) |
 
 Historical phase notes and foundation archive: [docs/roadmap-remaining.md](docs/roadmap-remaining.md).  
 Active parity board: [docs/roadmap-parity.md](docs/roadmap-parity.md).
@@ -81,10 +82,11 @@ Active parity board: [docs/roadmap-parity.md](docs/roadmap-parity.md).
 | [docs/releases.md](docs/releases.md) | Auto-release, `/build`, artifacts |
 | [docs/roadmap-parity.md](docs/roadmap-parity.md) | True OpenCode parity progress board |
 | [docs/roadmap-remaining.md](docs/roadmap-remaining.md) | Historical foundation P0–P3 archive |
+| [docs/roadmap-releases.md](docs/roadmap-releases.md) | Release packaging, changelogs, version reset plan |
 
 ## Architecture Decisions
 
-Recorded in [docs/adr/](docs/adr/). Start with [001-architecture-decisions.md](docs/adr/001-architecture-decisions.md). Plugin runtime strategy: [002-dual-plugin-runtime.md](docs/adr/002-dual-plugin-runtime.md).
+Recorded in [docs/adr/](docs/adr/). Start with [001-architecture-decisions.md](docs/adr/001-architecture-decisions.md). Plugin runtime strategy: [002-dual-plugin-runtime.md](docs/adr/002-dual-plugin-runtime.md). Release packaging: [003-release-packaging-and-changelogs.md](docs/adr/003-release-packaging-and-changelogs.md).
 
 ## Agent Skills
 
