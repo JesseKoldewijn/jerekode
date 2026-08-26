@@ -16,6 +16,20 @@ Brief orientation for AI agents working in this repository.
 - Exception: the trusted **Release** CI workflow may open a version-bump sync PR (or push with `RELEASE_PUSH_TOKEN`) after a merge — see [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/releases.md](docs/releases.md).
 - Include `[skip release]` in a merge commit message / release sync title to skip auto-release.
 
+## Commit messages
+
+Use **Conventional Commits** prefixes on every commit you create:
+
+- `feat:` — user-visible capability
+- `fix:` — bug fix
+- `docs:` — documentation only
+- `chore:` — maintenance, deps, tooling (no behavior change)
+- `refactor:` — internal restructuring without behavior change
+- `test:` — tests only
+- `ci:` — CI / workflow changes
+
+Format: `prefix:` or `prefix(scope):` + short imperative summary (e.g. `feat(cli): add version subcommand`). This aligns with the long-term semver/changelog direction in [roadmap P0c option B](docs/roadmap-releases.md#p0c--post-wipe-version-policy-pick-one); the Release workflow still bumps `0.0.x` sequentially and does not parse prefixes yet.
+
 ## Key Docs
 
 | Document | Purpose |

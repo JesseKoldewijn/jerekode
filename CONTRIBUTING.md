@@ -57,6 +57,20 @@ Without these, the Release job can push `release/sync-*` but cannot open the syn
 
 If the repository plan does not allow required status checks, still require PRs and disallow force pushes/deletions.
 
+## Commit messages
+
+Use **Conventional Commits** prefixes on branch commits and squash merge titles:
+
+- `feat:` — new user-facing behavior
+- `fix:` — bug fix
+- `docs:` — documentation only
+- `chore:` — tooling, deps, housekeeping
+- `refactor:` — code change without behavior change
+- `test:` — tests only
+- `ci:` — CI / GitHub Actions
+
+Format: `prefix:` or `prefix(scope):` + short imperative summary (e.g. `fix(sidecar): handle empty IPC payload`). This aligns with the long-term semver/changelog direction in [roadmap P0c option B](docs/roadmap-releases.md#p0c--post-wipe-version-policy-pick-one); today's Release workflow still bumps `0.0.x` sequentially and does not parse commit prefixes yet.
+
 ## Local checks
 
 ```bash
