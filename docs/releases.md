@@ -27,7 +27,14 @@ Every push/merge to `main` triggers the **Release** workflow (unless the commit 
 
 ### Sync PR auto-merge & loop prevention
 
-Repo setting **Allow auto-merge** is on. The workflow runs `gh pr merge --auto --squash` on the sync PR.
+Repo settings required:
+
+- **Allow auto-merge** (Settings → General)
+- **Actions → Workflow permissions:** Read and write + **Allow GitHub Actions to create and approve pull requests**
+
+Without the Actions PR checkbox, `gh pr create` fails with `GitHub Actions is not permitted to create or approve pull requests`. The workflow still pushes `release/sync-*` and continues build/publish from the bumped SHA; open/merge the sync PR manually (or fix the setting and re-run).
+
+The workflow runs `gh pr merge --auto --squash` on the sync PR.
 
 | Guard | Role |
 |-------|------|

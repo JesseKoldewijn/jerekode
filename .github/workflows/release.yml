@@ -99,12 +99,18 @@ jobs:
             else
               local body
               body="Auto version bump from the Release workflow after merge to main (label \`release-sync\`). Keeps Cargo.toml aligned with ${tag}. Commit/title include \`[skip release]\` so merging does not start another release. Auto-merge (squash) is enabled; merges when required checks pass. Build/publish in this run uses the bumped commit and does not wait for the sync PR."
-              pr_url="$(gh pr create \
+              # Requires repo setting: Actions → General → Workflow permissions →
+              # "Allow GitHub Actions to create and approve pull requests" (write).
+              if ! pr_url="$(gh pr create \
                 --base main \
                 --head "${branch}" \
                 --title "chore: release ${tag} [skip release]" \
                 --label release-sync \
-                --body "${body}")"
+                --body "${body}" 2>&1)"; then
+                echo "::warning::Failed to open sync PR for ${branch}: ${pr_url}"
+                echo "::warning::Enable Settings → Actions → General → 'Allow GitHub Actions to create and approve pull requests', or set RELEASE_PUSH_TOKEN. Branch was pushed; open the PR manually. Continuing build/publish from bumped SHA."
+                return 0
+              fi
               echo "Opened sync PR: ${pr_url}"
             fi
 
