@@ -1,7 +1,7 @@
 use crate::anthropic::AnthropicProvider;
+use crate::compat::{groq_provider, openrouter_provider};
 use crate::error::{ProviderError, ProviderResult};
 use crate::ollama::OllamaProvider;
-use crate::compat::{groq_provider, openrouter_provider};
 use crate::openai::OpenAiProvider;
 use crate::provider::{Provider, ProviderId, ReqwestHttpClient, StubProvider};
 use std::collections::HashMap;

@@ -2,11 +2,11 @@
 
 #[cfg(feature = "native-tui")]
 mod imp {
+    use crossterm::ExecutableCommand;
     use crossterm::event::{self, Event, KeyCode, KeyEventKind};
     use crossterm::terminal::{
         EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
     };
-    use crossterm::ExecutableCommand;
     use ratatui::Terminal;
     use ratatui::backend::{CrosstermBackend, TestBackend};
     use ratatui::widgets::{Block, Borders, Paragraph};
@@ -39,7 +39,9 @@ mod imp {
         loop {
             terminal.draw(|frame| {
                 let area = frame.area();
-                let block = Block::default().title("jereko native-tui").borders(Borders::ALL);
+                let block = Block::default()
+                    .title("jereko native-tui")
+                    .borders(Borders::ALL);
                 let paragraph = Paragraph::new(status.as_str()).block(block);
                 frame.render_widget(paragraph, area);
             })?;

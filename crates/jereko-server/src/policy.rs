@@ -31,8 +31,7 @@ impl ToolPolicy {
         let normalized = rel.replace('\\', "/");
         self.deny_path_prefixes.iter().any(|p| {
             let pref = p.replace('\\', "/");
-            normalized == pref.trim_end_matches('/')
-                || normalized.starts_with(&pref)
+            normalized == pref.trim_end_matches('/') || normalized.starts_with(&pref)
         })
     }
 }
