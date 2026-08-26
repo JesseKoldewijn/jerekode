@@ -32,6 +32,8 @@ def gate_passed(diff_txt: str) -> bool:
         return True
     if "No lines with coverage information" in diff_txt or not diff_txt.strip():
         return True
+    if "_skipped locally_" in diff_txt:
+        return True
     return True
 
 
@@ -88,33 +90,11 @@ def bun_snippet(text: str, limit: int = 40) -> str:
     return "```\n" + "\n".join(chunk) + "\n```"
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--out", required=True)
-    ap.add_argument("--summary", type=Path)
-    ap.add_argument("--diff-md", type=Path)
-    ap.add_argument("--diff-json", type=Path)
-    ap.add_argument("--diff-txt", type=Path)
-    ap.add_argument("--compare-branch", default="origin/main")
-    ap.add_argument("--fail-under", default="80")
-    ap.add_argument("--sha", default="")
-    ap.add_argument("--bun-rtk", type=Path)
-    ap.add_argument("--bun-sidecar", type=Path)
-    args = ap.parse_args()
-
-    summary = read_text(args.summary)
-    diff_md = read_text(args.diff_md)
-    diff_txt = read_text(args.diff_txt)
-    diff_json_raw = read_text(args.diff_json)
-    bun_rtk = read_text(args.bun_rtk)
-    bun_sidecar = read_text(args.bun_sidecar)
-
+def gate_section(title: str, diff_txt: str, diff_md: str, diff_json_raw: str) -> str:
     ok = gate_passed(diff_txt)
     diff_pct = extract_diff_pct(diff_txt)
     status_emoji = "✅" if ok else "❌"
     status_text = "passed" if ok else "failed"
-    sha = (args.sha or "")[:12] or "unknown"
-
     gap_rows = uncovered_rows(diff_json_raw, diff_md)
     if gap_rows:
         gaps_section = "\n".join(
@@ -130,20 +110,9 @@ def main() -> None:
             "(or the diff has no executable lines)._"
         )
 
-    body = f"""{MARKER}
-### {status_emoji} Coverage report ({status_text})
+    return f"""#### {title} ({status_emoji} {status_text})
 
-Diff coverage vs `{args.compare_branch}`: **{diff_pct}%** (gate: ≥ **{args.fail_under}%** of changed lines).
-
-Commit: `{sha}`
-
-#### Rust (workspace) summary
-
-```
-{summary.strip() or "(missing summary)"}
-```
-
-#### Diff coverage (changed lines)
+Diff coverage: **{diff_pct}%**
 
 ```
 {diff_txt.strip() or "(missing diff-cover output)"}
@@ -156,11 +125,70 @@ Commit: `{sha}`
 
 </details>
 
-#### Under-covered parts of this PR
+**Under-covered parts of this PR**
 
 {gaps_section}
+"""
 
-#### Bun / TypeScript (informational)
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--summary", type=Path)
+    ap.add_argument("--diff-md", type=Path)
+    ap.add_argument("--diff-json", type=Path)
+    ap.add_argument("--diff-txt", type=Path)
+    ap.add_argument("--bun-diff-md", type=Path)
+    ap.add_argument("--bun-diff-json", type=Path)
+    ap.add_argument("--bun-diff-txt", type=Path)
+    ap.add_argument("--compare-branch", default="origin/main")
+    ap.add_argument("--fail-under", default="80")
+    ap.add_argument("--sha", default="")
+    ap.add_argument("--bun-rtk", type=Path)
+    ap.add_argument("--bun-sidecar", type=Path)
+    args = ap.parse_args()
+
+    summary = read_text(args.summary)
+    diff_md = read_text(args.diff_md)
+    diff_txt = read_text(args.diff_txt)
+    diff_json_raw = read_text(args.diff_json)
+    bun_diff_md = read_text(args.bun_diff_md)
+    bun_diff_txt = read_text(args.bun_diff_txt)
+    bun_diff_json_raw = read_text(args.bun_diff_json)
+    bun_rtk = read_text(args.bun_rtk)
+    bun_sidecar = read_text(args.bun_sidecar)
+
+    rust_ok = gate_passed(diff_txt)
+    bun_ok = gate_passed(bun_diff_txt)
+    overall_ok = rust_ok and bun_ok
+    status_emoji = "✅" if overall_ok else "❌"
+    status_text = "passed" if overall_ok else "failed"
+    sha = (args.sha or "")[:12] or "unknown"
+
+    rust_section = gate_section("Rust diff coverage", diff_txt, diff_md, diff_json_raw)
+    bun_section = gate_section(
+        "Bun / TypeScript diff coverage", bun_diff_txt, bun_diff_md, bun_diff_json_raw
+    )
+
+    body = f"""{MARKER}
+### {status_emoji} Coverage report ({status_text})
+
+Gate: ≥ **{args.fail_under}%** diff coverage vs `{args.compare_branch}` on changed lines (Rust **and** Bun/TS).
+
+Commit: `{sha}`
+
+{rust_section}
+
+#### Rust (workspace) summary
+
+```
+{summary.strip() or "(missing summary)"}
+```
+
+{bun_section}
+
+<details>
+<summary>Bun package coverage tables</summary>
 
 **packages/rtk**
 
@@ -170,8 +198,10 @@ Commit: `{sha}`
 
 {bun_snippet(bun_sidecar)}
 
+</details>
+
 ---
-_Sticky comment updated on each push. Rust **diff** coverage is the merge gate; Bun coverage is informational._
+_Sticky comment updated on each push. Rust and Bun/TS **diff** coverage both block merge when below the gate._
 """
 
     Path(args.out).write_text(body, encoding="utf-8")

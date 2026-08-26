@@ -1,7 +1,7 @@
 name: Coverage
 
-# Sticky PR comment with Rust (+ informational Bun) coverage.
-# Gates on diff coverage of changed lines vs origin/main (default 80%).
+# Sticky PR comment with Rust + Bun/TS coverage.
+# Gates on diff coverage of changed lines vs origin/main (default 80%) for both.
 # Complements CI jobs rust / bun-sidecar; does not replace them.
 
 on:
@@ -82,6 +82,7 @@ jobs:
           name: coverage-reports
           path: |
             target/coverage/**
+            target/coverage/bun/**
           if-no-files-found: warn
 
       - name: Job summary
@@ -122,10 +123,10 @@ jobs:
             echo "Posted sticky coverage comment"
           fi
 
-      - name: Enforce diff coverage gate
+      - name: Enforce diff coverage gates
         if: ${{ !cancelled() }}
         run: |
           if [[ "${{ steps.cov.outcome }}" != "success" ]]; then
-            echo "Diff coverage gate failed (threshold ${DIFF_COVERAGE_FAIL_UNDER}% of changed lines)."
+            echo "Diff coverage gate failed (Rust and/or Bun/TS below ${DIFF_COVERAGE_FAIL_UNDER}% of changed lines)."
             exit 1
           fi

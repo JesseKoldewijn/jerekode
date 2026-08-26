@@ -212,9 +212,51 @@ jobs:
           echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "Release version=${VERSION} tag=${TAG} sha=${SHA}"
 
+  check:
+    name: Lint and test
+    needs: prepare
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.5"
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format check
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features --locked -- -D warnings
+
+      - name: Build test and RTK native plugins
+        run: |
+          cargo build -p jereko-test-native-plugin --locked
+          cargo build -p jereko-rtk-plugin --locked
+
+      - name: Test workspace
+        run: cargo test --workspace --locked
+
+      - name: Bun workspace tests
+        run: |
+          bun install
+          bun run --filter '@jerekode/sidecar' test
+          bun test ./packages/rtk
+
   build:
     name: Build ${{ matrix.target_os }}-${{ matrix.arch }}
-    needs: prepare
+    needs: [prepare, check]
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -248,6 +290,19 @@ jobs:
           shared-key: release-${{ matrix.target_os }}-${{ matrix.arch }}
           cache-on-failure: true
 
+      - name: Install packaging tools (Linux)
+        if: matrix.target_os == 'linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext-base
+          docker pull archlinux:latest || true
+
+      - name: Install packaging tools (Windows)
+        if: matrix.target_os == 'windows'
+        shell: pwsh
+        run: choco install nsis -y --no-progress
+
       - name: Build release binary
         shell: bash
         run: cargo build --release -p jereko-cli --locked
@@ -270,6 +325,22 @@ jobs:
           mkdir -p dist
           ./scripts/package-release.sh "${STEM}" "${BIN}" dist release
 
+      - name: Package installers
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TARGET_OS: ${{ matrix.target_os }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/package-installers.sh
+          if [[ "${TARGET_OS}" == "windows" ]]; then
+            BIN="target/release/jereko.exe"
+          else
+            BIN="target/release/jereko"
+          fi
+          ./scripts/package-installers.sh "${TARGET_OS}" "${ARCH}" "${BIN}" dist "${VERSION}"
+
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
@@ -280,7 +351,7 @@ jobs:
 
   publish:
     name: Publish GitHub Release
-    needs: [prepare, build]
+    needs: [prepare, check, build]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -315,12 +386,19 @@ jobs:
           Release **jereko ${VERSION}** at \`${SHA}\` (\`${SHORT_SHA}\`).
 
           ### Artifacts
-          Archives are named \`jereko-{version}-release-{os}-{arch}\` (\`.tar.gz\` on Unix, \`.zip\` on Windows) and include the \`jereko\` binary plus README/sidecar notes.
+          Portable archives: \`jereko-{version}-release-{os}-{arch}\` (\`.tar.gz\` / \`.zip\`).
+
+          **Installers (unsigned pre-1.0):**
+          - **Windows:** \`jereko-{version}-release-windows-x64-setup.exe\` or stable \`jereko-x64-setup.exe\`
+          - **Linux:** \`.deb\`, \`.rpm\`, \`.AppImage\`, Arch \`.pkg.tar.zst\` (plus \`.tar.gz\`)
+          - **macOS:** \`.pkg\` (plus \`.tar.gz\`)
+
+          Install examples: \`pacman -U …pkg.tar.zst\`, \`sudo dpkg -i …deb\`, run NSIS setup on Windows.
 
           ### Platforms
-          - linux x64
-          - macos x64 / arm64
-          - windows x64
+          - linux x64 (deb, rpm, AppImage, Arch pkg, tarball)
+          - macos x64 / arm64 (pkg + tarball)
+          - windows x64 (NSIS + zip)
 
           Bun sidecar sources are **not** bundled — see \`sidecar/README.md\` and [docs/releases.md](docs/releases.md).
 

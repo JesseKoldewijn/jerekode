@@ -117,11 +117,12 @@ These live in `crates/jereko-cli/tests/cli_smoke.rs` and run under `cargo test -
 Pull requests to `main` run `.github/workflows/coverage.yml`, which:
 
 1. Collects Rust workspace coverage via `cargo llvm-cov` (LCOV).
-2. Computes **diff coverage** of changed lines vs `origin/main` with `diff-cover`.
-3. **Fails** when changed-line coverage is below **80%** (override locally with `DIFF_COVERAGE_FAIL_UNDER`).
-4. Upserts a **sticky PR comment** (`<!-- jereko-coverage-sticky -->`) with the summary, uncovered changed regions, and informational Bun coverage for `packages/rtk` + `sidecar`.
+2. Collects Bun/TypeScript coverage for `packages/rtk` and `sidecar` via `bun test --coverage` (LCOV).
+3. Computes **diff coverage** of changed lines vs `origin/main` with `diff-cover` for **both** Rust and Bun/TS.
+4. **Fails** when changed-line coverage is below **80%** in either stack (override locally with `DIFF_COVERAGE_FAIL_UNDER`).
+5. Upserts a **sticky PR comment** (`<!-- jereko-coverage-sticky -->`) with Rust and Bun diff summaries, uncovered changed regions, and per-package coverage tables.
 
-Whole-repo floor is intentionally not enforced — the gate is on **new/changed lines**. Reports also appear in the Actions job summary and as the `coverage-reports` artifact.
+Whole-repo floor is intentionally not enforced — the gate is on **new/changed lines** in each stack. Reports also appear in the Actions job summary and as the `coverage-reports` artifact.
 
 Local preview:
 

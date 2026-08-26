@@ -1,0 +1,13 @@
+# WinGet manifest template — submit to microsoft/winget-pkgs as JesseKoldewijn.jereko
+PackageIdentifier: JesseKoldewijn.jereko
+PackageVersion: "{{VERSION}}"
+PackageLocale: en-US
+Publisher: Jesse Koldewijn
+PackageName: jereko
+License: MIT
+ShortDescription: Rust port of OpenCode — OpenCode-compatible AI coding agent runtime
+Installers:
+  - Architecture: x64
+    InstallerType: exe
+    InstallerUrl: https://github.com/JesseKoldewijn/jerekode/releases/download/v{{VERSION}}/jereko-x64-setup.exe
+    InstallerSha256: "{{SHA256_WINDOWS_SETUP}}"

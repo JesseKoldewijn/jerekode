@@ -1,0 +1,18 @@
+# Maintainer: Jesse Koldewijn
+pkgname=jereko
+pkgver=0.0.0
+pkgrel=1
+pkgdesc="Rust port of OpenCode — OpenCode-compatible AI coding agent runtime"
+arch=('x86_64')
+url="https://github.com/JesseKoldewijn/jerekode"
+license=('MIT')
+depends=()
+makedepends=()
+source=()
+options=('!strip')
+
+package() {
+  install -Dm755 "${startdir}/jereko" "${pkgdir}/usr/bin/jereko"
+  install -Dm644 "${startdir}/README.txt" "${pkgdir}/usr/share/doc/${pkgname}/README.txt"
+  install -Dm644 "${startdir}/SIDECAR.txt" "${pkgdir}/usr/share/doc/${pkgname}/SIDECAR.txt"
+}

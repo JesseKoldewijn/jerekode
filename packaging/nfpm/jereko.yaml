@@ -1,0 +1,22 @@
+# nfpm config — version/arch substituted by scripts/package-installers.sh
+name: jereko
+arch: "${NFPM_ARCH}"
+platform: linux
+version: "${NFPM_VERSION}"
+section: utils
+priority: optional
+maintainer: "Jesse Koldewijn <jesse@users.noreply.github.com>"
+description: |
+  Rust port of OpenCode — OpenCode-compatible AI coding agent runtime.
+vendor: jerekode
+homepage: https://github.com/JesseKoldewijn/jerekode
+license: MIT
+contents:
+  - src: ./staging/jereko
+    dst: /usr/bin/jereko
+    file_info:
+      mode: 0755
+  - src: ./staging/README.txt
+    dst: /usr/share/doc/jereko/README.txt
+  - src: ./staging/SIDECAR.txt
+    dst: /usr/share/doc/jereko/SIDECAR.txt

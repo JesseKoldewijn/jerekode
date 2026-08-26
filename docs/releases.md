@@ -22,9 +22,10 @@ Every push/merge to `main` triggers the **Release** workflow (unless the commit 
 2. **Commit** `chore: release v0.0.<n> [skip release]`, then land it on `main`:
    - **Default (protected `main`):** push branch `release/sync-0.0.<n>`, open a PR labeled `release-sync`, enable **auto-merge (squash)**. It merges when required checks (`rust`, `bun-sidecar`) pass. This run’s build/publish uses the bumped commit immediately and does **not** wait for that merge.
    - **Optional:** secret `RELEASE_PUSH_TOKEN` (admin PAT) pushes the bump straight to `main` (PromptComposer-style) and skips the sync PR.
-3. **Build** multi-platform `jereko` binaries (release profile) from the bumped commit.
-4. **Publish** a GitHub Release tagged `v0.0.<n>` with archives attached.
-5. **Notes:** static install/artifact body plus GitHub-generated notes **since the previous `v*` tag only**, filtered by [`.github/release.yml`](../.github/release.yml) and [`scripts/filter-release-notes.py`](../scripts/filter-release-notes.py) (drops `release-sync` / bots / `[skip release]` lines and the **New Contributors** section). `generate_release_notes` on softprops is **off**.
+3. **Build** multi-platform `jereko` binaries (release profile) from the bumped commit; **check** job runs fmt/clippy/tests first (PromptComposer-style).
+4. **Package** portable archives + OS installers (NSIS, deb/rpm/AppImage, macOS pkg, Arch pkg).
+5. **Publish** a GitHub Release tagged `v0.0.<n>` with all assets attached.
+6. **Notes:** static install/artifact body plus GitHub-generated notes **since the previous `v*` tag only**, filtered by [`.github/release.yml`](../.github/release.yml) and [`scripts/filter-release-notes.py`](../scripts/filter-release-notes.py) (drops `release-sync` / bots / `[skip release]` lines and the **New Contributors** section). `generate_release_notes` on softprops is **off**.
 
 ### Sync PR auto-merge & loop prevention
 
@@ -49,10 +50,28 @@ Humans and agents must still land code on `main` **only via pull request** (see 
 
 ## Artifact layout
 
-| Kind | Archive / artifact name |
-|------|-------------------------|
-| Tagged / auto release | `jereko-{version}-release-{os}-{arch}.tar.gz` / `.zip` |
+| Kind | Archive / installer name |
+|------|---------------------------|
+| Tagged / auto release (portable) | `jereko-{version}-release-{os}-{arch}.tar.gz` / `.zip` |
+| Windows installer | `jereko-{version}-release-windows-x64-setup.exe`, stable alias `jereko-x64-setup.exe` |
+| Linux installers | `jereko-{version}-release-linux-x64.deb`, `.rpm`, `.AppImage`, Arch `.pkg.tar.zst` |
+| macOS installer | `jereko-{version}-release-macos-{x64\|arm64}.pkg` |
 | PR build | `jereko-pr{N}-{profile}-{os}-{arch}` (workflow artifact + matching archive) |
+
+### Install examples (unsigned pre-1.0)
+
+| Platform | Command |
+|----------|---------|
+| Arch | `pacman -U jereko-0.0.3-release-linux-x64.pkg.tar.zst` |
+| Debian/Ubuntu | `sudo dpkg -i jereko-0.0.3-release-linux-x64.deb` |
+| Fedora/RHEL | `sudo rpm -i jereko-0.0.3-release-linux-x64.rpm` |
+| Generic Linux | `chmod +x jereko-*-linux-x64.AppImage && ./jereko-*-linux-x64.AppImage version` |
+| Windows | Run `jereko-x64-setup.exe` (SmartScreen may warn — unsigned) |
+| macOS | `sudo installer -pkg jereko-*-macos-arm64.pkg -target /` |
+
+Packaging scripts: [`scripts/package-release.sh`](../scripts/package-release.sh), [`scripts/package-installers.sh`](../scripts/package-installers.sh). Matrix locked in [`packaging/README.md`](../packaging/README.md).
+
+AUR: [`packaging/arch/README.md`](../packaging/arch/README.md). Homebrew/winget templates under `packaging/`.
 
 Examples:
 
@@ -157,8 +176,9 @@ ls /tmp/jereko-dist
 
 ## Notes policy / upcoming packaging
 
-Release bodies use a **static artifact blurb** plus **filtered** notes since the previous tag (see workflow + `.github/release.yml`). Assets today are **tarballs/zip only** (not installers). Installer formats and full vs native-only builds are tracked in:
+Release bodies use a **static artifact blurb** plus **filtered** notes since the previous tag (see workflow + `.github/release.yml`). **P2 installers** (NSIS, deb/rpm/AppImage, macOS pkg, Arch pkg) ship on GitHub Releases via [`scripts/package-installers.sh`](../scripts/package-installers.sh). Signing (P4) and native-only variants remain on the roadmap:
 
-- [roadmap-releases.md](./roadmap-releases.md) — phased plan (P0 version wipe + notes fix executed; installers later)
+- [roadmap-releases.md](./roadmap-releases.md) — phased plan (P0–P4)
 - [ADR 003](./adr/003-release-packaging-and-changelogs.md) — packaging / changelog decisions
+- [packaging/README.md](../packaging/README.md) — locked installer matrix
 
