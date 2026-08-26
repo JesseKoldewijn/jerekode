@@ -156,3 +156,60 @@ async fn tools_execute_write_read_via_router() {
 
     std::env::set_current_dir(prev).unwrap();
 }
+#[tokio::test]
+async fn extensions_mcp_call_and_lsp_hover() {
+    let app = build_router(AppState::default());
+    let mcp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/extensions/mcp/call")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::json!({"tool":"mcp_echo","args":{"ok":true}}).to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(mcp.status(), StatusCode::OK);
+    let body = mcp.into_body().collect().await.unwrap().to_bytes();
+    let json: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["ok"], true);
+
+    let init = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/extensions/lsp/initialize")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::json!({"root_uri":"file:///tmp"}).to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(init.status(), StatusCode::OK);
+
+    let hover = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/extensions/lsp/hover")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::json!({
+                        "uri":"file:///tmp/a.rs",
+                        "line":0,
+                        "character":3,
+                        "text":"fn foo() {}"
+                    })
+                    .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(hover.status(), StatusCode::OK);
+}
