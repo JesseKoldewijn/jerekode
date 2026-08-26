@@ -1,6 +1,6 @@
 # ADR 003: Release Packaging, Changelogs, and Distribution Variants
 
-**Status:** Accepted (P0 notes fix + version wipe executed 2026-08-26)  
+**Status:** Accepted (P0 notes fix + version wipe executed 2026-08-26; P2 installers shipped 2026-08-26)  
 **Date:** 2026-08-26  
 **Context:** Auto-release on `main` was producing unusable GitHub Release notes; assets are archives only; users want installers, a clean version reset, and optional Bun-free builds. Companion plan: [roadmap-releases.md](../roadmap-releases.md). Extends ADR 001 (binary `jereko`) and ADR 002 (plugin hosts).
 
@@ -20,10 +20,11 @@ Detailed phasing and open questions live in [roadmap-releases.md](../roadmap-rel
 | Piece | Today |
 |-------|--------|
 | Workflow | [`.github/workflows/release.yml`](../../.github/workflows/release.yml) |
-| Version on `main` push | `0.0.<github.run_number>` via `scripts/set-version.sh` (was `0.1.*` pre-wipe) |
+| Version on `main` push | Next sequential patch from `Cargo.toml` (`0.0.1` → `0.0.2` …) via `scripts/set-version.sh`; sync PR or optional `RELEASE_PUSH_TOKEN` |
 | Sync to protected `main` | Branch `release/sync-*`, label `release-sync`, squash auto-merge with `[skip release]` |
+| Pre-publish gate | Release workflow `check` job (fmt, clippy, tests, Bun) — PromptComposer-style |
 | Publish | `softprops/action-gh-release@v2` with **`generate_release_notes: false`**; body = static blurb + filtered notes via API `previous_tag_name` + `scripts/filter-release-notes.py` |
-| Assets | `scripts/package-release.sh` → `jereko-{ver}-release-{os}-{arch}.tar.gz` / `.zip` (binary + README + SIDECAR notes) |
+| Assets | Archives via `scripts/package-release.sh`; installers via `scripts/package-installers.sh` (NSIS, deb, rpm, AppImage, macOS pkg, Arch `.pkg.tar.zst`) |
 | Platforms built | linux-x64, macos-x64, macos-arm64, windows-x64 (no free GHA linux/windows arm64) |
 | Changelog config | [`.github/release.yml`](../../.github/release.yml) excludes `release-sync` + bot authors |
 

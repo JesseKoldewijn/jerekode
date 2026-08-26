@@ -29,4 +29,5 @@ _upstream-opencode/
 
 # Build artifacts
 dist/
+packaging/.staging-*/
 *.log

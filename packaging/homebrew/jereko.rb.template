@@ -1,0 +1,26 @@
+# Homebrew formula template — copy to tap as jereko.rb and set version/sha256.
+class Jereko < Formula
+  desc "Rust port of OpenCode — OpenCode-compatible AI coding agent runtime"
+  homepage "https://github.com/JesseKoldewijn/jerekode"
+  version "{{VERSION}}"
+  license "MIT"
+
+  on_macos do
+    if Hardware::CPU.intel?
+      url "https://github.com/JesseKoldewijn/jerekode/releases/download/v{{VERSION}}/jereko-{{VERSION}}-release-macos-x64.tar.gz"
+      sha256 "{{SHA256_MACOS_X64}}"
+    end
+    if Hardware::CPU.arm?
+      url "https://github.com/JesseKoldewijn/jerekode/releases/download/v{{VERSION}}/jereko-{{VERSION}}-release-macos-arm64.tar.gz"
+      sha256 "{{SHA256_MACOS_ARM64}}"
+    end
+  end
+
+  def install
+    bin.install "jereko"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/jereko version")
+  end
+end

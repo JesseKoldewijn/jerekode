@@ -45,7 +45,7 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 - [x] Delete any remaining remote/local `v0.1.*` tags.
 - [x] PR: `scripts/set-version.sh 0.0.1` + doc example updates + `[skip release]`.
 - [x] Close stale `release/sync-0.1.*` PRs/branches.
-- [ ] First clean release under new notes policy (`v0.0.1` or first post-cutover auto tag).
+- [x] First clean release under new notes policy (`v0.0.3`+ on sequential `0.0.x` line).
 
 ### P0c — Post-wipe version policy (pick one)
 
@@ -69,23 +69,26 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 ## P2 — Real installers (full variant first)
 
-| OS | Ship |
-|----|------|
-| Windows | NSIS setup exe (+ keep zip) |
+| OS / distro | Ship |
+|-------------|------|
+| Windows | NSIS setup exe (+ keep zip) + stable `jereko-x64-setup.exe` alias |
 | macOS | `.pkg` unsigned (+ keep tarball) |
-| Linux | `.deb`, `.rpm`, AppImage |
+| Linux (Debian/Ubuntu) | `.deb` |
+| Linux (Fedora/RHEL) | `.rpm` |
+| Linux (generic) | AppImage |
+| **Linux (Arch)** | **`.pkg.tar.zst`** on GitHub Releases + AUR PKGBUILD (P3) |
 
-- [ ] Evaluate cargo-dist vs cargo-packager vs nfpm for a Rust CLI.
-- [ ] Installer matrix initially **full** builds only; native-only installers follow once names/UX are stable.
-- [ ] Update [releases.md](./releases.md) / [distribution.md](./distribution.md) download tables.
+- [x] Evaluate cargo-dist vs cargo-packager vs nfpm for a Rust CLI — **nfpm + NSIS + pkgbuild + AppImageKit + Arch makepkg (Docker)** in [`scripts/package-installers.sh`](../scripts/package-installers.sh).
+- [x] Installer matrix initially **full** builds only; native-only installers follow once names/UX are stable.
+- [x] Update [releases.md](./releases.md) download tables.
 
 ---
 
 ## P3 — Package-manager distribution
 
-- [ ] Homebrew tap (name TBD).
-- [ ] winget manifest (and optional scoop).
-- [ ] AUR `PKGBUILD` (community or official).
+- [ ] Homebrew tap (template: [`packaging/homebrew/jereko.rb.template`](../packaging/homebrew/jereko.rb.template)).
+- [ ] winget manifest (template: [`packaging/winget/jereko.yaml.template`](../packaging/winget/jereko.yaml.template)).
+- [x] AUR `PKGBUILD` in-repo ([`packaging/arch/`](../packaging/arch/)); publish to AUR manually.
 - [ ] In-repo **Nix flake** (cheap; good for NixOS users).
 - [ ] Expand native-only to macos + arm64 as demand warrants.
 - [ ] Revisit **bundling Bun** inside full installers (default remains system Bun).
@@ -131,7 +134,7 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 1. ~~**Confirm destructive wipe** of all pre-reset GitHub Releases and `v0.1.*` tags?~~ **Done** (maintainer-approved; executed with P0 cutover).
 2. Any **mirrors**, forks, or downstream pins of `v0.1.*` assets? *(accepted break for pre-1.0; no known pins)*
-3. After wipe: keep **0.0.\<run_number\>** or move to **conventional-commit semver**? **Chose A** (`0.0.<run_number>` + filtered notes); B remains long-term option.
+3. After wipe: keep **sequential `0.0.<N+1>`** from Cargo.toml or move to **conventional-commit semver**? **Chose A** (sequential patches + filtered notes); B remains long-term option.
 
 ### Packaging / signing
 
