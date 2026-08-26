@@ -59,13 +59,14 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | **4** | WasmPluginHost, MCP/LSP/PTY, SQLite persistence | Partial (SQLite real; WASM load; MCP/LSP/PTY seams) |
 | **5** | Native TUI plugins; perf baseline; `native-tui` feature | Partial (ratatui stub + Criterion benches) |
 
-**What's next:** Incremental depth only — see remaining gaps in [docs/roadmap-remaining.md](docs/roadmap-remaining.md) (streaming providers, full MCP/LSP/PTY protocols, WASI hook ABI, portable-pty, 75+ providers).
+**What's next:** True OpenCode / opencode2 parity — see [docs/roadmap-parity.md](docs/roadmap-parity.md). Foundation status: [docs/roadmap-remaining.md](docs/roadmap-remaining.md).
 
 Detailed design: [docs/architecture.md](docs/architecture.md).  
 Testing approach: [docs/conformance.md](docs/conformance.md).  
 Engineering standards: [docs/development.md](docs/development.md).  
 Releases & `/build`: [docs/releases.md](docs/releases.md).  
-Remaining work: [docs/roadmap-remaining.md](docs/roadmap-remaining.md).
+Parity plan: [docs/roadmap-parity.md](docs/roadmap-parity.md).  
+Foundation remaining: [docs/roadmap-remaining.md](docs/roadmap-remaining.md).
 
 ## Architecture Decisions
 

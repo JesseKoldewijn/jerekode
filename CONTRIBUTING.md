@@ -32,6 +32,17 @@ Enable under **Settings → Branches → Branch protection rules** (or Rulesets)
 | Allow auto-merge | **On** — used by release sync PRs |
 | Allow specified actors to bypass | Org plans only — personal repos: sync PR + auto-merge or `RELEASE_PUSH_TOKEN` |
 
+### Required Actions permissions (release sync PRs)
+
+Under **Settings → Actions → General → Workflow permissions**:
+
+| Setting | Required |
+|---------|----------|
+| Workflow permissions | **Read and write** |
+| Allow GitHub Actions to create and approve pull requests | **On** |
+
+Without these, the Release job can push `release/sync-*` but cannot open the sync PR (`createPullRequest` GraphQL error). Optional secret `RELEASE_PUSH_TOKEN` (admin PAT) bypasses that path by pushing the bump to `main` directly.
+
 If the repository plan does not allow required status checks, still require PRs and disallow force pushes/deletions.
 
 ## Local checks

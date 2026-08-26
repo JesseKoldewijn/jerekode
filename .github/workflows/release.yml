@@ -99,12 +99,18 @@ jobs:
             else
               local body
               body="Auto version bump from the Release workflow after merge to main (label \`release-sync\`). Keeps Cargo.toml aligned with ${tag}. Commit/title include \`[skip release]\` so merging does not start another release. Auto-merge (squash) is enabled; merges when required checks pass. Build/publish in this run uses the bumped commit and does not wait for the sync PR."
-              pr_url="$(gh pr create \
+              # Requires repo setting: Actions → General → Workflow permissions →
+              # "Allow GitHub Actions to create and approve pull requests" (write).
+              if ! pr_url="$(gh pr create \
                 --base main \
                 --head "${branch}" \
                 --title "chore: release ${tag} [skip release]" \
                 --label release-sync \
-                --body "${body}")"
+                --body "${body}" 2>&1)"; then
+                echo "::warning::Failed to open sync PR for ${branch}: ${pr_url}"
+                echo "::warning::Enable Settings → Actions → General → 'Allow GitHub Actions to create and approve pull requests', or set RELEASE_PUSH_TOKEN. Branch was pushed; open the PR manually. Continuing build/publish from bumped SHA."
+                return 0
+              fi
               echo "Opened sync PR: ${pr_url}"
             fi
 
@@ -131,22 +137,29 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-            if git diff --quiet; then
+            # Scope the dirty check to version files only. A whole-tree
+            # `git diff --quiet` fails on CRLF noise in the working copy and
+            # then `git commit` errors with "nothing to commit".
+            if git diff --quiet -- Cargo.toml Cargo.lock; then
               echo "Version already ${VERSION}; reusing HEAD"
             else
               git add Cargo.toml Cargo.lock
-              # [skip release] so a sync-PR squash/merge does not re-trigger Release.
-              git commit -m "chore: release ${TAG} [skip release]"
-
-              if [[ "${HAS_PUSH_TOKEN}" == "true" ]] && git push origin HEAD:main; then
-                echo "Pushed version bump to main via RELEASE_PUSH_TOKEN (PromptComposer-style)."
+              if git diff --cached --quiet; then
+                echo "Version already ${VERSION} after normalize; reusing HEAD"
               else
-                if [[ "${HAS_PUSH_TOKEN}" == "true" ]]; then
-                  echo "::warning::RELEASE_PUSH_TOKEN push to main failed; falling back to sync PR + auto-merge."
+                # [skip release] so a sync-PR squash/merge does not re-trigger Release.
+                git commit -m "chore: release ${TAG} [skip release]"
+
+                if [[ "${HAS_PUSH_TOKEN}" == "true" ]] && git push origin HEAD:main; then
+                  echo "Pushed version bump to main via RELEASE_PUSH_TOKEN (PromptComposer-style)."
                 else
-                  echo "Using sync PR + auto-merge (branch protection / no RELEASE_PUSH_TOKEN)."
+                  if [[ "${HAS_PUSH_TOKEN}" == "true" ]]; then
+                    echo "::warning::RELEASE_PUSH_TOKEN push to main failed; falling back to sync PR + auto-merge."
+                  else
+                    echo "Using sync PR + auto-merge (branch protection / no RELEASE_PUSH_TOKEN)."
+                  fi
+                  open_sync_pr_with_automerge "${VERSION}" "${TAG}"
                 fi
-                open_sync_pr_with_automerge "${VERSION}" "${TAG}"
               fi
             fi
           elif [[ "${EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
