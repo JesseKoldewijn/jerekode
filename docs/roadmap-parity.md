@@ -17,9 +17,9 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 | P0b | Wire tools into HTTP `/v1|/v2/tools/execute` | Done | #12 |
 | P1a | Provider streaming seam (`complete_stream` / SSE) | In progress | this PR |
 | P1b | Bun sidecar loads/runs real plugins + hook fixtures | Done | #15 |
-| P2a | MCP depth beyond list_tools | Pending | — |
-| P2b | LSP depth beyond initialize stub | Pending | — |
-| P2c | portable-pty OS I/O | Pending | — |
+| P2a | MCP depth beyond list_tools | In progress | this PR |
+| P2b | LSP depth beyond initialize stub | In progress | this PR |
+| P2c | portable-pty OS I/O | In progress | this PR |
 | P2d | WASM WASI hook ABI | Pending | — |
 | P3a | HTTP v1/v2 surface expansion via fixtures | Pending | — |
 | P3b | More providers (incremental registry growth) | Pending | — |
