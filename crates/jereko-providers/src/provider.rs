@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use jereko_core::Message;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::sync::Arc;
 
 /// Stable provider identifier (e.g. `"anthropic"`, `"openai"`, `"ollama"`).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -45,9 +46,6 @@ pub struct CompletionResponse {
 }
 
 /// Trait implemented by each LLM provider adapter.
-///
-/// Designed for 75+ providers: keep implementations thin; shared HTTP/auth
-/// utilities will live in submodules as the registry grows.
 #[async_trait]
 pub trait Provider: Send + Sync {
     fn id(&self) -> &ProviderId;
@@ -58,7 +56,6 @@ pub trait Provider: Send + Sync {
 
     async fn complete(&self, request: CompletionRequest) -> ProviderResult<CompletionResponse>;
 
-    /// Optional health check for provider availability.
     async fn health_check(&self) -> ProviderResult<()> {
         Ok(())
     }
@@ -108,6 +105,87 @@ impl Provider for StubProvider {
     }
 }
 
+/// Shared HTTP client seam for provider adapters (mockable in tests).
+#[async_trait]
+pub trait HttpClient: Send + Sync {
+    async fn request_json(
+        &self,
+        method: &str,
+        url: &str,
+        headers: &[(&str, String)],
+        body: Option<serde_json::Value>,
+    ) -> ProviderResult<serde_json::Value>;
+}
+
+/// Default reqwest-backed HTTP client.
+#[derive(Clone, Default)]
+pub struct ReqwestHttpClient {
+    client: reqwest::Client,
+}
+
+impl ReqwestHttpClient {
+    pub fn new() -> Self {
+        Self {
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl HttpClient for ReqwestHttpClient {
+    async fn request_json(
+        &self,
+        method: &str,
+        url: &str,
+        headers: &[(&str, String)],
+        body: Option<serde_json::Value>,
+    ) -> ProviderResult<serde_json::Value> {
+        let mut req = match method {
+            "GET" => self.client.get(url),
+            "POST" => self.client.post(url),
+            other => {
+                return Err(ProviderError::ProviderFailure {
+                    provider: "http".into(),
+                    message: format!("unsupported method {other}"),
+                })
+            }
+        };
+        for (k, v) in headers {
+            req = req.header(*k, v);
+        }
+        if let Some(body) = body {
+            req = req.json(&body);
+        }
+        let response = req
+            .send()
+            .await
+            .map_err(|e| ProviderError::ProviderFailure {
+                provider: "http".into(),
+                message: e.to_string(),
+            })?;
+        let status = response.status();
+        let text = response
+            .text()
+            .await
+            .map_err(|e| ProviderError::ProviderFailure {
+                provider: "http".into(),
+                message: e.to_string(),
+            })?;
+        if !status.is_success() {
+            return Err(ProviderError::ProviderFailure {
+                provider: "http".into(),
+                message: format!("HTTP {status}: {text}"),
+            });
+        }
+        serde_json::from_str(&text).map_err(|e| ProviderError::ProviderFailure {
+            provider: "http".into(),
+            message: format!("invalid JSON: {e}"),
+        })
+    }
+}
+
+pub type SharedHttpClient = Arc<dyn HttpClient>;
+
 /// Resolve a provider from a registry by id string.
 pub fn resolve<'a>(
     registry: &'a crate::registry::ProviderRegistry,
@@ -116,4 +194,11 @@ pub fn resolve<'a>(
     registry
         .get(id)
         .ok_or_else(|| ProviderError::NotFound(id.into()))
+}
+
+pub fn env_api_key(var: &str) -> ProviderResult<String> {
+    std::env::var(var).map_err(|_| ProviderError::ProviderFailure {
+        provider: var.into(),
+        message: format!("missing API key env var {var}"),
+    })
 }

@@ -1,10 +1,12 @@
+use crate::anthropic::AnthropicProvider;
 use crate::error::{ProviderError, ProviderResult};
-use crate::provider::{Provider, ProviderId, StubProvider};
+use crate::ollama::OllamaProvider;
+use crate::openai::OpenAiProvider;
+use crate::provider::{Provider, ProviderId, ReqwestHttpClient, StubProvider};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// Thread-safe provider registry supporting 75+ built-in and plugin providers.
-///
-/// Lookup is O(1) by provider id. Registration order is preserved for listing.
 pub struct ProviderRegistry {
     providers: HashMap<String, Box<dyn Provider>>,
     registration_order: Vec<String>,
@@ -18,12 +20,22 @@ impl ProviderRegistry {
         }
     }
 
-    /// Create a registry pre-populated with stub providers for scaffolding.
+    /// Registry with stub providers (tests / offline).
     pub fn with_stubs() -> Self {
         let mut registry = Self::new();
         for id in ["openai", "anthropic", "ollama"] {
             let _ = registry.register(Box::new(StubProvider::new(id)));
         }
+        registry
+    }
+
+    /// Registry with real HTTP providers (OpenAI, Anthropic, Ollama).
+    pub fn with_defaults() -> Self {
+        let http = Arc::new(ReqwestHttpClient::new());
+        let mut registry = Self::new();
+        let _ = registry.register(Box::new(OpenAiProvider::new(http.clone())));
+        let _ = registry.register(Box::new(AnthropicProvider::new(http.clone())));
+        let _ = registry.register(Box::new(OllamaProvider::new(http)));
         registry
     }
 
@@ -73,5 +85,12 @@ mod tests {
         assert_eq!(registry.len(), 3);
         assert!(registry.get("openai").is_some());
         assert!(registry.get("unknown").is_none());
+    }
+
+    #[test]
+    fn defaults_register_three_real_providers() {
+        let registry = ProviderRegistry::with_defaults();
+        assert_eq!(registry.len(), 3);
+        assert_eq!(registry.get("openai").unwrap().display_name(), "OpenAI");
     }
 }
