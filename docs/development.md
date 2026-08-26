@@ -14,16 +14,16 @@ Prefer `cargo +stable …` locally if your default rustc is a nightly mismatch w
 ## Commands
 
 ```bash
-cargo fmt --check
+cargo fmt --all -- --check
 cargo clippy --all-targets --all-features --locked -- -D warnings
-cargo test --locked
+cargo test --workspace --locked
 cargo build -p jereko-cli --release
 ```
 
-Sidecar:
+Sidecar (matches CI `bun-sidecar` job):
 
 ```bash
-cd sidecar && bun install && bun test
+cd sidecar && bun install && bun run check && bun test
 ```
 
 Optional native TUI:
