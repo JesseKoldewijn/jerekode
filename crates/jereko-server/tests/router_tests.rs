@@ -215,3 +215,99 @@ async fn extensions_mcp_call_and_lsp_hover() {
         .unwrap();
     assert_eq!(hover.status(), StatusCode::OK);
 }
+
+#[tokio::test]
+async fn session_list_get_delete_via_router() {
+    let app = build_router(AppState::default());
+
+    let create = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v2/sessions")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    load_json("v2/create_session_request.json").to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create.status(), StatusCode::CREATED);
+    let create_body = create.into_body().collect().await.unwrap().to_bytes();
+    let session: Value = serde_json::from_slice(&create_body).unwrap();
+    let session_id = session["session"]["id"].as_str().unwrap().to_string();
+
+    let send = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/v2/sessions/{session_id}/messages"))
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    load_json("v2/send_message_request.json").to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(send.status(), StatusCode::OK);
+
+    let listed = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(format!("/v2/sessions/{session_id}/messages"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(listed.status(), StatusCode::OK);
+    let listed_body = listed.into_body().collect().await.unwrap().to_bytes();
+    let listed_json: Value = serde_json::from_slice(&listed_body).unwrap();
+    assert_eq!(listed_json["messages"].as_array().unwrap().len(), 2);
+    let _shape = load_json("v2/list_messages_response_shape.json");
+
+    let sessions = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/v2/sessions")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sessions.status(), StatusCode::OK);
+    let sessions_body = sessions.into_body().collect().await.unwrap().to_bytes();
+    let sessions_json: Value = serde_json::from_slice(&sessions_body).unwrap();
+    let ids = sessions_json["sessions"].as_array().unwrap();
+    assert!(ids.iter().any(|v| v.as_str() == Some(session_id.as_str())));
+
+    let deleted = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri(format!("/v2/sessions/{session_id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(deleted.status(), StatusCode::NO_CONTENT);
+
+    let gone = app
+        .oneshot(
+            Request::builder()
+                .uri(format!("/v2/sessions/{session_id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(gone.status(), StatusCode::NOT_FOUND);
+}

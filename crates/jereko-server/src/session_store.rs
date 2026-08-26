@@ -7,6 +7,8 @@ pub trait SessionStorePort: Send + Sync {
     fn insert(&self, session: Session) -> SessionId;
     fn get(&self, id: &SessionId) -> Option<Session>;
     fn update(&self, session: Session) -> bool;
+    fn delete(&self, id: &SessionId) -> bool;
+    fn list_ids(&self) -> Vec<SessionId>;
     fn len(&self) -> usize;
     fn is_empty(&self) -> bool {
         self.len() == 0
@@ -49,6 +51,24 @@ impl SessionStorePort for SessionStore {
             .expect("session store lock poisoned")
             .insert(session.id.0.clone(), session)
             .is_some()
+    }
+
+    fn delete(&self, id: &SessionId) -> bool {
+        self.inner
+            .write()
+            .expect("session store lock poisoned")
+            .remove(&id.0)
+            .is_some()
+    }
+
+    fn list_ids(&self) -> Vec<SessionId> {
+        self.inner
+            .read()
+            .expect("session store lock poisoned")
+            .keys()
+            .cloned()
+            .map(SessionId)
+            .collect()
     }
 
     fn len(&self) -> usize {

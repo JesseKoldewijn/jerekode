@@ -11,14 +11,14 @@ use axum::{
     extract::{Path, State},
     http::{HeaderMap, HeaderValue, StatusCode},
     response::IntoResponse,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/sessions", post(create_session))
-        .route("/sessions/{id}", get(get_session))
-        .route("/sessions/{id}/messages", post(send_message))
+        .route("/sessions", get(list_sessions).post(create_session))
+        .route("/sessions/{id}", get(get_session).delete(delete_session))
+        .route("/sessions/{id}/messages", get(list_messages).post(send_message))
         .route("/sessions/{id}/messages/stream", post(send_message_stream))
         .route("/providers", get(list_providers))
         .route("/tools/execute", post(execute_tool))
@@ -98,6 +98,27 @@ async fn execute_tool(
         StatusCode::BAD_REQUEST
     };
     (status, Json(result)).into_response()
+}
+
+
+
+async fn list_sessions(State(state): State<AppState>) -> impl IntoResponse {
+    let ids = state.ctx.list_sessions();
+    (StatusCode::OK, Json(serde_json::json!({ "sessions": ids }))).into_response()
+}
+
+async fn list_messages(State(state): State<AppState>, Path(id): Path<String>) -> impl IntoResponse {
+    match state.ctx.list_messages(&id) {
+        Ok(messages) => (StatusCode::OK, Json(serde_json::json!({ "messages": messages }))).into_response(),
+        Err(e) => map_error(e),
+    }
+}
+
+async fn delete_session(State(state): State<AppState>, Path(id): Path<String>) -> impl IntoResponse {
+    match state.ctx.delete_session(&id) {
+        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Err(e) => map_error(e),
+    }
 }
 
 fn map_error(err: HandlerError) -> axum::response::Response {
