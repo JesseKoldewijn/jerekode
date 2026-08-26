@@ -55,6 +55,8 @@ cargo bench -p jereko-core --bench hot_paths
 
 PR and `main` pushes run `.github/workflows/ci.yml` jobs `rust` and `bun-sidecar` (required on `main`). No path filters — see [CONTRIBUTING.md](../CONTRIBUTING.md#ci-on-pull-requests).
 
+PRs also run `.github/workflows/coverage.yml`: Rust **diff coverage** vs `origin/main` (default gate **80%** of changed lines), sticky PR comment with uncovered regions, and informational Bun coverage. See [conformance.md](./conformance.md#coverage-gate-ci).
+
 ## TDD at seams
 
 Follow [.agents/skills/tdd/SKILL.md](../.agents/skills/tdd/SKILL.md):

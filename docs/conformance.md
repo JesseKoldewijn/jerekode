@@ -111,6 +111,27 @@ These live in `crates/jereko-cli/tests/cli_smoke.rs` and run under `cargo test -
 - Prefer shape fixtures when dynamic fields (ids, timestamps) appear.
 - No upstream OpenCode source trees or generated dumps as fixtures.
 
+
+## Coverage gate (CI)
+
+Pull requests to `main` run `.github/workflows/coverage.yml`, which:
+
+1. Collects Rust workspace coverage via `cargo llvm-cov` (LCOV).
+2. Computes **diff coverage** of changed lines vs `origin/main` with `diff-cover`.
+3. **Fails** when changed-line coverage is below **80%** (override locally with `DIFF_COVERAGE_FAIL_UNDER`).
+4. Upserts a **sticky PR comment** (`<!-- jereko-coverage-sticky -->`) with the summary, uncovered changed regions, and informational Bun coverage for `packages/rtk` + `sidecar`.
+
+Whole-repo floor is intentionally not enforced — the gate is on **new/changed lines**. Reports also appear in the Actions job summary and as the `coverage-reports` artifact.
+
+Local preview:
+
+```bash
+cargo install cargo-llvm-cov
+cargo build -p jereko-test-native-plugin --locked
+cargo build -p jereko-rtk-plugin --locked
+./scripts/coverage.sh
+```
+
 ## Related
 
 - [architecture.md](./architecture.md)
