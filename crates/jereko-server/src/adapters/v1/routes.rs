@@ -5,12 +5,13 @@ use crate::adapters::v1::{
     normalize_send_message,
 };
 use crate::handlers::HandlerError;
+use crate::sse::format_completion_sse;
 use crate::state::AppState;
 use crate::tools::{ToolCall, ToolResult};
 use axum::{
     Json, Router,
     extract::{Path, State},
-    http::StatusCode,
+    http::{HeaderMap, HeaderValue, StatusCode},
     response::IntoResponse,
     routing::{get, post},
 };
@@ -20,6 +21,7 @@ pub fn router() -> Router<AppState> {
         .route("/session", post(create_session))
         .route("/session/{id}", get(get_session))
         .route("/session/{id}/message", post(send_message))
+        .route("/session/{id}/message/stream", post(send_message_stream))
         .route("/providers", get(list_providers))
         .route("/tools/execute", post(execute_tool))
 }
@@ -60,6 +62,30 @@ async fn send_message(
         Ok(resp) => {
             let v1 = denormalize_send_message(resp);
             (StatusCode::OK, Json(v1)).into_response()
+        }
+        Err(e) => map_error(e),
+    }
+}
+
+async fn send_message_stream(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(req): Json<V1SendMessageRequest>,
+) -> impl IntoResponse {
+    let content = normalize_send_message(req);
+    match state.ctx.send_message_stream(&id, content).await {
+        Ok(result) => {
+            let body = format_completion_sse(&result.chunks, &result.assistant_message);
+            let mut headers = HeaderMap::new();
+            headers.insert(
+                axum::http::header::CONTENT_TYPE,
+                HeaderValue::from_static("text/event-stream"),
+            );
+            headers.insert(
+                axum::http::header::CACHE_CONTROL,
+                HeaderValue::from_static("no-cache"),
+            );
+            (StatusCode::OK, headers, body).into_response()
         }
         Err(e) => map_error(e),
     }

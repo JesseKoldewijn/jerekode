@@ -6,16 +6,18 @@ mod ollama;
 mod openai;
 mod provider;
 mod registry;
+mod stream;
 
 pub use anthropic::AnthropicProvider;
 pub use error::{ProviderError, ProviderResult};
 pub use ollama::OllamaProvider;
 pub use openai::OpenAiProvider;
 pub use provider::{
-    CompletionRequest, CompletionResponse, HttpClient, ModelInfo, Provider, ProviderId,
-    ReqwestHttpClient, SharedHttpClient, StubProvider, env_api_key, resolve,
+    CompletionChunk, CompletionRequest, CompletionResponse, HttpClient, ModelInfo, Provider,
+    ProviderId, ReqwestHttpClient, SharedHttpClient, StubProvider, env_api_key, resolve,
 };
 pub use registry::ProviderRegistry;
+pub use stream::{parse_anthropic_sse, parse_ollama_ndjson, parse_openai_sse};
 
 #[cfg(test)]
 mod http_tests {
@@ -43,6 +45,20 @@ mod http_tests {
         ) -> ProviderResult<serde_json::Value> {
             self.calls.lock().unwrap().push(format!("{method} {url}"));
             self.inner.request_json(method, url, headers, body).await
+        }
+
+        async fn request_text(
+            &self,
+            method: &str,
+            url: &str,
+            headers: &[(&str, String)],
+            body: Option<serde_json::Value>,
+        ) -> ProviderResult<String> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(format!("{method} TEXT {url}"));
+            self.inner.request_text(method, url, headers, body).await
         }
     }
 
@@ -80,6 +96,51 @@ mod http_tests {
             .await
             .unwrap();
         assert_eq!(response.content, "hello from openai");
+        unsafe {
+            std::env::remove_var("OPENAI_API_KEY");
+        }
+    }
+
+    #[tokio::test]
+    async fn openai_complete_stream_against_wiremock() {
+        let server = MockServer::start().await;
+        let sse = "data: {\"choices\":[{\"delta\":{\"content\":\"hel\"},\"finish_reason\":null}]}\n\n\
+data: {\"choices\":[{\"delta\":{\"content\":\"lo\"},\"finish_reason\":null}]}\n\n\
+data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n\
+data: [DONE]\n\n";
+        Mock::given(method("POST"))
+            .and(path("/v1/chat/completions"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .insert_header("content-type", "text/event-stream")
+                    .set_body_string(sse),
+            )
+            .mount(&server)
+            .await;
+
+        unsafe {
+            std::env::set_var("OPENAI_API_KEY", "test-key");
+        }
+        let http = Arc::new(ReqwestHttpClient::new());
+        let provider = OpenAiProvider::new(http).with_base_url(format!("{}/v1", server.uri()));
+        let chunks = provider
+            .complete_stream(CompletionRequest {
+                model: "gpt-4o-mini".into(),
+                messages: vec![Message {
+                    role: MessageRole::User,
+                    content: "hi".into(),
+                    provider: None,
+                }],
+                max_tokens: None,
+            })
+            .await
+            .unwrap();
+        let text: String = chunks.iter().map(|c| c.delta.as_str()).collect();
+        assert_eq!(text, "hello");
+        assert_eq!(
+            chunks.last().unwrap().finish_reason.as_deref(),
+            Some("stop")
+        );
         unsafe {
             std::env::remove_var("OPENAI_API_KEY");
         }
@@ -150,6 +211,34 @@ mod http_tests {
     }
 
     #[tokio::test]
+    async fn ollama_complete_stream_against_wiremock() {
+        let server = MockServer::start().await;
+        let ndjson = "{\"message\":{\"content\":\"hi\"},\"done\":false}\n{\"message\":{\"content\":\"!\"},\"done\":true}\n";
+        Mock::given(method("POST"))
+            .and(path("/api/chat"))
+            .respond_with(ResponseTemplate::new(200).set_body_string(ndjson))
+            .mount(&server)
+            .await;
+
+        let http = Arc::new(ReqwestHttpClient::new());
+        let provider = OllamaProvider::new(http).with_base_url(server.uri());
+        let chunks = provider
+            .complete_stream(CompletionRequest {
+                model: "llama3.2".into(),
+                messages: vec![Message {
+                    role: MessageRole::User,
+                    content: "hi".into(),
+                    provider: None,
+                }],
+                max_tokens: None,
+            })
+            .await
+            .unwrap();
+        let text: String = chunks.iter().map(|c| c.delta.as_str()).collect();
+        assert_eq!(text, "hi!");
+    }
+
+    #[tokio::test]
     async fn recording_client_tracks_calls() {
         let server = MockServer::start().await;
         Mock::given(method("GET"))
@@ -169,5 +258,24 @@ mod http_tests {
         assert_eq!(models[0].id, "llama3.2");
         assert!(!http.calls.lock().unwrap().is_empty());
         let _map: HashMap<(), ()> = HashMap::new();
+    }
+
+    #[tokio::test]
+    async fn stub_complete_stream_single_chunk() {
+        let provider = StubProvider::new("openai");
+        let chunks = provider
+            .complete_stream(CompletionRequest {
+                model: "stub-model".into(),
+                messages: vec![Message {
+                    role: MessageRole::User,
+                    content: "hi".into(),
+                    provider: None,
+                }],
+                max_tokens: None,
+            })
+            .await
+            .unwrap();
+        assert_eq!(chunks.len(), 1);
+        assert!(chunks[0].delta.contains("stub:openai"));
     }
 }

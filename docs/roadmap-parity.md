@@ -12,10 +12,10 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 
 | ID | Slice | Status | PR |
 |----|-------|--------|-----|
-| R0 | Release pipeline green on main (Actions PR perms + sync resilience) | In progress | #5 synced; #6 harden; #7 sync 0.1.6 |
+| R0 | Release pipeline green on main (Actions PR perms + sync resilience) | Done | #5–#11; v0.1.8 |
 | P0a | CI hard-gates: Bun IPC + native dylib (no soft-skip) | Done | #8 |
-| P0b | Wire tools into HTTP `/v1|/v2/tools/execute` | In progress | this PR |
-| P1a | Provider streaming seam (`complete_stream` / SSE) | Pending | — |
+| P0b | Wire tools into HTTP `/v1|/v2/tools/execute` | Done | #12 |
+| P1a | Provider streaming seam (`complete_stream` / SSE) | In progress | this PR |
 | P1b | Bun sidecar loads/runs real plugins + hook fixtures | Pending | — |
 | P2a | MCP depth beyond list_tools | Pending | — |
 | P2b | LSP depth beyond initialize stub | Pending | — |
@@ -38,7 +38,7 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 | Native plugins | libloading works; test soft-skips if dylib missing | Prebuild test cdylib in CI; hard-fail |
 | Sidecar plugins | Echo/log only — does not load plugin modules | Load config plugins; dispatch hooks; fixture parity |
 | Tools | `read`/`write`/`edit`/`bash`/`grep` library only | Wired into session/message agent loop + fixtures |
-| Providers | OpenAI / Anthropic / Ollama request-response | Streaming + growing matrix toward 75+ |
+| Providers | OpenAI / Anthropic / Ollama + `complete_stream` + SSE HTTP | Growing matrix toward 75+ |
 | MCP / LSP / PTY | Status seams + stubs | Real protocol depth (call_tool, JSON-RPC methods, OS PTY) |
 | WASM | Load/validate | WASI hook invoke |
 | HTTP | Minimal v1/v2 session/message/providers | Full owned fixture surface |
