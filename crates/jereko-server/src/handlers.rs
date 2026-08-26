@@ -70,7 +70,11 @@ impl HandlerContext {
     }
 
     pub fn list_sessions(&self) -> Vec<String> {
-        self.sessions.list_ids().into_iter().map(|id| id.0).collect()
+        self.sessions
+            .list_ids()
+            .into_iter()
+            .map(|id| id.0)
+            .collect()
     }
 
     pub async fn send_message(
