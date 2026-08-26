@@ -9,6 +9,7 @@ pub mod error;
 pub mod extensions;
 pub mod handlers;
 pub mod persistence;
+pub mod policy;
 pub mod router;
 pub mod session_store;
 pub mod sse;
