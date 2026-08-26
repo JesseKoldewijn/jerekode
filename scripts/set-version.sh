@@ -2,7 +2,7 @@
 # Read or bump workspace package version for CI releases (PromptComposer-style).
 # Usage:
 #   ./scripts/set-version.sh --print     # print workspace.package.version
-#   ./scripts/set-version.sh 0.1.42     # set version (LF-normalized write)
+#   ./scripts/set-version.sh 0.0.42     # set version (LF-normalized write)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

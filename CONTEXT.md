@@ -67,7 +67,7 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | WASM | Module load + `jereko_hook` ABI |
 | MCP / LSP / PTY | call_tool, initialize/hover, portable-pty I/O |
 | TUI | Bun `jereko run` default; optional `native-tui` interactive MVP |
-| Release | Auto-release on `main` merge (`0.1.<run_number>` today); archives only — see [roadmap-releases.md](docs/roadmap-releases.md) |
+| Release | Auto-release on `main` merge (`0.0.<run_number>` after wipe; seed `0.0.1`); archives only — see [roadmap-releases.md](docs/roadmap-releases.md) |
 
 Historical phase notes and foundation archive: [docs/roadmap-remaining.md](docs/roadmap-remaining.md).  
 Closed parity checklist: [docs/roadmap-parity.md](docs/roadmap-parity.md).  

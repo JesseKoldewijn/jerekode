@@ -1,15 +1,19 @@
 name: Release
 
 # Auto-release on every push/merge to main (PromptComposer-style): bump to
-# 0.1.<run_number>, commit, build multi-platform binaries, publish GitHub Release.
+# 0.0.<run_number>, commit, build multi-platform binaries, publish GitHub Release.
+# Workspace seed after history wipe is 0.0.1; subsequent run numbers may skip.
 # Also supports tag push (v*) and workflow_dispatch.
 # PR builds live in pr-build.yml and never create releases.
 # Include [skip release] in a commit message to skip the main-push path.
 #
 # With branch protection (require PR), the default path is:
-#   bump on release/sync-0.1.N → open labeled sync PR → enable auto-merge →
+#   bump on release/sync-0.0.N → open labeled sync PR → enable auto-merge →
 #   build/publish from the bumped commit (does not wait for the sync PR).
 # Optional secret RELEASE_PUSH_TOKEN (admin PAT) restores a direct push to main.
+#
+# Release notes: static install/artifact body + filtered GitHub notes since the
+# previous tag only (no unfiltered whole-history notes / New Contributors).
 
 on:
   push:
@@ -55,7 +59,7 @@ jobs:
           fetch-depth: 0
 
       - name: Resolve or bump version
-        id: ver
+        id: ve
         shell: bash
         env:
           INPUT_VERSION: ${{ inputs.version }}
@@ -129,8 +133,8 @@ jobs:
           fi
 
           if [[ "${EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/heads/main ]]; then
-            # PromptComposer-style: 0.1.<run_number> on every main merge.
-            VERSION="0.1.${RUN_NUMBER}"
+            # PromptComposer-style: 0.0.<run_number> on every main merge (post wipe).
+            VERSION="0.0.${RUN_NUMBER}"
             TAG="v${VERSION}"
             ./scripts/set-version.sh "${VERSION}"
 
@@ -246,7 +250,7 @@ jobs:
         with:
           name: jereko-${{ needs.prepare.outputs.version }}-release-${{ matrix.target_os }}-${{ matrix.arch }}
           path: dist/*
-          if-no-files-found: error
+          if-no-files-found: erro
           retention-days: 30
 
   publish:
@@ -270,30 +274,75 @@ jobs:
         shell: bash
         run: ls -la dist
 
+      - name: Build release notes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          SHA: ${{ needs.prepare.outputs.sha }}
+          SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/filter-release-notes.py
+
+          cat > /tmp/release-notes.md <<EOF
+          Release **jereko ${VERSION}** at \`${SHA}\` (\`${SHORT_SHA}\`).
+
+          ### Artifacts
+          Archives are named \`jereko-{version}-release-{os}-{arch}\` (\`.tar.gz\` on Unix, \`.zip\` on Windows) and include the \`jereko\` binary plus README/sidecar notes.
+
+          ### Platforms
+          - linux x64
+          - macos x64 / arm64
+          - windows x64
+
+          Bun sidecar sources are **not** bundled — see \`sidecar/README.md\` and [docs/releases.md](docs/releases.md).
+
+          Version \`0.0.<n>\` increases on every successful \`main\` auto-release (PromptComposer-style; cutover seed was \`0.0.1\`). Include \`[skip release]\` in a merge commit message to skip publishing.
+          EOF
+          # Strip the common leading indent from the heredoc above.
+          sed -i -E 's/^[[:space:]]{10}//' /tmp/release-notes.md
+
+          PREV_TAG="$(git tag -l 'v*' --sort=-version:refname | grep -vxF "${TAG}" | head -n1 || true)"
+          if [[ -n "${PREV_TAG}" ]]; then
+            echo "Previous tag for notes: ${PREV_TAG}"
+            FILTERED="$(
+              gh api \
+                --method POST \
+                -H "Accept: application/vnd.github+json" \
+                "/repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+                -f tag_name="${TAG}" \
+                -f target_commitish="${SHA}" \
+                -f previous_tag_name="${PREV_TAG}" \
+                --jq .body \
+                | ./scripts/filter-release-notes.py
+            )"
+            if [[ -n "${FILTERED}" ]]; then
+              printf '\n%s\n' "${FILTERED}" >> /tmp/release-notes.md
+            else
+              printf '\n### Changes\nAll generated notes were filtered (sync/bot/[skip release]). See history for %s.\n' "${TAG}" >> /tmp/release-notes.md
+            fi
+          else
+            echo "No previous v* tag; publishing static body only."
+            printf '\n### Changes\nFirst release on this version line (or no prior tag). See commit history for %s.\n' "${TAG}" >> /tmp/release-notes.md
+          fi
+
+          echo "----- release notes preview -----"
+          cat /tmp/release-notes.md
+          echo "---------------------------------"
+
       - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
           target_commitish: ${{ needs.prepare.outputs.sha }}
           name: jereko ${{ needs.prepare.outputs.version }}
-          generate_release_notes: true
+          generate_release_notes: false
           draft: false
           prerelease: ${{ contains(needs.prepare.outputs.version, '-') || contains(needs.prepare.outputs.version, 'alpha') || contains(needs.prepare.outputs.version, 'beta') || contains(needs.prepare.outputs.version, 'rc') }}
           files: dist/*
           fail_on_unmatched_files: true
-          body: |
-            Release **jereko ${{ needs.prepare.outputs.version }}** at `${{ needs.prepare.outputs.sha }}` (`${{ needs.prepare.outputs.short_sha }}`).
-
-            ### Artifacts
-            Archives are named `jereko-{version}-release-{os}-{arch}` (`.tar.gz` on Unix, `.zip` on Windows) and include the `jereko` binary plus README/sidecar notes.
-
-            ### Platforms
-            - linux x64
-            - macos x64 / arm64
-            - windows x64
-
-            Bun sidecar sources are **not** bundled — see `sidecar/README.md` and [docs/releases.md](docs/releases.md).
-
-            Version `0.1.<n>` increases on every successful `main` auto-release (same idea as PromptComposer) so upgrades stay monotonic. Include `[skip release]` in a merge commit message to skip publishing.
+          body_path: /tmp/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

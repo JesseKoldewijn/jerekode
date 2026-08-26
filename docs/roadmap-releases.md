@@ -3,7 +3,7 @@
 Phased plan for trustworthy changelogs, a clean version line, installers, and optional Bun-free builds. Decision record: [ADR 003](./adr/003-release-packaging-and-changelogs.md). Operational how-to today: [releases.md](./releases.md).
 
 **Status:** Active forward plan (parity board closed).
-**This document is planning.** Destructive wipe and dual-build Cargo features are **planned, not implemented**. Do not check wipe / dual-build items until they land. A few P0/P1 checklist rows below are already true in repo (static release body; archive naming) and are marked done.
+**This document tracks packaging work.** P0 notes fix + version wipe to **0.0.1** were executed (maintainer-approved). Dual-build Cargo features remain **planned, not implemented**.
 
 ## Goals
 
@@ -30,28 +30,28 @@ Do **not** publish installer matrices onto `v0.1.*` history you plan to delete. 
 
 ### P0a — Stop bad notes (code/workflow)
 
-- [ ] Turn off unfiltered `generate_release_notes: true` **or** drive notes via API with explicit `previous_tag_name`.
-- [ ] Add `.github/release.yml` exclusions: label `release-sync`, authors `github-actions[bot]` / bots, and ideally titles matching `[skip release]`.
-- [ ] Post-filter or omit **New Contributors** until stable.
-- [x] Keep a short static body (artifacts, platforms, Bun sidecar note) like PromptComposer’s install blurb. *(present in `release.yml`; still prepended to unfiltered auto notes)*
-- [ ] Temporarily pause auto-release or require `[skip release]` during the wipe PR window.
+- [x] Turn off unfiltered `generate_release_notes: true` **or** drive notes via API with explicit `previous_tag_name`.
+- [x] Add `.github/release.yml` exclusions: label `release-sync`, authors `github-actions[bot]` / bots, and ideally titles matching `[skip release]`.
+- [x] Post-filter or omit **New Contributors** until stable.
+- [x] Keep a short static body (artifacts, platforms, Bun sidecar note) like PromptComposer’s install blurb.
+- [x] Temporarily pause auto-release or require `[skip release]` during the wipe PR window.
 
 ### P0b — Version reset and history purge (destructive — confirm first)
 
 See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-release-history-purge) for the full checklist. Summary:
 
-- [ ] Maintainer confirmation (and mirrors check).
-- [ ] `gh release delete` all pre-reset releases (with tag cleanup).
-- [ ] Delete any remaining remote/local `v0.1.*` tags.
-- [ ] PR: `scripts/set-version.sh 0.0.1` + doc example updates + `[skip release]`.
-- [ ] Close stale `release/sync-0.1.*` PRs/branches.
+- [x] Maintainer confirmation (and mirrors check).
+- [x] `gh release delete` all pre-reset releases (with tag cleanup).
+- [x] Delete any remaining remote/local `v0.1.*` tags.
+- [x] PR: `scripts/set-version.sh 0.0.1` + doc example updates + `[skip release]`.
+- [x] Close stale `release/sync-0.1.*` PRs/branches.
 - [ ] First clean release under new notes policy (`v0.0.1` or first post-cutover auto tag).
 
 ### P0c — Post-wipe version policy (pick one)
 
 | Option | When to choose |
 |--------|----------------|
-| **A.** `0.0.<run_number>` + filtered notes | Keep PromptComposer-style every-merge releases |
+| **A.** `0.0.<run_number>` + filtered notes | Keep PromptComposer-style every-merge releases — **chosen for cutover** |
 | **B.** Conventional commits / release-please (recommended long-term) | Quality changelogs and intentional semver |
 
 **Avoid** returning to `0.1.<run_number>` after wiping `v0.1.*`.
@@ -129,9 +129,9 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 ### Version reset / history
 
-1. **Confirm destructive wipe** of all pre-reset GitHub Releases and `v0.1.*` tags?
-2. Any **mirrors**, forks, or downstream pins of `v0.1.*` assets?
-3. After wipe: keep **0.0.\<run_number\>** or move to **conventional-commit semver**?
+1. ~~**Confirm destructive wipe** of all pre-reset GitHub Releases and `v0.1.*` tags?~~ **Done** (maintainer-approved; executed with P0 cutover).
+2. Any **mirrors**, forks, or downstream pins of `v0.1.*` assets? *(accepted break for pre-1.0; no known pins)*
+3. After wipe: keep **0.0.\<run_number\>** or move to **conventional-commit semver**? **Chose A** (`0.0.<run_number>` + filtered notes); B remains long-term option.
 
 ### Packaging / signing
 

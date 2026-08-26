@@ -1,0 +1,11 @@
+# Filters used by GitHub release-note generation (API / softprops previous_tag).
+# Release workflow prefers generate_release_notes=false + explicit previous_tag_name
+# and post-filters New Contributors; this file still applies to generate-notes API.
+changelog:
+  exclude:
+    labels:
+      - release-sync
+    authors:
+      - github-actions[bot]
+      - dependabot[bot]
+      - dependabot
