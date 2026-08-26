@@ -77,8 +77,11 @@ OUT_DIR="$(cd "$OUT_DIR" && pwd)"
     if command -v zip >/dev/null 2>&1; then
       zip -9 -r "${OUT_DIR}/${ARCHIVE}" "$STEM"
     else
+      # Compress in-place then move. Git Bash `pwd` paths like /d/a/... are not
+      # valid PowerShell filesystem paths (become \d\a\...).
       powershell.exe -NoProfile -Command \
-        "Compress-Archive -Path '${STEM}' -DestinationPath '${OUT_DIR}/${ARCHIVE}' -Force"
+        "Compress-Archive -Path '${STEM}' -DestinationPath '${ARCHIVE}' -Force"
+      mv "${ARCHIVE}" "${OUT_DIR}/${ARCHIVE}"
     fi
   else
     ARCHIVE="${STEM}.tar.gz"
