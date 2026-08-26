@@ -92,6 +92,8 @@ async fn cli_serve_health_and_v1_v2_session_smoke() {
     assert_eq!(v1.status(), 201, "v1 create session");
     let v1_body: Value = v1.json().await.unwrap();
     assert_eq!(v1_body["status"], "active");
+    let v1_id = v1_body["id"].as_str().unwrap_or_default();
+    assert!(!v1_id.is_empty(), "v1 session id missing: {v1_body}");
 
     let v2 = client
         .post(format!("http://127.0.0.1:{port}/v2/sessions"))
@@ -105,4 +107,25 @@ async fn cli_serve_health_and_v1_v2_session_smoke() {
     assert_eq!(v2.status(), 201, "v2 create session");
     let v2_body: Value = v2.json().await.unwrap();
     assert_eq!(v2_body["session"]["status"], "active");
+    let v2_id = v2_body["session"]["id"].as_str().unwrap_or_default();
+    assert!(!v2_id.is_empty(), "v2 session id missing: {v2_body}");
+}
+
+#[test]
+fn cli_help_exits_zero() {
+    let output = Command::new(jereko_bin())
+        .arg("--help")
+        .output()
+        .expect("spawn jereko --help");
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.to_lowercase().contains("serve"), "stdout: {stdout}");
+    assert!(
+        stdout.to_lowercase().contains("version"),
+        "stdout: {stdout}"
+    );
 }

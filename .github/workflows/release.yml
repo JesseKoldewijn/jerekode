@@ -250,7 +250,7 @@ jobs:
         with:
           name: jereko-${{ needs.prepare.outputs.version }}-release-${{ matrix.target_os }}-${{ matrix.arch }}
           path: dist/*
-          if-no-files-found: error
+          if-no-files-found: erro
           retention-days: 30
 
   publish:
