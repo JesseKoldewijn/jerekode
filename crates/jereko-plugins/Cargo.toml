@@ -28,6 +28,7 @@ criterion = { version = "0.8", features = ["async_tokio"] }
 jereko-test-native-plugin = { path = "../jereko-test-native-plugin" }
 tempfile = "3"
 tokio = { workspace = true }
+wat = "1"
 
 [[bench]]
 name = "hot_paths"

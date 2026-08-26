@@ -42,3 +42,8 @@ cargo build -p jereko-cli --features native-tui
 ```
 
 When enabled, `jereko_plugins::render_stub_frame` draws a minimal ratatui frame (test backend). Bun remains the default interactive path.
+
+
+## Criterion nightly
+
+Scheduled workflow: `.github/workflows/bench-nightly.yml` runs `cargo bench -p jereko-plugins` nightly and uploads Criterion HTML artifacts. Not PR-gated.
