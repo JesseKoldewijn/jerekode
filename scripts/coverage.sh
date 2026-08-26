@@ -51,11 +51,18 @@ if [[ ! -x "${VENV_DIR}/bin/diff-cover" ]]; then
 fi
 DIFF_COVER="${VENV_DIR}/bin/diff-cover"
 
+echo "==> Write clean PR diff (ignore working-tree / CRLF noise)"
+# diff-cover's default includes staged/unstaged working-tree changes, which on
+# some runners appears as huge CRLF-only "diffs" and false gate failures.
+git diff "${COMPARE_BRANCH}...HEAD" > "$OUT_DIR/pr.diff"
+
 echo "==> diff-cover vs ${COMPARE_BRANCH} (fail-under=${DIFF_FAIL_UNDER}%)"
 set +e
 "${DIFF_COVER}" "$OUT_DIR/lcov.info" \
-  --compare-branch="${COMPARE_BRANCH}" \
+  --diff-file="$OUT_DIR/pr.diff" \
   --fail-under="${DIFF_FAIL_UNDER}" \
+  --ignore-staged \
+  --ignore-unstaged \
   --show-uncovered \
   --format "markdown:${OUT_DIR}/diff-cover.md,json:${OUT_DIR}/diff-cover.json" \
   2>&1 | tee "$OUT_DIR/diff-cover.txt"
