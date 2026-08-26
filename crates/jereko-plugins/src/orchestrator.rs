@@ -9,7 +9,8 @@ use std::sync::Arc;
 enum LoadTier {
     Internal = 0,
     Native = 1,
-    Bun = 2,
+    Wasm = 2,
+    Bun = 3,
 }
 
 struct RegisteredPlugin {
@@ -49,7 +50,7 @@ impl PluginOrchestrator {
             let (host_id, name, tier) = match entry {
                 PluginEntry::Bun(s) => ("bun", s.clone(), LoadTier::Bun),
                 PluginEntry::Native { native } => ("native", native.clone(), LoadTier::Native),
-                PluginEntry::Wasm { wasm } => ("wasm", wasm.clone(), LoadTier::Bun),
+                PluginEntry::Wasm { wasm } => ("wasm", wasm.clone(), LoadTier::Wasm),
                 PluginEntry::Named { name, .. } => ("bun", name.clone(), LoadTier::Bun),
             };
 
@@ -111,7 +112,7 @@ mod tests {
     async fn dispatches_across_bun_and_native_hosts() {
         let port = Arc::new(InMemorySidecarPort::new());
         let bun = Arc::new(BunPluginHost::new(port.clone()));
-        let native = Arc::new(NativePluginHost::new("./test.so"));
+        let native = Arc::new(NativePluginHost::with_library_path("./test.so"));
 
         let mut orchestrator = PluginOrchestrator::new(vec![native.clone(), bun.clone()]);
         orchestrator

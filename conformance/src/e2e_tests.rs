@@ -36,7 +36,7 @@ async fn e2e_config_session_plugin_flow() {
 
     let port = Arc::new(InMemorySidecarPort::new());
     let bun = Arc::new(BunPluginHost::new(port));
-    let native = Arc::new(NativePluginHost::new("./tools.so"));
+    let native = Arc::new(NativePluginHost::with_library_path("./tools.so"));
     let mut orchestrator = PluginOrchestrator::new(vec![native, bun]);
     orchestrator
         .load_from_config(loader.opencode().plugins.as_slice())
@@ -45,6 +45,10 @@ async fn e2e_config_session_plugin_flow() {
 
     let hook_fixture: serde_json::Value = serde_json::from_str(
         &fs::read_to_string(fixture("plugins/hook_before_transform.json")).unwrap(),
+    )
+    .unwrap();
+    let expected: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(fixture("plugins/hook_dispatch_expected.json")).unwrap(),
     )
     .unwrap();
 
@@ -58,6 +62,22 @@ async fn e2e_config_session_plugin_flow() {
 
     assert_eq!(results.len(), 2);
     assert!(results.iter().any(|r| r.plugin.contains("acme")));
+    // Bun host expected output from fixture
+    let bun_expected = expected
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["host"] == "bun")
+        .unwrap();
+    let bun_result = results.iter().find(|r| r.plugin.contains("acme")).unwrap();
+    assert_eq!(
+        bun_result.output["status"],
+        bun_expected["output"]["status"]
+    );
+
+    // Native without real dylib still returns stub shape (path missing)
+    let native_result = results.iter().find(|r| r.plugin.contains("tools")).unwrap();
+    assert_eq!(native_result.output["host"], "native");
 }
 
 #[test]

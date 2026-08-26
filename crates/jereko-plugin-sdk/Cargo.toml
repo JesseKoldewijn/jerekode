@@ -1,6 +1,6 @@
 [package]
 name = "jereko-plugin-sdk"
-description = "Native plugin SDK stub for Jereko (Phase 2.5+)"
+description = "Native plugin SDK for Jereko (C ABI wrappers)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,3 +8,5 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
