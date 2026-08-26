@@ -39,12 +39,13 @@ impl WasmPluginHost {
         // pure compute fixtures that only export `memory` + `jereko_hook`.
         let linker: Linker<()> = Linker::new(&engine);
         let mut store = Store::new(&engine, ());
-        let instance: Instance = linker
-            .instantiate(&mut store, &module)
-            .map_err(|e| PluginError::Host {
-                host: "wasm".into(),
-                message: format!("instantiate: {e}"),
-            })?;
+        let instance: Instance =
+            linker
+                .instantiate(&mut store, &module)
+                .map_err(|e| PluginError::Host {
+                    host: "wasm".into(),
+                    message: format!("instantiate: {e}"),
+                })?;
 
         let Some(func) = instance.get_func(&mut store, "jereko_hook") else {
             return Ok(serde_json::json!({
@@ -65,12 +66,13 @@ impl WasmPluginHost {
             message: format!("serialize payload: {e}"),
         })?;
 
-        let memory = instance
-            .get_memory(&mut store, "memory")
-            .ok_or_else(|| PluginError::Host {
-                host: "wasm".into(),
-                message: "wasm module missing exported memory".into(),
-            })?;
+        let memory =
+            instance
+                .get_memory(&mut store, "memory")
+                .ok_or_else(|| PluginError::Host {
+                    host: "wasm".into(),
+                    message: "wasm module missing exported memory".into(),
+                })?;
 
         let ptr = 1024i32;
         memory
