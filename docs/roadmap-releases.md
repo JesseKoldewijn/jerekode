@@ -51,10 +51,10 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 | Option | When to choose |
 |--------|----------------|
-| **A.** `0.0.<run_number>` + filtered notes | Keep PromptComposer-style every-merge releases — **chosen for cutover** |
+| **A.** sequential `0.0.<N+1>` + filtered notes | Keep every-merge releases on `0.0.x` — **chosen post-wipe** (replaces raw `run_number`) |
 | **B.** Conventional commits / release-please (recommended long-term) | Quality changelogs and intentional semver |
 
-**Avoid** returning to `0.1.<run_number>` after wiping `v0.1.*`.
+**Avoid** returning to `0.1.<run_number>` after wiping `v0.1.*`. **Avoid** `0.0.<github.run_number>` after the wipe — use sequential patches from Cargo.toml (`0.0.1` → `0.0.2` → …).
 
 ---
 
