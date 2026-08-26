@@ -137,22 +137,29 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-            if git diff --quiet; then
+            # Scope the dirty check to version files only. A whole-tree
+            # `git diff --quiet` fails on CRLF noise in the working copy and
+            # then `git commit` errors with "nothing to commit".
+            if git diff --quiet -- Cargo.toml Cargo.lock; then
               echo "Version already ${VERSION}; reusing HEAD"
             else
               git add Cargo.toml Cargo.lock
-              # [skip release] so a sync-PR squash/merge does not re-trigger Release.
-              git commit -m "chore: release ${TAG} [skip release]"
-
-              if [[ "${HAS_PUSH_TOKEN}" == "true" ]] && git push origin HEAD:main; then
-                echo "Pushed version bump to main via RELEASE_PUSH_TOKEN (PromptComposer-style)."
+              if git diff --cached --quiet; then
+                echo "Version already ${VERSION} after normalize; reusing HEAD"
               else
-                if [[ "${HAS_PUSH_TOKEN}" == "true" ]]; then
-                  echo "::warning::RELEASE_PUSH_TOKEN push to main failed; falling back to sync PR + auto-merge."
+                # [skip release] so a sync-PR squash/merge does not re-trigger Release.
+                git commit -m "chore: release ${TAG} [skip release]"
+
+                if [[ "${HAS_PUSH_TOKEN}" == "true" ]] && git push origin HEAD:main; then
+                  echo "Pushed version bump to main via RELEASE_PUSH_TOKEN (PromptComposer-style)."
                 else
-                  echo "Using sync PR + auto-merge (branch protection / no RELEASE_PUSH_TOKEN)."
+                  if [[ "${HAS_PUSH_TOKEN}" == "true" ]]; then
+                    echo "::warning::RELEASE_PUSH_TOKEN push to main failed; falling back to sync PR + auto-merge."
+                  else
+                    echo "Using sync PR + auto-merge (branch protection / no RELEASE_PUSH_TOKEN)."
+                  fi
+                  open_sync_pr_with_automerge "${VERSION}" "${TAG}"
                 fi
-                open_sync_pr_with_automerge "${VERSION}" "${TAG}"
               fi
             fi
           elif [[ "${EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
