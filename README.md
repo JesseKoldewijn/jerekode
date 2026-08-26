@@ -1,36 +1,35 @@
 # Jereko
 
-Jereko is an AI coding agent runtime with OpenCode API compatibility, built as a Rust core with a Bun plugin sidecar.
-
-**Phase 0** provides workspace scaffolding — stubs and architecture foundations for subsequent implementation phases.
+Jereko is an AI coding agent runtime with OpenCode API compatibility: a **Rust core** plus a **Bun plugin sidecar**, dual plugin hosts (Bun + native; WASM optional), and owned conformance fixtures.
 
 ## Architecture
 
 See [docs/architecture.md](docs/architecture.md) for system design, adapter layer strategy, and provider registry design.
 
-Conformance testing approach: [docs/conformance.md](docs/conformance.md).
-
-Agent and contributor orientation: [CONTEXT.md](CONTEXT.md), [AGENTS.md](AGENTS.md), [docs/development.md](docs/development.md), [docs/adr/](docs/adr/).
+Conformance: [docs/conformance.md](docs/conformance.md).  
+Orientation: [CONTEXT.md](CONTEXT.md), [AGENTS.md](AGENTS.md), [docs/development.md](docs/development.md), [docs/adr/](docs/adr/).  
+Parity board: [docs/roadmap-parity.md](docs/roadmap-parity.md).
 
 ## Project Structure
 
 ```
 jerekode/
 ├── crates/
-│   ├── jereko-core/       # Domain types, session models
-│   ├── jereko-config/     # Config loading and merge precedence
-│   ├── jereko-server/     # HTTP server + v1/v2 adapter layer
-│   ├── jereko-cli/        # CLI binary (jereko)
-│   └── jereko-providers/  # Provider registry (75+ designed)
-├── sidecar/               # Bun plugin host (TUI + server plugins)
-├── conformance/           # Owned fixture-driven compatibility tests
-└── docs/                  # Architecture and conformance documentation
+│   ├── jereko-core/          # Domain types, session models
+│   ├── jereko-config/        # Config loading and merge precedence
+│   ├── jereko-server/        # HTTP server + v1/v2 adapters + tools/extensions
+│   ├── jereko-cli/           # CLI binary (jereko)
+│   ├── jereko-providers/     # Provider registry + streaming adapters
+│   └── jereko-plugin-sdk/    # Native plugin SDK / C ABI
+├── sidecar/                  # Bun plugin host (TUI + server plugins)
+├── conformance/              # Owned fixture-driven compatibility tests
+└── docs/                     # Architecture, conformance, roadmaps, ADRs
 ```
 
 ## Prerequisites
 
 - [Rust](https://rustup.rs/) (edition 2024, stable; MSRV 1.85+)
-- [Bun](https://bun.sh/) (for sidecar, Phase 2+)
+- [Bun](https://bun.sh/) (for sidecar / `jereko run`)
 
 ## Contributing
 
@@ -63,6 +62,12 @@ cargo run -p jereko-cli -- serve
 cargo run -p jereko-cli -- run
 ```
 
+Optional interactive native TUI (feature-flagged):
+
+```bash
+cargo run -p jereko-cli --features native-tui -- run --native
+```
+
 ## Binary Aliases
 
 The primary binary is `jereko`. Optional **`opencode`** and **`opencode2`** aliases point to the same binary.
@@ -85,33 +90,26 @@ opencode = "run -p jereko-cli --"
 opencode2 = "run -p jereko-cli --"
 ```
 
-Then: `cargo opencode version`
+Install helpers: [scripts/install.sh](scripts/install.sh), [docs/distribution.md](docs/distribution.md).
 
-### Windows
+## HTTP surface (v1 / v2)
 
-```powershell
-# After cargo build --release
-New-Item -ItemType HardLink -Path "$env:USERPROFILE\.cargo\bin\opencode.exe" -Target "target\release\jereko.exe"
-```
+Both adapter versions are served from one process. Representative routes:
 
-Or use `mklink` for symlinks (requires Developer Mode or admin).
+| Concern | v1 | v2 |
+|---------|----|----|
+| Sessions | `POST/GET/DELETE /v1/session[/{id}]` | `POST/GET/DELETE /v2/sessions[/{id}]` |
+| Messages | `GET/POST /v1/session/{id}/message` | `GET/POST /v2/sessions/{id}/messages` |
+| Stream | `POST .../message/stream` | `POST .../messages/stream` |
+| Providers | `GET /v1/providers` | `GET /v2/providers` |
+| Tools | `POST /v1/tools/execute` | `POST /v2/tools/execute` |
 
-## Sidecar (stub)
+Extensions: `/extensions/mcp/*`, `/extensions/lsp/*`, PTY helpers.
 
-```bash
-cd sidecar
-bun install
-bun run start
-```
+## Sidecar
 
-See [sidecar/README.md](sidecar/README.md) for the IPC contract.
-
-## Releases & PR builds
-
-- Cut a tagged release or run the Release workflow: [docs/releases.md](docs/releases.md)
-- On a PR, comment `/build` (or `/build debug`) to upload multi-platform workflow artifacts — **no** GitHub Release
-- Install / alias helpers: [docs/distribution.md](docs/distribution.md)
+The Bun sidecar hosts TUI and JS/TS plugins over JSON-line IPC. CI hard-gates Bun IPC and native dylib loading — soft-skips are not allowed.
 
 ## License
 
-[MIT](LICENSE) © 2026 Jesse Koldewijn
+MIT

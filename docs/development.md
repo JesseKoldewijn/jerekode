@@ -1,115 +1,67 @@
-# Development Guide
+# Development
 
-Rust engineering standards and build commands for Jereko contributors and agents.
+Engineering standards for the Jereko Rust workspace and Bun sidecar.
 
-## Prerequisites
+## Toolchain
 
-- [Rust](https://rustup.rs/) (edition 2024, stable; MSRV 1.85+)
-- [Bun](https://bun.sh/) (for sidecar, Phase 2+)
+- **Edition:** 2024
+- **Channel:** stable (CI uses `dtolnay/rust-toolchain@stable`)
+- **MSRV:** 1.85+
+- **License:** MIT
 
-## Build Commands
+Prefer `cargo +stable …` locally if your default rustc is a nightly mismatch with CI.
+
+## Commands
 
 ```bash
-# Build all crates
-cargo build
-
-# Build release binary
-cargo build --release
-
-# Run all workspace tests
-cargo test --workspace
-
-# Lint (must pass with zero warnings)
-cargo clippy --all-targets --all-features --locked -- -D warnings
-
-# Format check (CI uses --check; use cargo fmt locally to fix)
 cargo fmt --check
-
-# Conformance crate only
-cargo test -p jereko-conformance
+cargo clippy --all-targets --all-features --locked -- -D warnings
+cargo test --locked
+cargo build -p jereko-cli --release
 ```
 
-The primary CLI binary is **`jereko`**:
+Sidecar:
 
 ```bash
-cargo run -p jereko-cli -- version
-cargo run -p jereko-cli -- serve
+cd sidecar && bun install && bun test
 ```
 
-## Rust Standards
+Optional native TUI:
 
-These standards align with the [rust-best-practices](../.agents/skills/rust-best-practices/SKILL.md) skill and apply from Phase 1 onward.
+```bash
+cargo test -p jereko-cli --features native-tui
+```
 
-### Error Handling
+Criterion benches (not PR-gated; nightly workflow):
 
-| Context | Crate type | Approach |
-|---------|------------|----------|
-| Library crates | `jereko-core`, `jereko-config`, `jereko-server`, `jereko-providers`, `conformance` | `thiserror` for typed errors |
-| Binary | `jereko-cli` | `anyhow` for top-level error propagation |
+```bash
+cargo bench -p jereko-core --bench hot_paths
+```
 
-- Return `Result<T, E>` for fallible operations; avoid `panic!` in production code.
-- **No `unwrap()` or `expect()` outside tests.**
+## Standards
 
-### Linting and Documentation
+- Zero clippy warnings (`-D warnings` in CI).
+- `cargo fmt` required; CI fails on format drift.
+- Prefer small PRs that deepen one seam (fixture → impl → green CI).
+- Never soft-skip Bun IPC or native plugin CI gates.
 
-- Run `cargo clippy --all-targets --all-features --locked -- -D warnings` before pushing.
-- Public library crates should use `#![warn(missing_docs)]` (moving to `deny` as APIs stabilize).
-- Use `#[expect(clippy::lint)]` over `#[allow(...)]` with a justification comment.
+## TDD at seams
 
-### Testing Conventions
+Follow [.agents/skills/tdd/SKILL.md](../.agents/skills/tdd/SKILL.md):
 
-- Name tests descriptively: `normalize_should_map_v1_session_to_normalized()`.
-- Prefer one assertion per test when practical.
-- Use doc tests (`///`) for public API examples.
-- Test at **seams** documented in [conformance.md](./conformance.md) — not internals.
+1. Red — failing test at a documented seam / fixture.
+2. Green — minimal implementation.
+3. Refactor — during PR review until a dedicated code-review skill is installed.
 
-### Snapshot Testing
+`cargo insta` is optional for adapter normalize/denormalize round-trips.
 
-- **JSON fixtures** under `conformance/fixtures/` are the primary source of truth for HTTP conformance.
-- **`cargo insta`** is optional for adapter normalize/denormalize round-trips in Phase 1+; not required for Phase 0.
+## Workspace layout tips
 
-## TDD and Refactoring
+- Handlers in `jereko-server` operate only on **normalized** types.
+- Provider HTTP adapters live in `jereko-providers`; registry stubs are for tests.
+- Extension hosts (MCP/LSP/PTY/WASM) hang off `AppState` / `ExtensionHosts`.
+- Sandbox policy for tools: `jereko-server` `ToolPolicy`.
 
-Follow the [tdd](../.agents/skills/tdd/SKILL.md) skill:
+## Releases
 
-- Red → green → stop. Refactoring is **not** part of the implementation loop.
-- The TDD skill references a `code-review` skill for the refactor stage. That skill is not yet installed. Until it is, **refactoring happens during PR review** — keep red-green cycles minimal and leave structural cleanup for review.
-
-Default test seams are documented in [conformance.md](./conformance.md). Confirm with the user before adding seams outside that table.
-
-## Debugging
-
-Follow the [diagnosing-bugs](../.agents/skills/diagnosing-bugs/SKILL.md) skill:
-
-1. Build a tight, red-capable feedback loop before hypothesizing.
-2. Map loop types to conformance layers (see conformance doc).
-3. Turn minimized repros into regression tests at the correct seam.
-
-## Module Design
-
-Follow the [codebase-design](../.agents/skills/codebase-design/SKILL.md) skill for seam placement, depth, and adapter vocabulary. See [architecture.md](./architecture.md) for Jereko-specific seam mapping.
-
-## Plugin Host Development (Phase 2+)
-
-Plugin hosts implement the `PluginHost` trait and register hooks with the `PluginOrchestrator`. See [ADR 002](./adr/002-dual-plugin-runtime.md) for the dual-runtime design.
-
-| Host | Development path |
-|------|------------------|
-| **Bun** | TypeScript/Bun plugins in `sidecar/`; no Rust SDK needed |
-| **Native** | Rust SDK crate planned as **`jereko-plugin-sdk`**; stable C ABI in `jereko_plugin.h` (Phase 2.5) |
-| **WASM** | Same hook surface via WASM imports/exports (Phase 4) |
-
-Native plugin authors will depend on `jereko-plugin-sdk` for safe Rust bindings over the C ABI. Bun plugin authors continue using the existing sidecar plugin API.
-
-## Agent Context
-
-- Start with [CONTEXT.md](../CONTEXT.md) for crate map and vocabulary.
-- Check [docs/adr/](./adr/) before changing architectural decisions.
-- See [AGENTS.md](../AGENTS.md) for agent-specific orientation.
-- Remaining implementation priorities: [roadmap-remaining.md](./roadmap-remaining.md).
-
-## CI
-
-GitHub Actions runs test, clippy, and fmt check on push/PR — see [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
-
-`Cargo.lock` is tracked (application binary). CI uses `--locked` to ensure reproducible builds.
+See [releases.md](./releases.md). Local packaging: `scripts/package-release.sh`.

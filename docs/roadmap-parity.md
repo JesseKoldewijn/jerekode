@@ -1,8 +1,8 @@
 # True OpenCode / opencode2 Parity Roadmap
 
-**Status:** Active execution plan  
+**Status:** Documented slices complete  
 **Date:** 2026-08-26  
-**Supplements:** [roadmap-remaining.md](./roadmap-remaining.md) (foundation P0–P3), [conformance.md](./conformance.md), [CONTEXT.md](../CONTEXT.md)
+**Supplements:** [roadmap-remaining.md](./roadmap-remaining.md) (foundation archive), [conformance.md](./conformance.md), [CONTEXT.md](../CONTEXT.md)
 
 Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and hard CI gates — not soft-skips, not scaffold-only seams.
 
@@ -21,29 +21,29 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 | P2b | LSP depth beyond initialize stub | Done | #21 |
 | P2c | portable-pty OS I/O | Done | #21 |
 | P2d | WASM WASI hook ABI | Done | #24 |
-| P3a | HTTP v1/v2 surface expansion via fixtures | Done | this PR |
+| P3a | HTTP v1/v2 surface expansion via fixtures | Done | #28 |
 | P3b | More providers (incremental registry growth) | Done | #26 |
 | P3c | Sandbox policy engine | Done | #26 |
 | P3d | Native TUI interactive MVP (optional) | Done | #26 |
 | P3e | Criterion nightly workflow | Done | #24 |
-| DOC | Refactor all repo documentation for accuracy | Final step | — |
+| DOC | Refactor all repo documentation for accuracy | Done | this PR |
 
 ---
 
-## Gap matrix (current → target)
+## Gap matrix (current → ongoing growth)
 
-| Area | Current | Target for parity |
-|------|---------|-------------------|
-| Bun IPC | Real spawn; CI hard-gates | Hard-fail integration test in CI |
-| Native plugins | libloading + CI hard-gates | Prebuild test cdylib in CI; hard-fail |
-| Sidecar plugins | Dynamic import + invoke_hook | Growing OpenCode-compatible hook surface |
-| Tools | Wired via `/tools/execute` | Agent-loop depth + fixtures |
+| Area | Current | Ongoing growth |
+|------|---------|----------------|
+| Bun IPC | Real spawn; CI hard-gates | Broader OpenCode-compatible hook surface |
+| Native plugins | libloading + CI hard-gates | More server hook coverage |
+| Sidecar plugins | Dynamic import + `invoke_hook` | Growing plugin ecosystem |
+| Tools | Wired via `/tools/execute` + policy | Agent-loop depth + fixtures |
 | Providers | OpenAI / Anthropic / Ollama / Groq / OpenRouter + streaming | Growing matrix toward 75+ |
 | MCP / LSP / PTY | call_tool + hover + portable-pty I/O | Broader protocol matrix |
 | WASM | `jereko_hook` export + host fallback | Richer WASI surface |
 | HTTP | v1/v2 sessions list/get/delete + messages + stream + tools | Broader fixture coverage |
 | Release | Proven green publish on main merge | Keep green |
-| Docs | Some “stub” labels outdated | Final pass aligns all docs with reality |
+| Docs | Aligned with shipped capability | Keep updated with each slice |
 
 ---
 
@@ -53,7 +53,7 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 2. **Vertical slices:** fixture/test first → minimal impl → green CI.
 3. **No upstream OpenCode source** — owned fixtures only.
 4. **Do not weaken CI** — convert soft-skips to hard gates, never the reverse.
-5. Update this board as slices land; keep [roadmap-remaining.md](./roadmap-remaining.md) for historical foundation status.
+5. Update this board as slices land; keep [roadmap-remaining.md](./roadmap-remaining.md) as historical foundation status.
 
 ---
 
