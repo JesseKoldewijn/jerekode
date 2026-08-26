@@ -68,14 +68,10 @@ jobs:
           set -euo pipefail
           chmod +x scripts/set-version.sh
 
+          # CRLF-safe: Python universal newlines via set-version.sh --print
+          # (awk `$0 == "[workspace.package]"` fails on CRLF Cargo.toml).
           read_cargo_version() {
-            awk '
-              $0 == "[workspace.package]" { in_pkg=1; next }
-              in_pkg && /^\[/ { in_pkg=0 }
-              in_pkg && /^version[[:space:]]*=/ {
-                gsub(/"/, "", $3); print $3; exit
-              }
-            ' Cargo.toml
+            ./scripts/set-version.sh --print
           }
 
           ensure_release_sync_label() {
