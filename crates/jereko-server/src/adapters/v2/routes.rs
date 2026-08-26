@@ -11,7 +11,7 @@ use axum::{
     extract::{Path, State},
     http::{HeaderMap, HeaderValue, StatusCode},
     response::IntoResponse,
-    routing::{delete, get, post},
+    routing::{get, post},
 };
 
 pub fn router() -> Router<AppState> {
