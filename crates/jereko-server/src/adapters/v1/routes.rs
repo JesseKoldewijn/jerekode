@@ -6,6 +6,7 @@ use crate::adapters::v1::{
 };
 use crate::handlers::HandlerError;
 use crate::state::AppState;
+use crate::tools::{ToolCall, ToolResult};
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -20,6 +21,7 @@ pub fn router() -> Router<AppState> {
         .route("/session/{id}", get(get_session))
         .route("/session/{id}/message", post(send_message))
         .route("/providers", get(list_providers))
+        .route("/tools/execute", post(execute_tool))
 }
 
 async fn create_session(
@@ -69,6 +71,19 @@ async fn list_providers(State(state): State<AppState>) -> impl IntoResponse {
     (StatusCode::OK, Json(v1)).into_response()
 }
 
+async fn execute_tool(
+    State(state): State<AppState>,
+    Json(call): Json<ToolCall>,
+) -> impl IntoResponse {
+    let result: ToolResult = state.ctx.execute_tool(call);
+    let status = if result.ok {
+        StatusCode::OK
+    } else {
+        StatusCode::BAD_REQUEST
+    };
+    (status, Json(result)).into_response()
+}
+
 fn map_error(err: HandlerError) -> axum::response::Response {
     let (status, message) = match err {
         HandlerError::SessionNotFound(id) => (StatusCode::NOT_FOUND, id),
@@ -76,6 +91,7 @@ fn map_error(err: HandlerError) -> axum::response::Response {
             (StatusCode::BAD_REQUEST, format!("unknown provider: {id}"))
         }
         HandlerError::Provider(msg) => (StatusCode::BAD_GATEWAY, msg),
+        HandlerError::Tool(msg) => (StatusCode::BAD_REQUEST, msg),
     };
     (status, Json(V1ErrorResponse { error: message })).into_response()
 }

@@ -6,6 +6,7 @@ use std::sync::Arc;
 use crate::handlers::HandlerContext;
 use crate::persistence::SqliteSessionStore;
 use crate::session_store::{SessionStore, SessionStorePort};
+use crate::tools::ToolExecutor;
 
 /// Shared application state passed to HTTP handlers.
 #[derive(Clone)]
@@ -46,12 +47,14 @@ impl AppState {
         sessions: Arc<dyn SessionStorePort>,
         providers: Arc<ProviderRegistry>,
     ) -> Self {
+        let project_root = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
         Self {
             ctx: Arc::new(HandlerContext {
                 sessions,
                 providers,
                 default_provider: config.provider.clone(),
                 default_model: config.model.clone(),
+                tools: ToolExecutor::new(project_root).with_bash(true),
             }),
         }
     }

@@ -13,8 +13,8 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 | ID | Slice | Status | PR |
 |----|-------|--------|-----|
 | R0 | Release pipeline green on main (Actions PR perms + sync resilience) | In progress | #5 synced; #6 harden; #7 sync 0.1.6 |
-| P0a | CI hard-gates: Bun IPC + native dylib (no soft-skip) | In progress | this PR |
-| P0b | Wire tools into agent / HTTP send_message loop | Pending | — |
+| P0a | CI hard-gates: Bun IPC + native dylib (no soft-skip) | Done | #8 |
+| P0b | Wire tools into HTTP `/v1|/v2/tools/execute` | In progress | this PR |
 | P1a | Provider streaming seam (`complete_stream` / SSE) | Pending | — |
 | P1b | Bun sidecar loads/runs real plugins + hook fixtures | Pending | — |
 | P2a | MCP depth beyond list_tools | Pending | — |

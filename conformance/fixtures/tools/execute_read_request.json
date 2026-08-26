@@ -1,0 +1,6 @@
+{
+  "name": "read",
+  "args": {
+    "path": "tool_probe.txt"
+  }
+}

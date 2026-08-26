@@ -1,5 +1,6 @@
 use crate::adapters::normalized;
 use crate::session_store::SessionStorePort;
+use crate::tools::{ToolCall, ToolExecutor, ToolResult};
 use jereko_core::{Message, MessageRole};
 use jereko_providers::{CompletionRequest, ProviderRegistry, resolve};
 use std::sync::Arc;
@@ -9,6 +10,7 @@ pub struct HandlerContext {
     pub providers: Arc<ProviderRegistry>,
     pub default_provider: Option<String>,
     pub default_model: Option<String>,
+    pub tools: ToolExecutor,
 }
 
 impl HandlerContext {
@@ -101,6 +103,10 @@ impl HandlerContext {
         })
     }
 
+    pub fn execute_tool(&self, call: ToolCall) -> ToolResult {
+        self.tools.execute(&call)
+    }
+
     pub fn list_providers(&self) -> normalized::ListProvidersResponse {
         let providers = self
             .providers
@@ -128,4 +134,7 @@ pub enum HandlerError {
 
     #[error("provider error: {0}")]
     Provider(String),
+
+    #[error("tool error: {0}")]
+    Tool(String),
 }
