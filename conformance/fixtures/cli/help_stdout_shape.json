@@ -1,0 +1,6 @@
+{
+  "description": "Owned shape for `jerekode --help`. Shipped subcommands only (Decided #6).",
+  "exit_success": true,
+  "stdout_contains_ignore_case": ["serve", "run", "models", "session", "version"],
+  "stdout_must_not_contain_line_prefix": ["auth"]
+}

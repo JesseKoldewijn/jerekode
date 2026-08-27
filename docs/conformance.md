@@ -110,9 +110,9 @@ Spawn the real `jerekode` binary (`CARGO_BIN_EXE_jerekode`):
 - `jerekode run` — one-shot prompt path (stub / no-network when `JEREKO_USE_STUB_PROVIDERS` is set)
 - `jerekode models` / `jerekode session list` — discovery CLIs as they land
 
-These live in `crates/jerekode-cli/tests/cli_smoke.rs` and run under `cargo test --workspace`.
+These live in `crates/jerekode-cli/tests/cli_smoke.rs` and run under `cargo test --workspace`. Expected shapes load from owned fixtures in `conformance/fixtures/cli/` (see that directory's README).
 
-**Approved CLI seams** (above table) are the black-box boundaries for Layer 6. Owned fixtures will live under `conformance/fixtures/cli/` — deepen smoke until those fixtures land. New seams outside this table still need maintainer confirmation before landing.
+**Approved CLI seams** (above table) are the black-box boundaries for Layer 6. New seams outside this table still need maintainer confirmation before landing.
 
 ## Fixture Rules
 

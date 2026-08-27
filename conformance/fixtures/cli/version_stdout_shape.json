@@ -1,0 +1,5 @@
+{
+  "description": "Owned shape for `jerekode version` stdout (Layer 6 seam).",
+  "exit_success": true,
+  "stdout_contains": ["jerekode"]
+}

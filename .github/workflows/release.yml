@@ -360,6 +360,28 @@ jobs:
           mkdir -p dist
           ./scripts/package-release.sh "${STEM}" "${BIN}" dist release
 
+      - name: Smoke-test release archive
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TARGET_OS: ${{ matrix.target_os }}
+          ARCH: ${{ matrix.arch }}
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/smoke-release-artifact.sh
+          if [[ "${VARIANT}" == "native" ]]; then
+            STEM="jerekode-${VERSION}-native-release-${TARGET_OS}-${ARCH}"
+          else
+            STEM="jerekode-${VERSION}-release-${TARGET_OS}-${ARCH}"
+          fi
+          if [[ "${TARGET_OS}" == "windows" ]]; then
+            ARCHIVE="dist/${STEM}.zip"
+          else
+            ARCHIVE="dist/${STEM}.tar.gz"
+          fi
+          ./scripts/smoke-release-artifact.sh "${ARCHIVE}"
+
       - name: Package installers
         # Full variant only; native-only stays archive until installer UX is stable.
         if: matrix.variant == 'full'

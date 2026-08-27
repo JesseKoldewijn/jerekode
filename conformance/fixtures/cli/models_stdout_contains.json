@@ -1,0 +1,7 @@
+{
+  "description": "Stub registry exposes provider/model lines (minimum subset).",
+  "argv": ["models"],
+  "env": { "JEREKO_USE_STUB_PROVIDERS": "1" },
+  "exit_success": true,
+  "stdout_lines_contain": ["openai/stub-model", "anthropic/stub-model", "ollama/stub-model"]
+}
