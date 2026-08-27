@@ -8,6 +8,7 @@ authors.workspace = true
 
 [dependencies]
 axum = { workspace = true }
+base64 = "0.22"
 jerekode-config = { workspace = true }
 jerekode-core = { workspace = true }
 jerekode-plugins = { workspace = true, default-features = false }
@@ -18,6 +19,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tower-http = { version = "0.6", features = ["cors"] }
 tracing = { workspace = true }
 
 [features]
@@ -25,6 +27,8 @@ default = ["bun-sidecar"]
 bun-sidecar = ["jerekode-plugins/bun-sidecar"]
 
 [dev-dependencies]
+async-trait = { workspace = true }
+base64 = "0.22"
 http-body-util = "0.1"
 serde_json = { workspace = true }
 tempfile = "3"

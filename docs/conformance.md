@@ -29,6 +29,12 @@ Tests live at **pre-agreed seams** — public interfaces where behavior is obser
 | First-party plugins | `packages/*` + native | **True e2e** | real Bun process + real native dylib; shared fixtures; CI hard-gate |
 | `@jerekode/rtk` | packages/rtk | Unit + true e2e | shared rules; OpenCode2 path + native cdylib |
 | CLI runtime | `jerekode` binary | Smoke e2e | `version` + `serve` health / v1+v2 session create |
+| CLI help / version argv | `jerekode` binary | Black-box smoke → fixtures | Exit 0; stdout contains version; help omits unfinished cmds |
+| CLI serve bind + `/health` | `jerekode serve` | Black-box + HTTP | `/health` ok; `--hostname` alias of `--host` |
+| CLI `run` one-shot | `jerekode run` | Black-box / unit | Positional prompt → stdout reply + exit code (stub provider / no-network) |
+| CLI `models` list shape | `jerekode models` | Black-box or in-process | `provider/model` lines; owned shape when fixtures land |
+| CLI `session list` | `jerekode session list` | Black-box | Table or JSON over HTTP session APIs |
+| Agent loop | `jerekode-server` `agent_loop` | Unit | Stub/scripted provider → tools → final text / max turns |
 | WasmPluginHost | WASM hook ABI | Unit | `jerekode_hook` fixture module |
 | Tools / policy | `ToolExecutor` | Unit + router | `/tools/execute` fixtures |
 | Extensions | MCP / LSP / PTY | Unit + router | call_tool, hover, pty I/O |
@@ -100,11 +106,13 @@ Plugins that ship in this repo (`packages/*` and their native crates) **must** p
 Spawn the real `jerekode` binary (`CARGO_BIN_EXE_jerekode`):
 
 - `jerekode version` — exits 0; prints package version
-- `jerekode serve` — `/health` ok; create session on **v1** and **v2**
+- `jerekode serve` — `/health` ok; create session on **v1** and **v2**; `--hostname` bind
+- `jerekode run` — one-shot prompt path (stub / no-network when `JEREKO_USE_STUB_PROVIDERS` is set)
+- `jerekode models` / `jerekode session list` — discovery CLIs as they land
 
 These live in `crates/jerekode-cli/tests/cli_smoke.rs` and run under `cargo test --workspace`.
 
-**Forward work:** widen to argv/help/flag-compat and `run` behavior fixtures — proposed seams and `conformance/fixtures/cli/` layout in [roadmap-parity-cli.md](./roadmap-parity-cli.md). New seams outside this table still need maintainer confirmation before landing.
+**Approved CLI seams** (above table) are the black-box boundaries for Layer 6. Owned fixtures will live under `conformance/fixtures/cli/` — deepen smoke until those fixtures land. New seams outside this table still need maintainer confirmation before landing.
 
 ## Fixture Rules
 

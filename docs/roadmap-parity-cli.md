@@ -63,7 +63,7 @@ Locked for JesseKoldewijn/jerekode (2026-08-27). Phase work must follow these; d
 | 7 | **`web` / `acp` / `github` / `pr`** | **Post-v1** — out of 1.0 CLI parity. | **CLI-P4**. |
 | 8 | **Serve basic auth** | **Mirror OpenCode** — env-gated (`OPENCODE_SERVER_PASSWORD` / username env) + `attach` / `run --attach` `--password`/`--username` flags; required for drop-in remote attach. | Implement with `serve`/`attach` in **CLI-P1–P2**; do not ship remote attach without the mechanism. |
 | 9 | **Default download** | **Default = full (Bun included)** for OpenCode fidelity; **native-only = advanced / future**. | Locked in [roadmap-releases.md](./roadmap-releases.md) (Q7); marketing and install tables lead with full. |
-| 10 | **Conformance seams** | Proposed seams **shown for approval** before the first CLI fixture PR. | No full fixture table invented here yet; smoke may expand until approved. Draft below is **pending approval**. |
+| 10 | **Conformance seams** | Proposed seams **shown for approval** before the first CLI fixture PR. | **Approved** (see [conformance.md](./conformance.md)); deepen smoke until `conformance/fixtures/cli/` fixtures land. |
 
 ---
 
@@ -95,12 +95,14 @@ Source: `crates/jerekode-cli/` (`main.rs`, `commands/*`, `tests/cli_smoke.rs`).
 
 | Command | Flags (today) | Behavior |
 |---------|---------------|----------|
-| `serve` | `--host`, `-p/--port`, `--provider`, `--model`, `--project` | Load config; bind HTTP (default `127.0.0.1:4096`); Axum v1/v2 |
-| `run` | `--provider`, `--model`, `--project` | Spawn Bun sidecar, bootstrap, **Shutdown** — stub, not OpenCode `run` |
-| `version` | (none) | Prints version + “Phase 0 scaffold” |
-| *(no subcommand)* | — | Clap error — **must become TUI** |
-| `--help` / `-h` | — | Lists only what exists (keep that policy) |
-| `--version` / `-v` | — | **Disabled** |
+| `serve` | `--host`/`--hostname`, `-p/--port`, `--cors`, `--provider`, `--model`, `--project` | Load config; bind HTTP; Axum v1/v2; CORS + env basic auth |
+| `run` | positional message; `--provider`; `-m/--model` (`provider/model`); `--format`; `--project` | One-shot agent loop → print reply → exit |
+| `models` | `--provider`, `--project` | List `provider/model` from in-process registry |
+| `session list` / `session delete` | `--url`, `--format` / id | Thin HTTP client over `/v2/sessions` |
+| `version` | (none) | Prints version |
+| *(no subcommand)* | — | Clap error — **must become TUI** (deferred) |
+| `--help` / `-h` | — | Lists only shipped commands |
+| `--version` / `-v` | — | **Disabled** (deferred) |
 
 Binary aliases: [distribution.md](./distribution.md). Tests: Layer 6 smoke only.
 
@@ -126,24 +128,24 @@ Comprehensive backlog to match OpenCode CLI behaviour/functionality for **1.0**.
 
 | Work item | OpenCode behaviour | Gap today | Phase |
 |-----------|-------------------|-----------|-------|
-| Positional `run [message..]` | One-shot prompt, print reply, exit | Bootstrap stub | **CLI-P0** (minimal one-shot) → **CLI-P2** (full) |
-| Remove silent stub | Never advertise bootstrap-and-exit as `run` | Current behaviour | **CLI-P0** (fail loud *or* one-shot — prefer one-shot ASAP) |
-| `--model`/`-m`, `--agent`, `--variant` | `provider/model` + agent + reasoning variant | Split `--provider`/`--model` | **CLI-P0–P1** |
+| Positional `run [message..]` | One-shot prompt, print reply, exit | **Done** (one-shot + agent loop); full flags deferred | **CLI-P0** ✓ → **CLI-P2** (full) |
+| Remove silent stub | Never advertise bootstrap-and-exit as `run` | **Done** (real one-shot) | **CLI-P0** ✓ |
+| `--model`/`-m`, `--agent`, `--variant` | `provider/model` + agent + reasoning variant | **`--model provider/model` done**; `--agent`/`--variant` open | **CLI-P0–P1** |
 | Session continuity | `--continue`, `--session`, `--fork`, `--title`, `--share` | Missing | **CLI-P1–P2** |
-| `--format default\|json` | Formatted vs raw JSON events | Missing | **CLI-P1** |
+| `--format default\|json` | Formatted vs raw JSON events | **Done** (`default`/`json`) | **CLI-P1** ✓ |
 | `--file`/`-f`, `--thinking`, `--auto`, `--command` | Attach files, show thinking, auto-approve, slash command | Missing | **CLI-P2** |
 | `--attach` + basic auth flags | Attach to running `serve`; `--password`/`--username` | Missing | **CLI-P2** (Decided #8) |
 | `--port` for local server | Local ephemeral server port | Missing | **CLI-P1–P2** |
-| Agent loop + tools | Tools, permissions, streaming stdout | Sidecar only stub | **CLI-P2** |
+| Agent loop + tools | Tools, permissions, streaming stdout | **Basic loop + tools done**; streaming/`--auto` deferred | **CLI-P0–P2** |
 
 ### C. `serve` & `attach`
 
 | Work item | OpenCode behaviour | Gap today | Phase |
 |-----------|-------------------|-----------|-------|
-| `--hostname` alias | Bind hostname | `--host` only | **CLI-P0** |
-| `--cors` (repeatable) | Extra CORS origins | Missing | **CLI-P1** |
+| `--hostname` alias | Bind hostname | **Done** | **CLI-P0** ✓ |
+| `--cors` (repeatable) | Extra CORS origins | **Done** | **CLI-P1** ✓ |
 | `--mdns`, `--mdns-domain` | Discovery | Missing | **CLI-P2** |
-| Basic auth | `OPENCODE_SERVER_PASSWORD` (+ username env) | Missing | **CLI-P1–P2** (Decided #8 — required for drop-in) |
+| Basic auth | `OPENCODE_SERVER_PASSWORD` (+ username env) | **Serve env-gated begun**; attach client flags open | **CLI-P1–P2** (Decided #8) |
 | `attach [url]` | TUI against remote serve | Missing | **CLI-P2** |
 | `attach` flags | `--dir`, session continue/fork, `--password`/`-p`, `--username`/`-u` | Missing | **CLI-P2** |
 
@@ -151,9 +153,9 @@ Comprehensive backlog to match OpenCode CLI behaviour/functionality for **1.0**.
 
 | Work item | OpenCode behaviour | Gap today | Phase |
 |-----------|-------------------|-----------|-------|
-| `models [provider]` | List `provider/model`; `--refresh`, `--verbose` | Missing | **CLI-P1** |
-| `session list` | Table/json; `--max-count`/`-n`, `--format` | HTTP only | **CLI-P1** |
-| `session delete <id>` | Delete session | HTTP only | **CLI-P1** |
+| `models [provider]` | List `provider/model`; `--refresh`, `--verbose` | **Done** (basic list); refresh/verbose polish open | **CLI-P1** ✓ |
+| `session list` | Table/json; `--max-count`/`-n`, `--format` | **Done** (table/json thin client); `--max-count` open | **CLI-P1** ✓ |
+| `session delete <id>` | Delete session | **Done** (thin HTTP client) | **CLI-P1** ✓ |
 | `export` / `import` | Session JSON / share URL; `--sanitize` | Missing | **CLI-P2** |
 | `stats` | Token/cost; `--days`, `--tools`, `--models`, `--project` | Missing | **CLI-P3** |
 
@@ -209,13 +211,13 @@ These are not separate “CLI-only” tasks — they are the runtime depth OpenC
 
 | Work item | Why CLI needs it | Phase |
 |-----------|------------------|-------|
-| Durable non-interactive agent / prompt loop | Core of OpenCode `run` | **CLI-P0–P2** |
+| Durable non-interactive agent / prompt loop | Core of OpenCode `run` | **Basic done**; full parity **CLI-P2** |
 | TUI ↔ local server lifecycle (port/hostname flags) | Bare invoke / attach | **CLI-P0–P1** |
 | Session continue / fork end-to-end | `--continue` / `--session` / `--fork` | **CLI-P1–P2** |
 | Provider auth load + OpenCode import | `auth` + first-run `run`/TUI | **CLI-P2** |
-| HTTP basic auth (env-gated) + client flags | Remote attach (Decided #8 — required for drop-in) | **CLI-P1–P2** |
-| CORS middleware | `serve --cors`; future `web` | **CLI-P1** |
-| Models list/refresh without TUI | `models` CLI | **CLI-P1** |
+| HTTP basic auth (env-gated) + client flags | Remote attach (Decided #8 — required for drop-in) | **Serve begun**; client flags **CLI-P2** |
+| CORS middleware | `serve --cors`; future `web` | **Done** (serve) |
+| Models list/refresh without TUI | `models` CLI | **Done** (basic) |
 | MCP/plugin config writers + live status | `mcp` / `plugin` CLIs | **CLI-P2** |
 | Permission / `--auto` vs sandbox engine | `run` / TUI `--auto` | **CLI-P2** |
 | Exit codes + stdout/stderr contracts | `run --format json` automation | **CLI-P1–P2** |
@@ -259,21 +261,21 @@ From [roadmap-parity.md](./roadmap-parity.md) — **runtime slices are Done**; C
 
 - [ ] Bare invoke → Bun TUI (Decided #2).
 - [ ] Enable `-v` / `--version`; clean `version` output.
-- [ ] `serve --hostname` alias for `--host`.
-- [ ] Help lists **only** implemented commands (Decided #6).
-- [ ] Start **real `run`**: positional message + OpenCode `--model` form; remove silent bootstrap-and-exit (Decided #3). Interim loud “not implemented” only if one-shot cannot land in the same slice — never as the end state.
-- [ ] Smoke: version flag; hostname; bare invoke / help honesty. Fixtures wait for seam approval (#10).
+- [x] `serve --hostname` alias for `--host`.
+- [x] Help lists **only** implemented commands (Decided #6).
+- [x] Start **real `run`**: positional message + OpenCode `--model` form; remove silent bootstrap-and-exit (Decided #3). Agent loop + tools; stub/no-network path for smoke.
+- [x] Smoke: help; hostname; `run` one-shot (stub). Fixtures: seams **approved** (#10); `conformance/fixtures/cli/` pending.
 
 ### CLI-P1 — Compat flags & thin management CLIs
 
 **Outcome:** Automation/discovery CLIs and serve hardening toward attach.
 
-- [ ] `serve --cors`; logging flags ↔ `--log-level` / `RUST_LOG`.
-- [ ] Begin **basic auth** on `serve` (Decided #8 — mirror OpenCode env-gated behavior); required for drop-in — complete before remote attach.
-- [ ] `models` (`--refresh`, `--verbose`); `session list` / `delete`.
-- [ ] `run` essentials: `--format`, session continue flags, `--dir`.
+- [x] `serve --cors` (logging flags ↔ `--log-level` still open).
+- [x] Begin **basic auth** on `serve` (Decided #8 — `OPENCODE_SERVER_PASSWORD` / jerekode equivalent); client `--password`/`--username` still open for attach.
+- [x] `models`; `session list` / `delete` (thin; `--refresh`/`--verbose` polish deferred).
+- [x] `run` essentials: `--format` (+ `--model provider/model`); session continue / `--dir` deferred.
 - [ ] Global `--pure` / document core `OPENCODE_*` in `docs/cli.md` or [distribution.md](./distribution.md).
-- [ ] After seam approval: `conformance/fixtures/cli/` argv fixtures.
+- [ ] `conformance/fixtures/cli/` argv fixtures (seams approved; fixtures pending).
 
 ### CLI-P2 — Behavioral parity (agent loop, attach, auth, ecosystem CLIs)
 
@@ -322,17 +324,15 @@ From [roadmap-parity.md](./roadmap-parity.md) — **runtime slices are Done**; C
 
 ## Conformance / test strategy (CLI)
 
-**Process (Decided #10):** Propose CLI seams for approval **before** the first CLI fixture PR. Until then expand `crates/jerekode-cli/tests/cli_smoke.rs` only.
+**Process (Decided #10):** CLI seams are **approved** and listed in [conformance.md](./conformance.md). Expand `crates/jerekode-cli/tests/cli_smoke.rs` until owned fixtures land under `conformance/fixtures/cli/`.
 
-**Draft seams — pending approval (not yet in conformance.md):**
-
-| Seam (proposed) | Style | Fixture idea |
-|-----------------|-------|--------------|
-| CLI help / version argv | Black-box binary | Exit 0; stdout contains version; help omits unfinished cmds |
-| `serve` bind + `/health` | Black-box + HTTP | Extend smoke; add `--hostname` |
-| `run` one-shot prompt | Black-box | Owned prompt → expected shape/exit (after loop exists) |
-| `models` list shape | Black-box or HTTP | Independent provider/model list fixture |
-| `session list` table/json | Black-box | Seeded session store fixture |
+| Seam (approved) | Style | Fixture idea | Status |
+|-----------------|-------|--------------|--------|
+| CLI help / version argv | Black-box binary | Exit 0; stdout contains version; help omits unfinished cmds | Approved — smoke |
+| CLI serve bind + `/health` | Black-box + HTTP | Extend smoke; `--hostname` | Approved — smoke |
+| CLI `run` one-shot | Black-box / unit | Owned prompt → expected shape/exit | Approved — smoke + agent-loop unit |
+| CLI `models` list shape | Black-box or in-process | Independent provider/model list fixture | Approved — smoke |
+| CLI `session list` table/json | Black-box | Seeded session store fixture | Approved — smoke |
 
 **Rules:** Independent expected values; no upstream OpenCode source as fixtures; shape fixtures when IDs vary; vertical slices; do not weaken Bun/native hard-gates.
 
@@ -355,7 +355,7 @@ From [roadmap-parity.md](./roadmap-parity.md) — **runtime slices are Done**; C
 All formal compatibility locks (#1–#10) are decided above. Remaining implementation details:
 
 1. **Exact jerekode auth data path** (platform dirs) — pick when implementing `auth` (must not write OpenCode’s `auth.json`).
-2. **Conformance seam table** — propose for approval at first CLI fixture PR (#10); draft below is not approved.
+2. **CLI fixture files** — seams approved in [conformance.md](./conformance.md); land independent expected values under `conformance/fixtures/cli/`.
 3. **Experimental `OPENCODE_EXPERIMENTAL_*` matrix** — which flags are required for “drop-in” vs documented deltas for 1.0.
 4. **`upgrade` / `uninstall`** — stay non-goal for 1.0, or thin wrappers after package-manager story?
 5. Releases-only: signing certs, Homebrew tap name, whether to **bundle** Bun inside full installers later (default remains system Bun until revisited).

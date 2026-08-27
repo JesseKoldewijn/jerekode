@@ -5,9 +5,12 @@
 //! deprecation a matter of removing the v1 adapter rather than touching core logic.
 
 pub mod adapters;
+pub mod agent_loop;
 pub mod error;
 pub mod extensions;
 pub mod handlers;
+pub mod middleware;
+pub mod options;
 pub mod persistence;
 pub mod policy;
 pub mod router;
@@ -23,20 +26,31 @@ use jerekode_plugins::{NativePluginHost, PluginHost, PluginOrchestrator, WasmPlu
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+pub use agent_loop::{AgentLoop, AgentLoopError, AgentRunRequest, AgentRunResult};
 pub use error::{ServerError, ServerResult};
+pub use options::{BasicAuthMode, RouterOptions};
 pub use persistence::SqliteSessionStore;
-pub use router::build_router;
+pub use router::{build_router, build_router_with};
 pub use session_store::{SessionStore, SessionStorePort};
 pub use state::AppState;
 
 /// Start the HTTP server on a specific address (for tests — stub providers).
 pub async fn serve_on(addr: SocketAddr, config: &OpenCodeConfig) -> ServerResult<()> {
+    serve_on_with(addr, config, RouterOptions::default()).await
+}
+
+/// Start the HTTP server on a specific address with router options.
+pub async fn serve_on_with(
+    addr: SocketAddr,
+    config: &OpenCodeConfig,
+    opts: RouterOptions,
+) -> ServerResult<()> {
     let state = if let Some(path) = config.session_db.as_ref() {
         AppState::with_sqlite(config, path).map_err(ServerError::Serve)?
     } else {
         AppState::new(config)
     };
-    let app = build_router(state);
+    let app = build_router_with(state, opts);
 
     tracing::info!(%addr, "jerekode server listening");
     let listener = tokio::net::TcpListener::bind(addr)
@@ -52,6 +66,11 @@ pub async fn serve_on(addr: SocketAddr, config: &OpenCodeConfig) -> ServerResult
 
 /// Start the HTTP server using config host/port.
 pub async fn serve(config: &OpenCodeConfig) -> ServerResult<()> {
+    serve_with(config, RouterOptions::default()).await
+}
+
+/// Start the HTTP server using config host/port and router options (CORS, etc.).
+pub async fn serve_with(config: &OpenCodeConfig, opts: RouterOptions) -> ServerResult<()> {
     let host = config.host.as_deref().unwrap_or("127.0.0.1");
     let port = config.port.unwrap_or(4096);
     let addr: SocketAddr = format!("{host}:{port}").parse().map_err(|e| {
@@ -61,7 +80,7 @@ pub async fn serve(config: &OpenCodeConfig) -> ServerResult<()> {
         )
     })?;
     let state = build_app_state(config).await?;
-    let app = build_router(state);
+    let app = build_router_with(state, opts);
 
     tracing::info!(%addr, "jerekode server listening");
     let listener = tokio::net::TcpListener::bind(addr)

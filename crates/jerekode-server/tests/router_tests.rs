@@ -352,3 +352,72 @@ async fn extension_defaults_apply_when_fields_omitted() {
     assert_eq!(spawn_json["ok"], true);
     assert_eq!(spawn_json["session_id"], "defaults");
 }
+
+#[tokio::test]
+async fn health_requires_basic_auth_when_password_env_set() {
+    use jerekode_server::{BasicAuthMode, RouterOptions, build_router_with};
+    let app = build_router_with(
+        AppState::default(),
+        RouterOptions {
+            cors_origins: Vec::new(),
+            basic_auth: BasicAuthMode::Fixed {
+                username: "opencode".into(),
+                password: "router-secret".into(),
+            },
+        },
+    );
+    let denied = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(denied.status(), StatusCode::UNAUTHORIZED);
+
+    use base64::Engine;
+    let token = base64::engine::general_purpose::STANDARD.encode(b"opencode:router-secret");
+    let ok = app
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .header("authorization", format!("Basic {token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(ok.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn cors_layer_reflects_configured_origin() {
+    use jerekode_server::{RouterOptions, build_router_with};
+    let app = build_router_with(
+        AppState::default(),
+        RouterOptions {
+            cors_origins: vec!["http://localhost:3000".into()],
+            basic_auth: Default::default(),
+        },
+    );
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("OPTIONS")
+                .uri("/health")
+                .header("origin", "http://localhost:3000")
+                .header("access-control-request-method", "GET")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let allow = response
+        .headers()
+        .get("access-control-allow-origin")
+        .and_then(|v| v.to_str().ok());
+    assert_eq!(allow, Some("http://localhost:3000"));
+}

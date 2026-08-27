@@ -16,7 +16,8 @@ pub use ollama::OllamaProvider;
 pub use openai::OpenAiProvider;
 pub use provider::{
     CompletionChunk, CompletionRequest, CompletionResponse, HttpClient, ModelInfo, Provider,
-    ProviderId, ReqwestHttpClient, SharedHttpClient, StubProvider, env_api_key, resolve,
+    ProviderId, ProviderToolCall, ReqwestHttpClient, SharedHttpClient, StubProvider, env_api_key,
+    resolve,
 };
 pub use registry::ProviderRegistry;
 pub use stream::{parse_anthropic_sse, parse_ollama_ndjson, parse_openai_sse};

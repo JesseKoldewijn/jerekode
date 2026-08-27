@@ -1,167 +1,96 @@
 use clap::Args;
 use jerekode_config::{CliOverrides, ConfigLoader};
-#[cfg(feature = "bun-sidecar")]
-use jerekode_plugins::{BunPluginHost, BunProcessSidecarPort, SidecarOutbound, SidecarPort};
-use jerekode_plugins::{NativePluginHost, PluginOrchestrator, WasmPluginHost};
-use std::sync::Arc;
+use jerekode_server::{AgentRunRequest, AppState};
+use std::env;
+use std::process::ExitCode;
+
+use crate::util::resolve_provider_model;
 
 #[derive(Args, Debug)]
 pub struct RunArgs {
+    /// Prompt message (one-shot). Multiple words are joined with spaces.
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+    pub message: Vec<String>,
+
     /// Provider id override
     #[arg(long)]
     pub provider: Option<String>,
 
-    /// Model id override
-    #[arg(long)]
+    /// Model id, or `provider/model` (OpenCode form)
+    #[arg(short = 'm', long)]
     pub model: Option<String>,
+
+    /// Output format: `default` (plain text) or `json`
+    #[arg(long, default_value = "default")]
+    pub format: String,
 
     /// Project root for config discovery
     #[arg(long)]
     pub project: Option<String>,
 }
 
-pub async fn execute(args: RunArgs) -> anyhow::Result<()> {
+pub async fn execute(args: RunArgs) -> anyhow::Result<ExitCode> {
+    let message = args.message.join(" ").trim().to_string();
+    if message.is_empty() {
+        eprintln!("error: `jerekode run` requires a positional message");
+        eprintln!("usage: jerekode run [OPTIONS] <MESSAGE>...");
+        return Ok(ExitCode::from(2));
+    }
+
     let project = args
         .project
         .map(Into::into)
-        .unwrap_or_else(|| std::env::current_dir().expect("current dir"));
+        .unwrap_or_else(|| env::current_dir().expect("current dir"));
 
+    let (provider, model) = resolve_provider_model(args.provider, args.model);
     let cli = CliOverrides {
-        provider: args.provider,
-        model: args.model,
+        provider: provider.clone(),
+        model: model.clone(),
         ..Default::default()
     };
     let loader = ConfigLoader::load_discovered(&project, &cli)?;
+    let config = loader.opencode().clone();
 
-    #[cfg(feature = "bun-sidecar")]
-    {
-        let sidecar_entry = loader
-            .tui()
-            .sidecar
-            .as_ref()
-            .and_then(|s| s.entry.clone())
-            .unwrap_or_else(|| "sidecar/src/index.ts".into());
+    // Force stub providers in tests / offline; otherwise production registry.
+    // `AppState::new` always uses stubs; `production` uses real HTTP providers.
+    let state = if std::env::var("JEREKO_USE_STUB_PROVIDERS").is_ok() {
+        AppState::new(&config)
+    } else {
+        AppState::production(&config).map_err(|e| anyhow::anyhow!(e))?
+    };
 
-        let process = BunProcessSidecarPort::spawn(sidecar_entry).await?;
-        process.wait_startup_ready().await?;
-        let port: Arc<dyn SidecarPort> = process;
-        let bun = Arc::new(BunPluginHost::new(port.clone()));
-        let native = Arc::new(NativePluginHost::new());
-        let wasm = Arc::new(WasmPluginHost::new());
-
-        let mut orchestrator = PluginOrchestrator::new(vec![native, bun, wasm]);
-        orchestrator
-            .load_from_config(loader.opencode().plugins.as_slice())
-            .await?;
-
-        tracing::info!(
-            plugins = orchestrator.loaded_count(),
-            theme = ?loader.tui().theme,
-            "jerekode run — sidecar plugin host active"
-        );
-
-        orchestrator
-            .dispatch_hook(jerekode_plugins::HookCall {
-                hook: "tui.render".into(),
-                payload: serde_json::json!({
-                    "theme": loader.tui().theme,
-                    "bootstrap": true
-                }),
-            })
-            .await?;
-
-        let _ = port.send(SidecarOutbound::Shutdown).await;
-    }
-
-    #[cfg(not(feature = "bun-sidecar"))]
-    {
-        let native = Arc::new(NativePluginHost::new());
-        let wasm = Arc::new(WasmPluginHost::new());
-        let mut orchestrator = PluginOrchestrator::new(vec![native, wasm]);
-        orchestrator
-            .load_from_config(loader.opencode().plugins.as_slice())
-            .await
-            .map_err(|e| anyhow::anyhow!("{e}"))?;
-
-        tracing::info!(
-            plugins = orchestrator.loaded_count(),
-            theme = ?loader.tui().theme,
-            "jerekode run — native-only build (no Bun sidecar)"
-        );
-
-        orchestrator
-            .dispatch_hook(jerekode_plugins::HookCall {
-                hook: "tui.render".into(),
-                payload: serde_json::json!({
-                    "theme": loader.tui().theme,
-                    "bootstrap": true
-                }),
-            })
-            .await
-            .map_err(|e| anyhow::anyhow!("{e}"))?;
-    }
-
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use std::path::PathBuf;
-    use std::process::Command as StdCommand;
-
-    #[cfg(feature = "bun-sidecar")]
-    fn bun_available() -> bool {
-        StdCommand::new("bun")
-            .arg("--version")
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false)
-    }
-
-    #[cfg(feature = "bun-sidecar")]
-    fn sidecar_entry() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../sidecar/src/index.ts")
-    }
-
-    #[cfg(feature = "bun-sidecar")]
-    #[tokio::test]
-    async fn execute_boots_sidecar_plugin_host() {
-        if !bun_available() {
-            if std::env::var_os("CI").is_some() {
-                panic!("execute_boots_sidecar_plugin_host requires bun on PATH");
-            }
-            eprintln!("skipping: bun unavailable");
-            return;
-        }
-
-        let entry = sidecar_entry();
-        assert!(
-            entry.exists(),
-            "sidecar entry missing at {}",
-            entry.display()
-        );
-
-        let project = tempfile::tempdir().expect("temp project");
-        let opencode = project.path().join(".opencode");
-        fs::create_dir_all(&opencode).expect("mkdir .opencode");
-        fs::write(
-            opencode.join("tui.json"),
-            serde_json::json!({
-                "theme": "test",
-                "sidecar": { "entry": entry.to_string_lossy() }
-            })
-            .to_string(),
-        )
-        .expect("write tui.json");
-
-        execute(RunArgs {
-            provider: None,
-            model: None,
-            project: Some(project.path().to_string_lossy().into_owned()),
+    let agent = state.agent_loop();
+    match agent
+        .run(AgentRunRequest {
+            message,
+            session_id: None,
+            provider_id: provider.or_else(|| config.provider.clone()),
+            model: model.or_else(|| config.model.clone()),
+            max_turns: Some(8),
         })
         .await
-        .expect("run execute with bun sidecar");
+    {
+        Ok(result) => {
+            match args.format.as_str() {
+                "json" => {
+                    println!(
+                        "{}",
+                        serde_json::json!({
+                            "session_id": result.session_id,
+                            "content": result.final_text,
+                            "turns": result.turns,
+                        })
+                    );
+                }
+                _ => {
+                    println!("{}", result.final_text);
+                }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        Err(e) => {
+            eprintln!("error: {e}");
+            Ok(ExitCode::from(1))
+        }
     }
 }

@@ -80,6 +80,17 @@ impl AppState {
         }
     }
 
+    /// Build an [`crate::AgentLoop`] from this app state (same sessions/providers/tools).
+    pub fn agent_loop(&self) -> crate::AgentLoop {
+        crate::AgentLoop::new(
+            Arc::clone(&self.ctx.sessions),
+            Arc::clone(&self.ctx.providers),
+            self.ctx.tools.clone(),
+            self.ctx.default_provider.clone(),
+            self.ctx.default_model.clone(),
+        )
+    }
+
     pub fn with_sqlite(config: &OpenCodeConfig, path: impl Into<PathBuf>) -> Result<Self, String> {
         let store = SqliteSessionStore::open(path.into())?;
         Ok(Self::with_store(config, Arc::new(store)))

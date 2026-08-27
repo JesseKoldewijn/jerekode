@@ -180,8 +180,16 @@ pub struct BunProcessSidecarPort {
 impl BunProcessSidecarPort {
     /// Spawn `bun run <entry>` with piped stdio and a stdout reader task.
     pub async fn spawn(sidecar_entry: impl Into<String>) -> PluginResult<Arc<Self>> {
+        Self::spawn_with_bin("bun", sidecar_entry).await
+    }
+
+    /// Spawn a sidecar using an explicit Bun binary path/name (tests use a missing path).
+    pub async fn spawn_with_bin(
+        bun_bin: impl AsRef<std::ffi::OsStr>,
+        sidecar_entry: impl Into<String>,
+    ) -> PluginResult<Arc<Self>> {
         let sidecar_entry = sidecar_entry.into();
-        let mut child = Command::new("bun")
+        let mut child = Command::new(bun_bin)
             .arg("run")
             .arg(&sidecar_entry)
             .stdin(Stdio::piped())
@@ -502,19 +510,16 @@ mod tests {
     #[cfg(feature = "bun-sidecar")]
     #[tokio::test]
     async fn bun_spawn_reports_not_found_hint_when_bun_missing() {
-        let previous = std::env::var_os("PATH");
-        // SAFETY: test-only PATH mutation; restored below before returning.
-        unsafe {
-            std::env::set_var("PATH", "");
-        }
-        let err = match BunProcessSidecarPort::spawn("sidecar/src/index.ts").await {
-            Ok(_) => panic!("spawn must fail without bun on PATH"),
+        // Avoid mutating process PATH (races other parallel Bun tests / clippy await_holding_lock).
+        let err = match BunProcessSidecarPort::spawn_with_bin(
+            "/nonexistent/jerekode-missing-bun",
+            "sidecar/src/index.ts",
+        )
+        .await
+        {
+            Ok(_) => panic!("spawn must fail with missing bun binary"),
             Err(e) => e,
         };
-        match previous {
-            Some(path) => unsafe { std::env::set_var("PATH", path) },
-            None => unsafe { std::env::remove_var("PATH") },
-        }
         let msg = err.to_string();
         assert!(
             msg.contains("failed to spawn bun") && msg.contains("Bun was not found on PATH"),

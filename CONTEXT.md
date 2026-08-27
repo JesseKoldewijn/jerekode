@@ -6,7 +6,7 @@ Start here for a navigable map of the repository. Human-oriented docs live in [d
 
 Jerekode is a **working Rust port of OpenCode** — an OpenCode-compatible AI coding agent runtime (Rust core, Bun plugin sidecar, dual plugin hosts per ADR 002). Compatibility is conformance-driven with owned fixtures (no upstream OpenCode source in-repo). Release pipeline on `main` is green.
 
-Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.md](docs/roadmap-parity.md). Further growth (more providers, richer MCP/LSP/WASM surfaces) is incremental, not foundation scaffolding. **Active forward plans:** CLI ↔ OpenCode full drop-in remaining work (locked decisions + phased inventory; serve basic auth still open with recommended lock) — [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md); release packaging / changelogs / installers (**default download = full**/Bun; native-only advanced/future) — [docs/roadmap-releases.md](docs/roadmap-releases.md).
+Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.md](docs/roadmap-parity.md). Further growth (more providers, richer MCP/LSP/WASM surfaces) is incremental, not foundation scaffolding. **Active forward plans:** CLI ↔ OpenCode full drop-in (locked decisions #1–#10 including serve basic auth mirror; CLI seams approved in [conformance.md](docs/conformance.md)) — [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md); release packaging / changelogs / installers (**default download = full**/Bun; native-only advanced/future) — [docs/roadmap-releases.md](docs/roadmap-releases.md).
 
 ## Crate Map
 
@@ -68,7 +68,7 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | Bun plugins | Real sidecar spawn, dynamic import, `invoke_hook`; CI hard-gates |
 | Native plugins | libloading + test cdylib; CI hard-gates |
 | RTK adapter | `@jerekode/rtk` OpenCode2 + `jerekode-rtk-plugin` native; true Bun+native e2e ([ADR 004](docs/adr/004-rtk-dual-adapter.md)) |
-| CLI smoke | `jerekode version` + `jerekode serve` v1/v2 session create (binary e2e); full OpenCode CLI drop-in plan in [roadmap-parity-cli.md](docs/roadmap-parity-cli.md) |
+| CLI | `serve` (hostname/CORS/basic-auth env), real `run` one-shot + agent loop, `models`, `session list/delete`; Layer 6 smoke + approved CLI seams in [conformance.md](docs/conformance.md); remaining drop-in inventory in [roadmap-parity-cli.md](docs/roadmap-parity-cli.md) |
 | WASM | Module load + `jerekode_hook` ABI |
 | MCP / LSP / PTY | call_tool, initialize/hover, portable-pty I/O |
 | TUI | Bun `jerekode run` default; optional `native-tui` interactive MVP |
