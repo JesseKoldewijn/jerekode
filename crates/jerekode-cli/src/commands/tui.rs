@@ -78,15 +78,10 @@ pub async fn execute() -> anyhow::Result<ExitCode> {
             return Ok(ExitCode::from(1));
         };
 
-        let smoke = env::var("JEREKODE_TUI_SMOKE").is_ok_and(|v| !v.is_empty() && v != "0");
-        let mut cmd = Command::new("bun");
-        cmd.arg("run").arg(&entry);
-        if smoke {
-            cmd.stdin(Stdio::null());
-        } else {
-            cmd.stdin(Stdio::inherit());
-        }
-        let status = cmd
+        let status = Command::new("bun")
+            .arg("run")
+            .arg(&entry)
+            .stdin(Stdio::inherit())
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .status()
