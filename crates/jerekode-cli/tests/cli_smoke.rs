@@ -140,11 +140,11 @@ async fn cli_serve_basic_auth_env_gates_health() {
     let url = format!("http://127.0.0.1:{port}/health");
     let mut saw_unauthorized = false;
     for _ in 0..50 {
-        if let Ok(resp) = client.get(&url).send().await {
-            if resp.status() == reqwest::StatusCode::UNAUTHORIZED {
-                saw_unauthorized = true;
-                break;
-            }
+        if let Ok(resp) = client.get(&url).send().await
+            && resp.status() == reqwest::StatusCode::UNAUTHORIZED
+        {
+            saw_unauthorized = true;
+            break;
         }
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
