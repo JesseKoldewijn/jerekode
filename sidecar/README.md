@@ -1,6 +1,6 @@
 # Bun Plugin Host Sidecar
 
-The Jereko sidecar is a Bun/TypeScript process that hosts TUI and server plugins with full JavaScript ecosystem fidelity. The Rust core (`jereko-cli`, `jereko-server`) owns HTTP, sessions, config, and provider routing; the sidecar owns plugin lifecycle and UI rendering.
+The Jerekode sidecar is a Bun/TypeScript process that hosts TUI and server plugins with full JavaScript ecosystem fidelity. The Rust core (`jerekode-cli`, `jerekode-server`) owns HTTP, sessions, config, and provider routing; the sidecar owns plugin lifecycle and UI rendering.
 
 ## Why a Sidecar?
 
@@ -50,9 +50,9 @@ bun run check
 
 ## Integration
 
-`jereko run`:
+`jerekode run`:
 
-1. Load merged config from Rust (`jereko-config`).
+1. Load merged config from Rust (`jerekode-config`).
 2. Spawn `bun run sidecar/src/index.ts` via `BunProcessSidecarPort`.
 3. Exchange JSON-line messages over stdio.
 4. Forward session events between HTTP core and TUI plugins.

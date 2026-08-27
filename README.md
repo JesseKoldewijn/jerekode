@@ -1,6 +1,6 @@
-# Jereko
+# Jerekode
 
-Jereko is a **Rust port of OpenCode** — an OpenCode-compatible AI coding agent runtime. Implementation is a **Rust core** plus a **Bun plugin sidecar**, with dual plugin hosts (Bun + native; WASM optional) and owned conformance fixtures.
+Jerekode is a **Rust port of OpenCode** — an OpenCode-compatible AI coding agent runtime. Implementation is a **Rust core** plus a **Bun plugin sidecar**, with dual plugin hosts (Bun + native; WASM optional) and owned conformance fixtures.
 
 It is not a line-for-line fork and does not vendor upstream OpenCode source; compatibility is conformance-driven (owned fixtures at public seams).
 
@@ -18,14 +18,14 @@ Active packaging / release plan: [docs/roadmap-releases.md](docs/roadmap-release
 ```
 jerekode/
 ├── crates/
-│   ├── jereko-core/          # Domain types, session models
-│   ├── jereko-config/        # Config loading and merge precedence
-│   ├── jereko-server/        # HTTP server + v1/v2 adapters + tools/extensions
-│   ├── jereko-cli/           # CLI binary (jereko)
-│   ├── jereko-providers/     # Provider registry + streaming adapters
-│   ├── jereko-plugins/       # PluginOrchestrator + Bun/native/WASM hosts
-│   ├── jereko-plugin-sdk/    # Native plugin SDK / C ABI
-│   └── jereko-test-native-plugin/  # Test cdylib for NativePluginHost CI
+│   ├── jerekode-core/          # Domain types, session models
+│   ├── jerekode-config/        # Config loading and merge precedence
+│   ├── jerekode-server/        # HTTP server + v1/v2 adapters + tools/extensions
+│   ├── jerekode-cli/           # CLI binary (jerekode)
+│   ├── jerekode-providers/     # Provider registry + streaming adapters
+│   ├── jerekode-plugins/       # PluginOrchestrator + Bun/native/WASM hosts
+│   ├── jerekode-plugin-sdk/    # Native plugin SDK / C ABI
+│   └── jerekode-test-native-plugin/  # Test cdylib for NativePluginHost CI
 ├── sidecar/                  # Bun plugin host (TUI + server plugins)
 ├── conformance/              # Owned fixture-driven compatibility tests
 └── docs/                     # Architecture, conformance, roadmaps, ADRs
@@ -34,7 +34,7 @@ jerekode/
 ## Prerequisites
 
 - [Rust](https://rustup.rs/) (edition 2024, stable; MSRV 1.85+)
-- [Bun](https://bun.sh/) (for sidecar / `jereko run`)
+- [Bun](https://bun.sh/) (for sidecar / `jerekode run`)
 
 ## Contributing
 
@@ -59,30 +59,30 @@ cargo clippy --all-targets --all-features --locked -- -D warnings
 cargo fmt --all -- --check
 ```
 
-The primary CLI binary is **`jereko`**:
+The primary CLI binary is **`jerekode`**:
 
 ```bash
-cargo run -p jereko-cli -- version
-cargo run -p jereko-cli -- serve
-cargo run -p jereko-cli -- run
+cargo run -p jerekode-cli -- version
+cargo run -p jerekode-cli -- serve
+cargo run -p jerekode-cli -- run
 ```
 
-Optional native TUI helpers are behind the `native-tui` Cargo feature (ratatui MVP in `jereko-plugins`; Bun `jereko run` remains the default interactive path):
+Optional native TUI helpers are behind the `native-tui` Cargo feature (ratatui MVP in `jerekode-plugins`; Bun `jerekode run` remains the default interactive path):
 
 ```bash
-cargo build -p jereko-cli --features native-tui
+cargo build -p jerekode-cli --features native-tui
 ```
 
 ## Binary Aliases
 
-The primary binary is `jereko`. Optional **`opencode`** and **`opencode2`** aliases point to the same binary.
+The primary binary is `jerekode`. Optional **`opencode`** and **`opencode2`** aliases point to the same binary.
 
 ### Symlinks (Unix/macOS)
 
 ```bash
 cargo build --release
-ln -s target/release/jereko ~/.local/bin/opencode
-ln -s target/release/jereko ~/.local/bin/opencode2
+ln -s target/release/jerekode ~/.local/bin/opencode
+ln -s target/release/jerekode ~/.local/bin/opencode2
 ```
 
 ### Cargo bin aliases
@@ -91,8 +91,8 @@ Add to `~/.cargo/config.toml`:
 
 ```toml
 [alias]
-opencode = "run -p jereko-cli --"
-opencode2 = "run -p jereko-cli --"
+opencode = "run -p jerekode-cli --"
+opencode2 = "run -p jerekode-cli --"
 ```
 
 Install helpers: [scripts/install.sh](scripts/install.sh), [docs/distribution.md](docs/distribution.md).

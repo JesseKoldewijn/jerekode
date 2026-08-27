@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "Bun plugin host sidecar for Jereko TUI and server plugins",
+  "description": "Bun plugin host sidecar for Jerekode TUI and server plugins",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {

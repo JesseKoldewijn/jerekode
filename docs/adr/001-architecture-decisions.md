@@ -6,13 +6,13 @@
 
 ## Decision
 
-Jereko is built as a **Rust core + Bun sidecar** runtime targeting OpenCode API compatibility through owned conformance tests — without importing upstream source code.
+Jerekode is built as a **Rust core + Bun sidecar** runtime targeting OpenCode API compatibility through owned conformance tests — without importing upstream source code.
 
 ## Decisions Recorded
 
 ### 1. Primary binary: `jerekode`
 
-- The CLI binary is named **`jerekode`** (crate remains `jereko-cli`).
+- The CLI binary is named **`jerekode`** (crate remains `jerekode-cli`).
 - Optional aliases **`opencode`** and **`opencode2`** point to the same binary (symlinks or install-time aliases).
 - Aliases are not separate implementations.
 
@@ -38,7 +38,7 @@ Jereko is built as a **Rust core + Bun sidecar** runtime targeting OpenCode API 
 
 ### 4. Full provider registry from day one
 
-- `jereko-providers` uses a trait-based registry designed for **75+ providers**.
+- `jerekode-providers` uses a trait-based registry designed for **75+ providers**.
 - Built-in providers ship in-crate; plugin-provided providers register via sidecar (Phase 2).
 - Tests use `StubProvider` at the trait boundary; real provider tests mock at the HTTP boundary only.
 
@@ -64,7 +64,7 @@ Jereko is built as a **Rust core + Bun sidecar** runtime targeting OpenCode API 
 
 | Topic | Decision |
 |-------|----------|
-| `Cargo.lock` | Tracked — jereko is an application binary |
+| `Cargo.lock` | Tracked — jerekode is an application binary |
 | Agent context | `CONTEXT.md` + `AGENTS.md` at repo root |
 | ADRs | `docs/adr/` created now; new decisions get numbered ADRs |
 | Skills | `.agents/skills/` committed with `skills-lock.json` |

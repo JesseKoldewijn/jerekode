@@ -22,7 +22,7 @@ Related: [architecture.md](./architecture.md), [conformance.md](./conformance.md
 | HTTP | Axum v1/v2: sessions list/get/delete, messages, SSE stream, providers, tools |
 | Sessions | `SessionStorePort`; in-memory + SQLite |
 | Providers | OpenAI / Anthropic / Ollama / Groq / OpenRouter + stubs; streaming |
-| Plugins | Orchestrator; Bun spawn + real plugin load; NativePluginHost; Wasm `jereko_hook` |
+| Plugins | Orchestrator; Bun spawn + real plugin load; NativePluginHost; Wasm `jerekode_hook` |
 | Sidecar | JSON-line stdio; Bun CI hard-gate |
 | Extensions | MCP call_tool; LSP initialize/hover; portable-pty I/O |
 | Tools | read/write/edit/bash/grep + sandbox policy |
@@ -73,7 +73,7 @@ No new ADR is required for deepening existing seams. Packaging decisions: [ADR 0
 2. **Session DB location** — optional `sessionDb` config path.
 3. **Bun version pin** — CI pins `1.2.5`; engines `>=1.1`.
 4. **IPC contract** — snake_case tags/fields canonical.
-5. **`jereko-plugin-sdk` workspace** — member + test plugin.
-6. **Tool execution home** — `jereko-server::tools`.
+5. **`jerekode-plugin-sdk` workspace** — member + test plugin.
+6. **Tool execution home** — `jerekode-server::tools`.
 7. **Provider streaming** — shipped (`complete_stream` + SSE HTTP).
 8. **Sandbox policy** — `ToolPolicy` (deny `.git/`, bash allow, timeouts).

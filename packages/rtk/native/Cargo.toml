@@ -1,6 +1,6 @@
 [package]
-name = "jereko-rtk-plugin"
-description = "Native RTK adapter cdylib for Jereko NativePluginHost"
+name = "jerekode-rtk-plugin"
+description = "Native RTK adapter cdylib for Jerekode NativePluginHost"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,12 +8,12 @@ authors.workspace = true
 publish = false
 
 [lib]
-name = "jereko_rtk_plugin"
+name = "jerekode_rtk_plugin"
 crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
 [dependencies]
-jereko-plugin-sdk = { path = "../../../crates/jereko-plugin-sdk" }
+jerekode-plugin-sdk = { path = "../../../crates/jerekode-plugin-sdk" }
 regex = "1"
 serde = { workspace = true }
 serde_json = { workspace = true }

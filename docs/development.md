@@ -1,6 +1,6 @@
 # Development
 
-Engineering standards for the Jereko Rust workspace and Bun sidecar.
+Engineering standards for the Jerekode Rust workspace and Bun sidecar.
 
 ## Toolchain
 
@@ -16,13 +16,13 @@ Prefer `cargo +stable …` locally if your default rustc is a nightly mismatch w
 ```bash
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features --locked -- -D warnings
-cargo build -p jereko-test-native-plugin --locked
-cargo build -p jereko-rtk-plugin --locked
+cargo build -p jerekode-test-native-plugin --locked
+cargo build -p jerekode-rtk-plugin --locked
 cargo test --workspace --locked
-cargo build -p jereko-cli --release
+cargo build -p jerekode-cli --release
 ```
 
-CLI runtime smoke (included in workspace tests): `jerekode version` + `jerekode serve` v1/v2 session create — see `crates/jereko-cli/tests/cli_smoke.rs`.
+CLI runtime smoke (included in workspace tests): `jerekode version` + `jerekode serve` v1/v2 session create — see `crates/jerekode-cli/tests/cli_smoke.rs`.
 
 First-party plugins (e.g. `@jerekode/rtk`) need **true e2e** against Bun process + native dylib — see [conformance.md](./conformance.md) Layer 5.
 
@@ -35,13 +35,13 @@ cd sidecar && bun install && bun run check && bun test
 Optional native TUI:
 
 ```bash
-cargo test -p jereko-cli --features native-tui
+cargo test -p jerekode-cli --features native-tui
 ```
 
 Criterion benches (not PR-gated; nightly workflow):
 
 ```bash
-cargo bench -p jereko-core --bench hot_paths
+cargo bench -p jerekode-core --bench hot_paths
 ```
 
 ## Standards
@@ -71,10 +71,10 @@ Follow [.agents/skills/tdd/SKILL.md](../.agents/skills/tdd/SKILL.md):
 ## Workspace layout tips
 
 - **Monorepo:** Bun workspaces (`packages/*`, `sidecar`) + Cargo workspace (`crates/*`, `packages/rtk/native`, `conformance`).
-- Handlers in `jereko-server` operate only on **normalized** types.
-- Provider HTTP adapters live in `jereko-providers`; registry stubs are for tests.
+- Handlers in `jerekode-server` operate only on **normalized** types.
+- Provider HTTP adapters live in `jerekode-providers`; registry stubs are for tests.
 - Extension hosts (MCP/LSP/PTY/WASM) hang off `AppState` / `ExtensionHosts`.
-- Sandbox policy for tools: `jereko-server` `ToolPolicy`.
+- Sandbox policy for tools: `jerekode-server` `ToolPolicy`.
 - First-party RTK adapter: `packages/rtk` (see [ADR 004](./adr/004-rtk-dual-adapter.md)).
 
 ```bash
@@ -83,8 +83,8 @@ bun install
 bun test ./packages/rtk
 cd sidecar && bun run check && bun test
 
-cargo build -p jereko-rtk-plugin --locked
-cargo test -p jereko-rtk-plugin --locked
+cargo build -p jerekode-rtk-plugin --locked
+cargo test -p jerekode-rtk-plugin --locked
 ```
 
 ## Releases

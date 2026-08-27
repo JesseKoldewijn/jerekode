@@ -3,8 +3,8 @@
 //! First-party plugins must prove rewrite through **real** hosts (native dylib +
 //! Bun process sidecar), not in-memory fakes. Table path only — no `rtk` binary.
 
-use jereko_config::PluginEntry;
-use jereko_plugins::{
+use jerekode_config::PluginEntry;
+use jerekode_plugins::{
     BunPluginHost, BunProcessSidecarPort, HookCall, NativePluginHost, PluginOrchestrator,
     SidecarOutbound, SidecarPort, TOOL_EXECUTE_BEFORE, apply_command_mutations,
 };
@@ -32,11 +32,11 @@ fn native_rtk_lib() -> PathBuf {
         .join("../target")
         .join(profile);
     if cfg!(windows) {
-        base.join("jereko_rtk_plugin.dll")
+        base.join("jerekode_rtk_plugin.dll")
     } else if cfg!(target_os = "macos") {
-        base.join("libjereko_rtk_plugin.dylib")
+        base.join("libjerekode_rtk_plugin.dylib")
     } else {
-        base.join("libjereko_rtk_plugin.so")
+        base.join("libjerekode_rtk_plugin.so")
     }
 }
 
@@ -232,9 +232,9 @@ async fn rtk_server_execute_tool_runs_with_orchestrator_attached() {
         return;
     }
 
-    use jereko_config::OpenCodeConfig;
-    use jereko_server::AppState;
-    use jereko_server::tools::{ToolCall, ToolName};
+    use jerekode_config::OpenCodeConfig;
+    use jerekode_server::AppState;
+    use jerekode_server::tools::{ToolCall, ToolName};
 
     let native = Arc::new(NativePluginHost::with_library_path(lib.to_string_lossy()));
     let mut orch = PluginOrchestrator::new(vec![native]);
@@ -250,7 +250,7 @@ async fn rtk_server_execute_tool_runs_with_orchestrator_attached() {
         .ctx
         .execute_tool(ToolCall {
             name: ToolName::Bash,
-            args: serde_json::json!({"command": "echo jereko-rtk"}),
+            args: serde_json::json!({"command": "echo jerekode-rtk"}),
         })
         .await;
     assert!(
@@ -258,5 +258,5 @@ async fn rtk_server_execute_tool_runs_with_orchestrator_attached() {
         "bash after hooks should succeed: {}",
         result.output
     );
-    assert!(result.output.contains("jereko-rtk"));
+    assert!(result.output.contains("jerekode-rtk"));
 }

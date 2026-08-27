@@ -36,7 +36,7 @@ Detailed phasing and open questions live in [roadmap-releases.md](../roadmap-rel
 - Publishes a **hand-written `releaseBody`** (install/upgrade instructions) — **does not** rely on GitHub `generate_release_notes`.
 - Signs Tauri updater payloads; optional Apple/Windows code signing is still a separate concern.
 
-Jereko is a **Rust CLI**, not a Tauri GUI — installer tooling differs (`cargo-dist` / `cargo-packager` / WiX / nfpm), but the **notes lesson** transfers: do not ship unfiltered auto notes.
+Jerekode is a **Rust CLI**, not a Tauri GUI — installer tooling differs (`cargo-dist` / `cargo-packager` / WiX / nfpm), but the **notes lesson** transfers: do not ship unfiltered auto notes.
 
 ### Why changelogs and "New Contributors" are wrong
 
@@ -57,8 +57,8 @@ Root causes (combined):
 
 | Fact | Detail |
 |------|--------|
-| Binary name | `jerekode` (`jereko-cli` `[[bin]]`) |
-| Cargo features today | `native-tui` only (optional ratatui stub via `jereko-plugins/native-tui`). **No** `bun-sidecar` / `native-only` feature. |
+| Binary name | `jerekode` (`jerekode-cli` `[[bin]]`) |
+| Cargo features today | `native-tui` only (optional ratatui stub via `jerekode-plugins/native-tui`). **No** `bun-sidecar` / `native-only` feature. |
 | Bun coupling | Always-on in code paths that use it: `BunProcessSidecarPort::spawn` runs `Command::new("bun")`; `jerekode run` always builds orchestrator with `NativePluginHost` + `BunPluginHost` + `WasmPluginHost`. |
 | Release archives | **Do not** bundle Bun or `sidecar/` sources — `SIDECAR.txt` tells users to install Bun and run from repo (system Bun). |
 | Without Bun | OpenCode-fidelity TUI (SolidJS / sidecar), unqualified npm/TS plugins, and `tui.render` via sidecar are unavailable. Native dylib plugins + WASM (when enabled) + HTTP `serve` remain in scope for a native-only variant. `native-tui` is a stub, not a Bun replacement yet. |
@@ -67,7 +67,7 @@ Root causes (combined):
 
 ## Changelog approach (recommendation)
 
-| Option | Fit for jereko | Verdict |
+| Option | Fit for jerekode | Verdict |
 |--------|----------------|---------|
 | Raw GitHub `generate_release_notes` (current) | Fast, but broken here | **Stop for published body** (or heavily filter) |
 | Filtered GitHub notes (`.github/release.yml` + explicit previous tag) | Low effort; excludes labels/authors | **Good P0 stopgap** |
@@ -181,15 +181,15 @@ Tooling options to evaluate in implementation PRs: [cargo-dist](https://opensour
 | Variant | Audience | Bun | Plugins / TUI |
 |---------|----------|-----|----------------|
 | **Full** (`bun-sidecar` on) | OpenCode / JS/TS plugin users | System Bun required (P0–P2); optionally bundle Bun later | BunPluginHost default; sidecar TUI plugins |
-| **Native-only** (`bun-sidecar` off) | Server/CLI users who only need Rust/native (and WASM) plugins | Not shipped; not required | NativePluginHost (+ WasmPluginHost); `jereko run` must not spawn Bun; clear errors if config requests Bun/TS plugins |
+| **Native-only** (`bun-sidecar` off) | Server/CLI users who only need Rust/native (and WASM) plugins | Not shipped; not required | NativePluginHost (+ WasmPluginHost); `jerekode run` must not spawn Bun; clear errors if config requests Bun/TS plugins |
 
 ### Implementation approach (recommendation)
 
-1. **Cargo feature `bun-sidecar` (default = enabled)** on `jereko-plugins` / `jereko-cli`, wrapping `bun_host`, `BunProcessSidecarPort`, and CLI registration. Mirror optional compile-out of Bun-only paths.
+1. **Cargo feature `bun-sidecar` (default = enabled)** on `jerekode-plugins` / `jerekode-cli`, wrapping `bun_host`, `BunProcessSidecarPort`, and CLI registration. Mirror optional compile-out of Bun-only paths.
 2. **Do not** create a separate workspace binary crate unless packaging forces it. Prefer **one crate, two release artifacts**:
-   - `jereko-{ver}-release-{os}-{arch}` — full (default)
-   - `jereko-{ver}-native-release-{os}-{arch}` — build with Bun sidecar feature off  
-   Installers: `jereko-setup.exe` vs `jereko-native-setup.exe` (names TBD).
+   - `jerekode-{ver}-release-{os}-{arch}` — full (default)
+   - `jerekode-{ver}-native-release-{os}-{arch}` — build with Bun sidecar feature off  
+   Installers: `jerekode-setup.exe` vs `jerekode-native-setup.exe` (names TBD).
 3. Keep **`native-tui` orthogonal** — it does not mean "native-only distribution." Native-only may later enable `native-tui` by default once the stub is real.
 4. **Runtime UX:** native-only builds should error clearly if config selects Bun/unqualified npm plugins or sidecar entry points ("this build was compiled without Bun sidecar support; download the full build or use native/wasm plugins").
 5. **CI matrix:** `os × arch × variant` doubles artifact count. **Phase:** ship **full only** through P1–P2; add **native-only** for linux-x64 + windows-x64 first (highest demand / cheapest), then expand.
@@ -199,7 +199,7 @@ Tooling options to evaluate in implementation PRs: [cargo-dist](https://opensour
 | Approach | Pros | Cons |
 |----------|------|------|
 | Feature flag + two artifacts (recommended) | One codebase; ADR 002 hosts stay clear; smaller native binary | Matrix cost; must test both |
-| Separate bins (`jereko` + `jereko-native`) | Very explicit download names | Duplicate clap surface; drift risk |
+| Separate bins (`jerekode` + `jerekode-native`) | Very explicit download names | Duplicate clap surface; drift risk |
 | Always one fat binary | Simplest CI | Cannot remove Bun *requirement* from UX; users still need Bun on PATH for `run` |
 
 **Size/startup:** Native-only mainly removes the need to spawn Bun and ship/sidecar docs expectations; Rust code size savings are modest unless Bun host modules are `cfg`'d out. Biggest win is **operational** (no Bun install), not megabytes.

@@ -1,7 +1,7 @@
 //! Layer 3 black-box HTTP conformance against a running server.
 
-use jereko_config::OpenCodeConfig;
-use jereko_server::serve_on;
+use jerekode_config::OpenCodeConfig;
+use jerekode_server::serve_on;
 use serde_json::Value;
 use std::fs;
 use std::net::{SocketAddr, TcpListener};

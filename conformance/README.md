@@ -1,13 +1,13 @@
 # Conformance Tests
 
-Jereko validates OpenCode compatibility through **owned conformance fixtures and specs** — not by vendoring or forking upstream source code.
+Jerekode validates OpenCode compatibility through **owned conformance fixtures and specs** — not by vendoring or forking upstream source code.
 
 ## Principles
 
 1. **No upstream code in repo** — We do not submodule, vendor, or clone OpenCode into this repository.
 2. **Fixture-driven** — Request/response pairs, config samples, and API schemas live under `conformance/fixtures/`.
-3. **Spec-derived** — Fixtures are authored from public API documentation and behavioral observations, maintained by Jereko contributors.
-4. **Automated** — `cargo test -p jereko-conformance` runs the harness (config, HTTP black-box, tools, e2e).
+3. **Spec-derived** — Fixtures are authored from public API documentation and behavioral observations, maintained by Jerekode contributors.
+4. **Automated** — `cargo test -p jerekode-conformance` runs the harness (config, HTTP black-box, tools, e2e).
 
 ## Directory Layout
 
@@ -36,12 +36,12 @@ conformance/
 cargo test
 
 # Conformance crate only
-cargo test -p jereko-conformance
+cargo test -p jerekode-conformance
 ```
 
 ## Coverage (current)
 
-- HTTP adapter / black-box tests against `jereko serve` with owned v1/v2 fixtures
+- HTTP adapter / black-box tests against `jerekode serve` with owned v1/v2 fixtures
 - Config merge tests with owned `opencode.json` / `tui.json` samples
 - Tools and workspace integration coverage as implemented under `src/`
 

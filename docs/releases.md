@@ -169,7 +169,7 @@ Separate stickies per profile so `/build debug` and `/build release` do not over
 ## Local packaging smoke test
 
 ```bash
-cargo build --release -p jereko-cli --locked
+cargo build --release -p jerekode-cli --locked
 ./scripts/package-release.sh jerekode-0.0.0-local-release-linux-x64 target/release/jerekode /tmp/jerekode-dist release
 ls /tmp/jerekode-dist
 ```

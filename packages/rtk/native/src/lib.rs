@@ -126,7 +126,7 @@ fn handle_hook(hook: &str, payload: Value) -> Result<Value, i32> {
     }
 }
 
-jereko_plugin_sdk::export_plugin!("jereko-rtk", "0.0.1", handle_hook);
+jerekode_plugin_sdk::export_plugin!("jerekode-rtk", "0.0.1", handle_hook);
 
 #[cfg(test)]
 mod tests {

@@ -1,5 +1,5 @@
 /**
- * Jereko Bun Sidecar — Plugin Host Entry Point
+ * Jerekode Bun Sidecar — Plugin Host Entry Point
  *
  * JSON-line IPC over stdio (one message per line).
  * Field names use snake_case to match Rust serde (`rename_all = "snake_case"`).
@@ -259,7 +259,7 @@ export function startSidecar(options: SidecarOptions = {}): void {
   emit({
     type: "log",
     level: "info",
-    message: `jereko sidecar started (config: ${options.configPath ?? "none"})`,
+    message: `jerekode sidecar started (config: ${options.configPath ?? "none"})`,
   });
   emit({ type: "ready" });
 

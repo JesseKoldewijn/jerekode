@@ -13,7 +13,7 @@ Installs `jerekode` plus aliases `opencode` and `opencode2` into `$JEREKODE_PREF
 ## Manual aliases
 
 ```bash
-cargo build -p jereko-cli --release
+cargo build -p jerekode-cli --release
 ln -s "$(pwd)/target/release/jerekode" ~/.local/bin/opencode
 ln -s "$(pwd)/target/release/jerekode" ~/.local/bin/opencode2
 ```
@@ -23,7 +23,7 @@ ln -s "$(pwd)/target/release/jerekode" ~/.local/bin/opencode2
 Copy or hardlink `jerekode.exe` as `opencode.exe` / `opencode2.exe` onto a directory in `%PATH%`, or use PowerShell:
 
 ```powershell
-cargo build -p jereko-cli --release
+cargo build -p jerekode-cli --release
 Copy-Item target\release\jerekode.exe $env:USERPROFILE\.local\bin\jerekode.exe
 Copy-Item target\release\jerekode.exe $env:USERPROFILE\.local\bin\opencode.exe
 Copy-Item target\release\jerekode.exe $env:USERPROFILE\.local\bin\opencode2.exe
@@ -36,13 +36,13 @@ Copy-Item target\release\jerekode.exe $env:USERPROFILE\.local\bin\opencode2.exe
 | Core CLI / server | Rust-built binary only |
 | `jerekode run` sidecar | Bun >= 1.1 on PATH |
 | SQLite sessions | Optional `sessionDb` in `opencode.json` |
-| Native plugins | Platform dylib built against `jereko-plugin-sdk` |
+| Native plugins | Platform dylib built against `jerekode-plugin-sdk` |
 
 ## Feature flags
 
 ```bash
-cargo build -p jereko-cli --features native-tui
-cargo bench -p jereko-plugins
+cargo build -p jerekode-cli --features native-tui
+cargo bench -p jerekode-plugins
 ```
 
 ## CI releases

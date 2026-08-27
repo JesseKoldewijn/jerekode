@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "license": "MIT",
-  "description": "Jereko Bun workspaces root (sidecar + packages)",
+  "description": "Jerekode Bun workspaces root (sidecar + packages)",
   "workspaces": [
     "packages/*",
     "sidecar"

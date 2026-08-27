@@ -30,6 +30,6 @@ Apple notarization and Windows Authenticode are tracked in [docs/roadmap-release
 ## Local smoke test
 
 ```bash
-cargo build --release -p jereko-cli --locked
+cargo build --release -p jerekode-cli --locked
 VERSION=0.0.0-local ./scripts/package-installers.sh linux x64 target/release/jerekode dist
 ```

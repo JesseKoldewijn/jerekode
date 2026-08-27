@@ -242,8 +242,8 @@ jobs:
 
       - name: Build test and RTK native plugins
         run: |
-          cargo build -p jereko-test-native-plugin --locked
-          cargo build -p jereko-rtk-plugin --locked
+          cargo build -p jerekode-test-native-plugin --locked
+          cargo build -p jerekode-rtk-plugin --locked
 
       - name: Test workspace
         run: cargo test --workspace --locked
@@ -305,7 +305,7 @@ jobs:
 
       - name: Build release binary
         shell: bash
-        run: cargo build --release -p jereko-cli --locked
+        run: cargo build --release -p jerekode-cli --locked
 
       - name: Package artifact
         shell: bash

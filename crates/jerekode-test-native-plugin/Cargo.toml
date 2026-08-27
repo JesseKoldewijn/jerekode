@@ -1,0 +1,16 @@
+[package]
+name = "jerekode-test-native-plugin"
+description = "Test cdylib plugin for NativePluginHost conformance"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+jerekode-plugin-sdk = { path = "../jerekode-plugin-sdk" }
+serde_json = { workspace = true }

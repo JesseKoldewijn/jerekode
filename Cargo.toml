@@ -1,13 +1,13 @@
 [workspace]
 members = [
-    "crates/jereko-core",
-    "crates/jereko-config",
-    "crates/jereko-server",
-    "crates/jereko-cli",
-    "crates/jereko-providers",
-    "crates/jereko-plugins",
-    "crates/jereko-plugin-sdk",
-    "crates/jereko-test-native-plugin",
+    "crates/jerekode-core",
+    "crates/jerekode-config",
+    "crates/jerekode-server",
+    "crates/jerekode-cli",
+    "crates/jerekode-providers",
+    "crates/jerekode-plugins",
+    "crates/jerekode-plugin-sdk",
+    "crates/jerekode-test-native-plugin",
     "packages/rtk/native",
     "conformance",
 ]
@@ -18,18 +18,18 @@ version = "0.0.6"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
-authors = ["Jereko Contributors"]
+authors = ["Jerekode Contributors"]
 repository = "https://github.com/JesseKoldewijn/jerekode"
 
 [workspace.dependencies]
 async-trait = "0.1"
 axum = "0.8"
 clap = { version = "4", features = ["derive"] }
-jereko-config = { path = "crates/jereko-config" }
-jereko-core = { path = "crates/jereko-core" }
-jereko-plugins = { path = "crates/jereko-plugins" }
-jereko-providers = { path = "crates/jereko-providers" }
-jereko-server = { path = "crates/jereko-server" }
+jerekode-config = { path = "crates/jerekode-config" }
+jerekode-core = { path = "crates/jerekode-core" }
+jerekode-plugins = { path = "crates/jerekode-plugins" }
+jerekode-providers = { path = "crates/jerekode-providers" }
+jerekode-server = { path = "crates/jerekode-server" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

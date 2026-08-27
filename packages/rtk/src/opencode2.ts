@@ -17,7 +17,7 @@ export const hooks = {
       stub: false,
     };
   },
-  /** Back-compat with older jereko fixtures. */
+  /** Back-compat with older jerekode fixtures. */
   before_transform: async (payload: Record<string, unknown>) => {
     const input =
       typeof payload.input === "string"

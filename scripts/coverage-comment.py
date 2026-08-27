@@ -8,7 +8,7 @@ import json
 import re
 from pathlib import Path
 
-MARKER = "<!-- jereko-coverage-sticky -->"
+MARKER = "<!-- jerekode-coverage-sticky -->"
 
 
 def read_text(path: Path | None) -> str:

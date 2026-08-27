@@ -1,31 +1,31 @@
-# Jereko Architecture
+# Jerekode Architecture
 
-Jereko is a **Rust port of OpenCode**: an OpenCode-compatible AI coding agent runtime built as a **Rust core + Bun sidecar**. Compatibility is conformance-driven — this repository does not vendor upstream OpenCode source.
+Jerekode is a **Rust port of OpenCode**: an OpenCode-compatible AI coding agent runtime built as a **Rust core + Bun sidecar**. Compatibility is conformance-driven — this repository does not vendor upstream OpenCode source.
 
 ## System Overview
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                        jereko CLI                           │
-│  (primary binary: `jereko`; aliases: opencode, opencode2)   │
+│                        jerekode CLI                           │
+│  (primary binary: `jerekode`; aliases: opencode, opencode2)   │
 └──────────────┬──────────────────────────────┬───────────────┘
                │                              │
                ▼                              ▼
 ┌──────────────────────────┐    ┌────────────────────────────┐
-│     jereko-server        │    │   Bun Sidecar (sidecar/)   │
+│     jerekode-server        │    │   Bun Sidecar (sidecar/)   │
 │  HTTP + adapter layer    │◄──►│  TUI + server plugins      │
 │  v1 / v2 normalization   │    │  JSON-line IPC             │
 └──────────────┬───────────┘    └────────────────────────────┘
                │
                ▼
 ┌──────────────────────────┐    ┌────────────────────────────┐
-│     jereko-core          │    │   jereko-providers         │
+│     jerekode-core          │    │   jerekode-providers         │
 │  sessions, messages      │    │  provider registry         │
 └──────────────────────────┘    └────────────────────────────┘
                │
                ▼
 ┌──────────────────────────┐
-│     jereko-config        │
+│     jerekode-config        │
 │  JSONC config + merge    │
 └──────────────────────────┘
 ```
@@ -34,30 +34,30 @@ Jereko is a **Rust port of OpenCode**: an OpenCode-compatible AI coding agent ru
 
 | Crate | Role |
 |-------|------|
-| `jereko-core` | Domain types, session models, shared errors |
-| `jereko-config` | Config loading, precedence merge, `opencode.json` / `tui.json` types |
-| `jereko-server` | Axum HTTP server, v1/v2 adapters, tools, extensions, policy |
-| `jereko-cli` | CLI entry point (`serve`, `run`, `version`) |
-| `jereko-providers` | Provider trait, registry, HTTP adapters |
-| `jereko-plugins` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
-| `jereko-plugin-sdk` | Native plugin C ABI / Rust helpers |
-| `jereko-rtk-plugin` | Native RTK adapter (`packages/rtk/native`) |
+| `jerekode-core` | Domain types, session models, shared errors |
+| `jerekode-config` | Config loading, precedence merge, `opencode.json` / `tui.json` types |
+| `jerekode-server` | Axum HTTP server, v1/v2 adapters, tools, extensions, policy |
+| `jerekode-cli` | CLI entry point (`serve`, `run`, `version`) |
+| `jerekode-providers` | Provider trait, registry, HTTP adapters |
+| `jerekode-plugins` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
+| `jerekode-plugin-sdk` | Native plugin C ABI / Rust helpers |
+| `jerekode-rtk-plugin` | Native RTK adapter (`packages/rtk/native`) |
 
 **JS packages (Bun workspaces):** `sidecar/` (plugin host), `packages/rtk/` (`@jerekode/rtk` OpenCode2 entry + shared rules). See [ADR 004](./adr/004-rtk-dual-adapter.md).
 
-| `jereko-providers` | Provider trait, registry, streaming HTTP adapters |
-| `jereko-plugins` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
-| `jereko-plugin-sdk` | Native plugin C ABI / Rust helpers |
+| `jerekode-providers` | Provider trait, registry, streaming HTTP adapters |
+| `jerekode-plugins` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
+| `jerekode-plugin-sdk` | Native plugin C ABI / Rust helpers |
 | `conformance` | Owned fixture-driven compatibility tests |
 
 ## Terminology: Adapters vs Seams
 
-Jereko uses "adapter" in three distinct senses. Each maps to a **seam** in [codebase-design](../.agents/skills/codebase-design/SKILL.md) vocabulary:
+Jerekode uses "adapter" in three distinct senses. Each maps to a **seam** in [codebase-design](../.agents/skills/codebase-design/SKILL.md) vocabulary:
 
 | Concept | Location | Role |
 |---------|----------|------|
-| **Wire adapter** | `jereko-server/src/adapters/v1/`, `v2/` | Translates v1 or v2 HTTP wire format ↔ normalized types |
-| **Provider adapter** | `jereko-providers` (`Provider` trait) | Implements LLM backend behavior (Anthropic, OpenAI, Groq, `StubProvider`, etc.) |
+| **Wire adapter** | `jerekode-server/src/adapters/v1/`, `v2/` | Translates v1 or v2 HTTP wire format ↔ normalized types |
+| **Provider adapter** | `jerekode-providers` (`Provider` trait) | Implements LLM backend behavior (Anthropic, OpenAI, Groq, `StubProvider`, etc.) |
 | **Sidecar adapter** | Rust ↔ Bun IPC | Transport for BunPluginHost — production (spawn Bun) or test (in-memory) |
 | **Plugin host** | `PluginOrchestrator` | `PluginHost` trait — Bun, native dylib, or WASM implementations |
 
@@ -67,11 +67,11 @@ Jereko uses "adapter" in three distinct senses. Each maps to a **seam** in [code
 
 | Crate / module | Seam | Interface | Adapters |
 |----------------|------|-----------|----------|
-| `jereko-server/adapters/` | HTTP wire normalization | Normalized request/response types | v1 wire adapter, v2 wire adapter |
-| `jereko-server/router` | HTTP routing | Axum routes on normalized types | single implementation; in-process tests |
-| `jereko-providers` | LLM provider | `Provider` trait (`complete`, `complete_stream`, …) | HTTP adapters + `StubProvider` |
-| `jereko-config` | Configuration | Merge loader API | File/env/CLI sources |
-| `jereko-core` | Domain | Session, message types | pure domain |
+| `jerekode-server/adapters/` | HTTP wire normalization | Normalized request/response types | v1 wire adapter, v2 wire adapter |
+| `jerekode-server/router` | HTTP routing | Axum routes on normalized types | single implementation; in-process tests |
+| `jerekode-providers` | LLM provider | `Provider` trait (`complete`, `complete_stream`, …) | HTTP adapters + `StubProvider` |
+| `jerekode-config` | Configuration | Merge loader API | File/env/CLI sources |
+| `jerekode-core` | Domain | Session, message types | pure domain |
 | Plugin orchestrator | Plugin hook dispatch | `PluginOrchestrator`, `PluginHost` | BunPluginHost, NativePluginHost, WasmPluginHost |
 | Sidecar IPC | Sidecar transport | `SidecarPort` | Bun process adapter, in-memory test adapter |
 | Session store | Persistence | `SessionStorePort` | in-memory, SQLite |
@@ -98,10 +98,10 @@ Shipped surface includes sessions (create/get/list/delete), messages (list/send/
 
 ## Binary Naming
 
-- **Primary binary**: `jereko`
+- **Primary binary**: `jerekode`
 - **Optional aliases**: `opencode`, `opencode2` (symlinks or install-time aliases)
 
-Aliases are not separate implementations — they point to the same `jereko` binary.
+Aliases are not separate implementations — they point to the same `jerekode` binary.
 
 ## Plugin Orchestrator & Dual Hosts
 
@@ -124,7 +124,7 @@ Plugins are loaded and dispatched through a **PluginOrchestrator** in Rust that 
                                             │  Bun sidecar process │
                                             └──────────────────────┘
 
-Also: WasmPluginHost — sandboxed modules with `jereko_hook` export
+Also: WasmPluginHost — sandboxed modules with `jerekode_hook` export
 ```
 
 ### Host Types
@@ -133,11 +133,11 @@ Also: WasmPluginHost — sandboxed modules with `jereko_hook` export
 |------|-------------|------|
 | **BunPluginHost** | `"@acme/server-plugin"` (unqualified string, default) | OpenCode/Bun fidelity via sidecar IPC; dynamic import + `invoke_hook` |
 | **NativePluginHost** | `{ "native": "./path/to/plugin.so" }` | In-process dylib; server hooks |
-| **WasmPluginHost** | `{ "wasm": "./path/to/plugin.wasm" }` | Sandboxed plugins; `jereko_hook` ABI (host fallback if export missing) |
+| **WasmPluginHost** | `{ "wasm": "./path/to/plugin.wasm" }` | Sandboxed plugins; `jerekode_hook` ABI (host fallback if export missing) |
 
 **Load order:** internal → native → bun. The orchestrator builds a single ordered hook chain across all active hosts with failure isolation per plugin.
 
-**TUI:** Bun `jereko run` is the default. Optional `native-tui` feature provides an interactive ratatui MVP — not a Bun replacement.
+**TUI:** Bun `jerekode run` is the default. Optional `native-tui` feature provides an interactive ratatui MVP — not a Bun replacement.
 
 ### SidecarPort → BunPluginHost
 
@@ -152,7 +152,7 @@ See [sidecar/README.md](../sidecar/README.md) for the IPC contract.
 
 ## Provider Registry
 
-`jereko-providers` uses a trait-based registry designed for **75+ providers**:
+`jerekode-providers` uses a trait-based registry designed for **75+ providers**:
 
 - `Provider` trait: `list_models`, `complete`, `complete_stream`, `health_check`
 - Shipped adapters: OpenAI, Anthropic, Ollama, Groq, OpenRouter (+ stubs for tests)
@@ -178,7 +178,7 @@ Full details: [development.md](./development.md).
 | Rule | Detail |
 |------|--------|
 | Library errors | `thiserror` in library crates |
-| CLI errors | `anyhow` in `jereko-cli` only |
+| CLI errors | `anyhow` in `jerekode-cli` only |
 | Panics | No `unwrap()`/`expect()` outside tests |
 | Linting | `cargo clippy --all-targets --all-features --locked -- -D warnings` |
 | Documentation | `#![warn(missing_docs)]` on public library crates |
@@ -191,7 +191,7 @@ Release packaging (installers, changelog quality, version reset, full vs native-
 Also documented for later productization (not blocking parity):
 
 - **Pinokio / Gepeto launchers** — optional 1-click install
-- **Cursor SDK** — `jereko serve` as an agent-consumable HTTP API
+- **Cursor SDK** — `jerekode serve` as an agent-consumable HTTP API
 - Broader native TUI / plugin surface beyond the MVP
 
 ## Conformance Testing Strategy
@@ -218,4 +218,4 @@ Historical foundation notes: [roadmap-remaining.md](./roadmap-remaining.md).
 
 ## Upstream Reference
 
-OpenCode is the behavioral compatibility reference only. Jereko does not depend on, submodule, or vendor OpenCode code.
+OpenCode is the behavioral compatibility reference only. Jerekode does not depend on, submodule, or vendor OpenCode code.

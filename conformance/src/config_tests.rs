@@ -1,6 +1,6 @@
 //! Config merge conformance using owned fixtures.
 
-use jereko_config::{ConfigLayer, ConfigLoader};
+use jerekode_config::{ConfigLayer, ConfigLoader};
 use std::path::PathBuf;
 
 fn fixture(path: &str) -> PathBuf {

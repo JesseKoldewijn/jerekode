@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "license": "MIT",
-  "description": "RTK adapter for OpenCode2/Bun and Jereko native plugins",
+  "description": "RTK adapter for OpenCode2/Bun and Jerekode native plugins",
   "type": "module",
   "main": "src/index.ts",
   "exports": {

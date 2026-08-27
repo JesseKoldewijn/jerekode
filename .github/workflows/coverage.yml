@@ -62,8 +62,8 @@ jobs:
 
       - name: Build native plugins (coverage tests need dylibs)
         run: |
-          cargo build -p jereko-test-native-plugin --locked
-          cargo build -p jereko-rtk-plugin --locked
+          cargo build -p jerekode-test-native-plugin --locked
+          cargo build -p jerekode-rtk-plugin --locked
 
       - name: Run coverage + diff gate
         id: cov
@@ -100,7 +100,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          MARKER: "<!-- jereko-coverage-sticky -->"
+          MARKER: "<!-- jerekode-coverage-sticky -->"
         run: |
           set -euo pipefail
           BODY_FILE=target/coverage/comment.md

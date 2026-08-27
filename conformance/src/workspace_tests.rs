@@ -1,9 +1,9 @@
 //! Workspace-level smoke tests ensuring Phase 0 scaffolding compiles and links.
 
-use jereko_config::{ConfigLayer, ConfigLoader, OpenCodeConfig};
-use jereko_core::Session;
-use jereko_providers::ProviderRegistry;
-use jereko_server::{AppState, build_router};
+use jerekode_config::{ConfigLayer, ConfigLoader, OpenCodeConfig};
+use jerekode_core::Session;
+use jerekode_providers::ProviderRegistry;
+use jerekode_server::{AppState, build_router};
 
 #[test]
 fn workspace_crates_link() {

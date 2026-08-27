@@ -1,7 +1,7 @@
 //! Layer 4 end-to-end session + plugin orchestrator flow.
 
-use jereko_config::{ConfigLoader, PluginEntry};
-use jereko_plugins::{
+use jerekode_config::{ConfigLoader, PluginEntry};
+use jerekode_plugins::{
     BunPluginHost, HookCall, InMemorySidecarPort, NativePluginHost, PluginOrchestrator,
 };
 use std::fs;
@@ -29,7 +29,7 @@ async fn e2e_config_session_plugin_flow() {
     loader
         .load_file(
             config_dir.join("opencode.json"),
-            jereko_config::ConfigLayer::Project,
+            jerekode_config::ConfigLayer::Project,
         )
         .unwrap();
     assert_eq!(loader.opencode().provider.as_deref(), Some("anthropic"));

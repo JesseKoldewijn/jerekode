@@ -61,10 +61,10 @@ jobs:
         run: cargo clippy --all-targets --all-features --locked -- -D warnings
 
       - name: Build test native plugin
-        run: cargo build -p jereko-test-native-plugin --locked
+        run: cargo build -p jerekode-test-native-plugin --locked
 
       - name: Build RTK native plugin
-        run: cargo build -p jereko-rtk-plugin --locked
+        run: cargo build -p jerekode-rtk-plugin --locked
 
       - name: Test
         run: cargo test --workspace --locked

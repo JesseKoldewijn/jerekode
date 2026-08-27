@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 echo "Building jerekode (release)..."
-cargo build -p jereko-cli --release
+cargo build -p jerekode-cli --release
 
 install -m 755 "$ROOT/target/release/jerekode" "$BIN_DIR/jerekode"
 ln -sfn "$BIN_DIR/jerekode" "$BIN_DIR/opencode"
