@@ -34,8 +34,61 @@ jerekode/
 
 ## Prerequisites
 
-- [Rust](https://rustup.rs/) (edition 2024, stable; MSRV 1.85+)
-- [Bun](https://bun.sh/) (for sidecar / `jerekode run`)
+- [Rust](https://rustup.rs/) (edition 2024, stable; MSRV 1.85+) — for building from source
+- [Bun](https://bun.sh/) (for sidecar / `jerekode run`) — not bundled in release archives
+
+## Install
+
+Download binaries and installers from [GitHub Releases](https://github.com/JesseKoldewijn/jerekode/releases). Pre-1.0 packages are **unsigned**. The Bun sidecar is **not** included — install Bun separately if you use `jerekode run` (see [sidecar/README.md](sidecar/README.md)).
+
+Supported release targets today: **Windows x64**, **Linux x64**, **macOS x64**, **macOS arm64** (no linux-arm64 / windows-arm64 builds yet).
+
+### Windows (x64)
+
+- **NSIS installer:** run [`jerekode-x64-setup.exe`](https://github.com/JesseKoldewijn/jerekode/releases/latest) (stable alias), or `jerekode-{version}-release-windows-x64-setup.exe`. SmartScreen may warn — unsigned.
+- **Portable:** unzip `jerekode-{version}-release-windows-x64.zip` and put `jerekode.exe` on your `PATH`.
+
+### Linux (x64)
+
+```bash
+# Arch
+sudo pacman -U jerekode-*-release-linux-x64.pkg.tar.zst
+
+# Debian / Ubuntu
+sudo dpkg -i jerekode-*-release-linux-x64.deb
+
+# Fedora / RHEL
+sudo rpm -i jerekode-*-release-linux-x64.rpm
+
+# AppImage
+chmod +x jerekode-*-linux-x64.AppImage
+./jerekode-*-linux-x64.AppImage version
+
+# Portable archive
+tar -xzf jerekode-*-release-linux-x64.tar.gz
+```
+
+### macOS (x64 / arm64)
+
+```bash
+# Unsigned .pkg (pick arch)
+sudo installer -pkg jerekode-*-macos-arm64.pkg -target /
+# sudo installer -pkg jerekode-*-macos-x64.pkg -target /
+
+# Portable archive
+tar -xzf jerekode-*-release-macos-arm64.tar.gz
+# tar -xzf jerekode-*-release-macos-x64.tar.gz
+```
+
+Gatekeeper may block unsigned packages — allow the app in System Settings, or open via Finder (right-click → Open).
+
+### Package managers (templates / future)
+
+AUR, Homebrew, and winget templates live under [`packaging/`](packaging/) — see [packaging/README.md](packaging/README.md) and [packaging/arch/README.md](packaging/arch/README.md). Not published as official taps yet.
+
+### From source
+
+Build with Cargo (below), then optionally install aliases with [`scripts/install.sh`](scripts/install.sh). More detail: [docs/distribution.md](docs/distribution.md), [docs/releases.md](docs/releases.md).
 
 ## Contributing
 
@@ -118,9 +171,9 @@ The Bun sidecar hosts TUI and JS/TS plugins over JSON-line IPC. CI hard-gates Bu
 
 ## Releases & PR builds
 
-- Auto-release on merge to `main`, tags, and `/build` PR artifacts: [docs/releases.md](docs/releases.md)
-- Install / alias helpers: [docs/distribution.md](docs/distribution.md)
-- Upcoming packaging (installers, changelog fix, version reset, full vs native-only): [docs/roadmap-releases.md](docs/roadmap-releases.md)
+- Platform installers and download names: [Install](#install) above; full ops: [docs/releases.md](docs/releases.md)
+- Local install / alias helpers: [docs/distribution.md](docs/distribution.md)
+- Upcoming packaging (signing, changelog policy, full vs native-only): [docs/roadmap-releases.md](docs/roadmap-releases.md)
 - CLI ↔ OpenCode command parity (argv gaps, phases): [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md)
 
 ## License
