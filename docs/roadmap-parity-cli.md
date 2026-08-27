@@ -1,10 +1,12 @@
 # CLI ↔ OpenCode Parity Roadmap
 
-**Status:** Active — command-surface and behavioral CLI parity (foundation HTTP/plugin parity closed)  
-**Date:** 2026-08-27  
-**Related:** [roadmap-parity.md](./roadmap-parity.md) (closed R0–P3e foundation) · [roadmap-releases.md](./roadmap-releases.md) (packaging / distribution — **owned there**, sequenced here) · [conformance.md](./conformance.md) · [architecture.md](./architecture.md) · [ADR 001](./adr/001-architecture-decisions.md)
+**Status:** Active — full OpenCode CLI drop-in plan + remaining-work inventory (foundation HTTP/plugin parity closed)  
+**Date:** 2026-08-27 (decisions locked / inventory expanded same day)  
+**Related:** [roadmap-parity.md](./roadmap-parity.md) (closed R0–P3e foundation) · [roadmap-releases.md](./roadmap-releases.md) (packaging — **default download = full**/Bun; native-only advanced/future) · [conformance.md](./conformance.md) · [architecture.md](./architecture.md) · [ADR 001](./adr/001-architecture-decisions.md)
 
-Goal: make `jerekode` (and aliases `opencode` / `opencode2`) a **practical drop-in CLI** for OpenCode users where we choose to compete — proven by owned black-box fixtures, not by copying upstream source.
+Goal: make `jerekode` (and aliases `opencode` / `opencode2`) a **true drop-in OpenCode CLI** — full command-surface and behavioral mirror for 1.0 scope — proven by owned black-box fixtures, not by copying upstream source.
+
+Reference inventory: [opencode.ai/docs/cli](https://opencode.ai/docs/cli/) · [opencode.ai/docs/server](https://opencode.ai/docs/server/) (public docs, 2026-08).
 
 ---
 
@@ -16,33 +18,53 @@ That left the **user-facing CLI** under-specified. Today the binary is **not** o
 
 | Dimension | Shipped reality | OpenCode (public docs) |
 |-----------|-----------------|------------------------|
-| Subcommands | `serve`, `run`, `version` | Dozens (`agent`, `auth`, `mcp`, `models`, `session`, `web`, …) |
+| Subcommands | `serve`, `run`, `version` | Dozens (`agent`, `auth`, `mcp`, `models`, `session`, …) |
 | Default argv | Subcommand **required** | Bare `opencode` → TUI |
 | `run` | Sidecar bootstrap then **shutdown** (stub) | Non-interactive prompt / agent loop (+ `--attach`, session flags, …) |
-| `serve` flags | `--host`, `--port`, … | `--hostname`, `--port`, `--cors`, `--mdns`, … |
+| `serve` flags | `--host`, `--port`, … | `--hostname`, `--port`, `--cors`, `--mdns`, basic auth env |
 | Version UX | `version` subcommand; clap `--version` disabled | Global `-v` / `--version` |
 | Conformance | Layer 6 smoke only | N/A — we must own CLI fixtures |
 
-**Parity contract today (implicit):** HTTP + config + plugins + tools at pre-agreed seams.  
-**Under-specified:** argv surface, flag aliases, exit codes, stdout/stderr shapes, default-no-args TUI, auth/models/session management CLIs, web/acp/github product commands.
+**CLI contract (locked):** full OpenCode CLI mirror for 1.0 scope; **post-v1** for `web` / `acp` / `github` / `pr`; see [Decided](#decided--locked-compatibility-contract). Remaining work is inventoried below — including **real `run` parity** (not a permanent stub).
 
 ---
 
 ## Goals
 
-1. **Define** an explicit CLI parity contract (in-scope commands, alias policy, output stability).
-2. **Close high-value gaps** so common OpenCode workflows (`serve`, interactive TUI / bare invoke, `run "prompt"`, `models`, `auth`, session list/delete) work on jerekode with documented deltas.
-3. **Extend conformance** with black-box CLI seams and independent fixtures (no upstream source).
-4. **Sequence** remaining [roadmap-releases.md](./roadmap-releases.md) packaging work so installers/distribution land when the CLI story is coherent (or clearly labeled as packaging-only).
+1. **Plan and close** the entire remaining OpenCode CLI surface needed for drop-in use (1.0 scope).
+2. Deliver bare TUI, real `run`, `serve`/`attach`, auth/models/session/mcp/agent/plugin/export/import/db/stats, and flag/env fidelity.
+3. **Extend conformance** with black-box CLI seams — proposed seams shown for approval before the first CLI fixture PR.
+4. **Sequence** [roadmap-releases.md](./roadmap-releases.md) so default downloads are **full (Bun)** when drop-in messaging ships.
 
 ## Non-goals
 
 - Vendoring or forking OpenCode (ADR 001).
 - Byte-identical help text or identical internal architecture.
 - Replacing Bun TUI as the default interactive path (ADR 001/002); optional `native-tui` stays secondary.
-- One-shot parity with every OpenCode command (GitHub agent, `pr`, `uninstall`/`upgrade` installers, experimental env flags) unless prioritized below.
+- **`web` / `acp` / `github` / `pr` for 1.0** — **post-v1** (Decided #7).
+- `upgrade` / `uninstall` competing with package managers (prefer releases roadmap; may land later as thin wrappers).
 - Weakening Bun IPC / native dylib CI hard-gates.
-- Implementing CLI features in the same PR as this planning doc.
+- Listing unimplemented commands in `--help` (omit until ready).
+
+---
+
+## Decided — locked compatibility contract
+
+Locked for JesseKoldewijn/jerekode (2026-08-27). Phase work must follow these; do not reopen without maintainer agreement.
+
+| # | Topic | Decision | Phase implication |
+|---|--------|----------|-------------------|
+| 1 | **Compatibility bar** | **Full OpenCode CLI mirror** — true drop-in, not a documented subset. | Plan and ship the [remaining-work inventory](#remaining-work-inventory--full-drop-in-10); raise priority of auth, models, session, attach, `run`, flag/env fidelity. |
+| 2 | **Bare invoke** | Bare `jerekode` (or `opencode` / `opencode2`) **starts the TUI**. | **CLI-P0**. |
+| 3 | **`run` + remaining work** | Plan the **entirety** of remaining work to match OpenCode behaviour; **real `run` parity** is in that plan (not a permanent stub). Interim honest failure OK only until one-shot/agent path lands — never silent bootstrap-and-exit as the advertised behavior. | **CLI-P0** starts `run` (one-shot); **CLI-P1–P2** complete agent loop + flags; see inventory. |
+| 4 | **Model flags** | **Mirror OpenCode exactly** (`--model` / `-m` as `provider/model`, plus related flags per public docs). | Align clap in every command that takes a model; jerekode-only flags must not break OpenCode argv. |
+| 5 | **Auth store** | **Import** from OpenCode credentials; **store** under a **jerekode-specific** path (do **not** overwrite OpenCode’s store). | **CLI-P2** `auth`; document paths in `docs/cli.md`. |
+| 6 | **Help stubs** | **Omit until ready** — do not list unimplemented commands in `--help`. | Help = shipped commands only. |
+| 7 | **`web` / `acp` / `github` / `pr`** | **Post-v1** — out of 1.0 CLI parity. | **CLI-P4**. |
+| 9 | **Default download** | **Default = full (Bun included)** for OpenCode fidelity; **native-only = advanced / future**. | Locked in [roadmap-releases.md](./roadmap-releases.md) (Q7); marketing and install tables lead with full. |
+| 10 | **Conformance seams** | Proposed seams **shown for approval** before the first CLI fixture PR. | No full fixture table invented here yet; smoke may expand until approved. Draft below is **pending approval**. |
+
+**Still open (formal):** **#8 serve basic auth** — see [Open questions](#open-questions-narrow). **Recommended lock:** required for drop-in `attach` / `run --attach`; scheduled in CLI-P1–P2 (do not ship remote attach without the mechanism).
 
 ---
 
@@ -52,17 +74,18 @@ That left the **user-facing CLI** under-specified. Today the binary is **not** o
 |-------|----------|---------------------|-------------------|
 | **HTTP wire** | v1/v2 fixtures at router + black-box serve | Strong | Keep; CLI drives server via same APIs |
 | **Config** | JSONC merge precedence; `opencode.json` / `tui.json` | Strong | Flag/env naming alignment |
-| **Plugins** | Bun + native + WASM hosts; hook fixtures | Strong | `plugin` install CLI later |
-| **Tools / policy / extensions** | `/tools/execute`, MCP/LSP/PTY | Strong (depth grows) | Expose via `mcp` / `run` UX |
-| **CLI argv + UX** | Subcommands, flags, exit codes, stdout | **Smoke only** | **This roadmap** |
-| **Packaging** | Archives → installers → package managers | Active in releases roadmap | Cross-linked phases below |
+| **Plugins** | Bun + native + WASM hosts; hook fixtures | Strong | `plugin` install CLI |
+| **Tools / policy / extensions** | `/tools/execute`, MCP/LSP/PTY | Strong (depth grows) | Expose via `mcp` / `run` / agent UX |
+| **CLI argv + UX** | Subcommands, flags, exit codes, stdout | **Smoke only** | **This roadmap** — full mirror |
+| **Packaging** | Archives → installers → package managers | Active in releases | Default **full** download (Decided #9) |
 
-**Compatibility stance (proposed):**
+**Compatibility stance (locked):**
 
-- Primary name: `jerekode`.
-- Aliases `opencode` / `opencode2` remain the **same binary** (ADR 001).
-- Prefer **OpenCode-compatible flag names** where cheap (`--hostname` alias for `--host`); keep jerekode-only flags documented.
-- Behavioral parity is proven by **owned fixtures**, not by matching OpenCode git SHAs.
+- Primary name: `jerekode`; aliases `opencode` / `opencode2` are the same binary (ADR 001); bare → TUI.
+- OpenCode-compatible flags and `--model provider/model` are the bar.
+- Auth: import OpenCode store; write only jerekode-specific store.
+- Default user-facing artifact: **full** (Bun); native-only labeled advanced/future.
+- Behavioral parity via **owned fixtures**, not OpenCode git SHAs.
 
 ---
 
@@ -72,198 +95,244 @@ Source: `crates/jerekode-cli/` (`main.rs`, `commands/*`, `tests/cli_smoke.rs`).
 
 | Command | Flags (today) | Behavior |
 |---------|---------------|----------|
-| `serve` | `--host`, `-p/--port`, `--provider`, `--model`, `--project` | Load config; bind HTTP (default host `127.0.0.1`, port **4096**); Axum v1/v2 |
-| `run` | `--provider`, `--model`, `--project` | Spawn Bun sidecar, load plugins, dispatch `tui.render` bootstrap, **send Shutdown** — not a lasting TUI or prompt runner |
-| `version` | (none) | Prints `jerekode {version} (Phase 0 scaffold)` + alias note |
-| *(no subcommand)* | — | Clap error (subcommand required) |
-| `--help` / `-h` | — | Clap help (smoke-tested) |
-| `--version` / `-v` | — | **Disabled** (`disable_version_flag = true`) |
+| `serve` | `--host`, `-p/--port`, `--provider`, `--model`, `--project` | Load config; bind HTTP (default `127.0.0.1:4096`); Axum v1/v2 |
+| `run` | `--provider`, `--model`, `--project` | Spawn Bun sidecar, bootstrap, **Shutdown** — stub, not OpenCode `run` |
+| `version` | (none) | Prints version + “Phase 0 scaffold” |
+| *(no subcommand)* | — | Clap error — **must become TUI** |
+| `--help` / `-h` | — | Lists only what exists (keep that policy) |
+| `--version` / `-v` | — | **Disabled** |
 
-Binary aliases (`opencode`, `opencode2`) are install-time only — see [distribution.md](./distribution.md).
-
-**Tests:** Layer 6 smoke — `version` contains package version; `serve` `/health` + v1/v2 session create; `--help` mentions serve/version. No argv matrix fixtures yet.
+Binary aliases: [distribution.md](./distribution.md). Tests: Layer 6 smoke only.
 
 ---
 
-## Inventory: OpenCode CLI (public docs)
+## Remaining-work inventory — full drop-in (1.0)
 
-Reference: [opencode.ai/docs/cli](https://opencode.ai/docs/cli/) and [server docs](https://opencode.ai/docs/server/) (2026-08). Rows marked **TBD** need maintainer confirmation against a pinned OpenCode release notes / live `--help` (no upstream tree in-repo).
+Comprehensive backlog to match OpenCode CLI behaviour/functionality for **1.0**. Post-v1 items are listed but **not** required for 1.0. Status: **Todo** unless noted. Phases are sequencing hints, not separate products.
 
-### Command / behavior matrix
+### A. Invocation & globals
 
-| OpenCode command | OpenCode role (summary) | jerekode today | Gap | Priority hint |
-|------------------|-------------------------|----------------|-----|---------------|
-| *(bare / default)* | Start TUI; optional `[project]` | Missing (requires subcommand) | Default → interactive path | **P0** |
-| `tui` / bare flags | `--continue`, `--session`, `--model`, `--port`, `--hostname`, `--cors`, … | N/A | Flag set + session continue | **P0–P1** |
-| `serve` | Headless HTTP API | Partial | Flag names (`--hostname` vs `--host`); missing `--cors`, `--mdns`, basic auth env | **P0–P1** |
-| `run [message..]` | Non-interactive prompt / agent | Stub (bootstrap+exit) | Real prompt path, stdout format, `--attach`, session flags | **P0–P2** |
-| `attach [url]` | TUI against remote `serve`/`web` | Missing | Client attach | **P1–P2** |
-| `version` / `-v` | Print version | Partial | Global `-v`; drop “Phase 0 scaffold” wording | **P0** |
-| `models [provider]` | List `provider/model` | Missing | CLI over registry HTTP | **P1** |
-| `auth` (login/list/logout) | Provider credentials | Missing | Auth store UX (**TBD** path vs OpenCode `auth.json`) | **P1–P2** |
-| `session list/delete` | Session management | Missing (HTTP only) | Thin CLI over session store / HTTP | **P1** |
-| `mcp` (add/list/auth/…) | MCP config UX | Missing (HTTP extensions only) | Config + status CLI | **P2** |
-| `agent` (create/list) | Agent files / permissions | Missing | Product decision | **P2–P3** / TBD |
-| `export` / `import` | Session JSON / share URL | Missing | Persistence format | **P2** |
-| `stats` | Token/cost stats | Missing | Needs metering | **P3** / TBD |
-| `web` | Serve + browser UI | Missing | Product decision | **P3** / out of scope? |
-| `acp` | Agent Client Protocol stdio | Missing | Product decision | TBD |
-| `plugin` / `plug` | Install plugin into config | Missing | Orchestrator already loads | **P2** |
-| `github` / `pr` | GH Actions / PR checkout | Missing | Likely **out of scope** initially | Non-goal / later |
-| `db` / `db path` | DB tools | Missing | Optional with `sessionDb` | **P2** |
-| `debug` | Troubleshooting | Missing | Low priority | **P3** |
-| `upgrade` / `uninstall` | Self-update / remove | Missing | Conflicts with package managers | Prefer releases roadmap |
-| Global `--pure`, `--log-level`, … | Runtime toggles | Partial (tracing `RUST_LOG`) | Document mapping | **P1** |
-| Env `OPENCODE_*` | Large matrix | Partial (config/env merge) | Document supported subset | **P1** |
+| Work item | OpenCode behaviour | Gap today | Phase |
+|-----------|-------------------|-----------|-------|
+| Bare invoke → TUI | `opencode` / `opencode [project]` starts TUI | Subcommand required | **CLI-P0** |
+| `tui` / bare flags | `--continue`/`-c`, `--session`/`-s`, `--fork`, `--prompt`, `--model`/`-m`, `--agent`, `--auto`, `--port`, `--hostname`, `--mdns`, `--mdns-domain`, `--cors` | Missing | **CLI-P0–P1** |
+| Global `-v` / `--version` | Print version | Disabled; `version` subcommand wording stale | **CLI-P0** |
+| Global `--help` | Honest help (omit unfinished cmds) | OK policy; expand as cmds land | **CLI-P0+** |
+| Global `--print-logs`, `--log-level` | stderr logs / DEBUG\|INFO\|WARN\|ERROR | Partial (`RUST_LOG`) | **CLI-P1** |
+| Global `--pure` | Run without external plugins | Missing | **CLI-P1–P2** |
+| `--dir` / project root | Working directory for TUI/`run`/`attach` | `--project` only | **CLI-P0–P1** (compat alias) |
 
-### Flag spotlight: `serve`
+### B. `run` — real non-interactive agent path
 
-| Flag / concern | OpenCode | jerekode | Notes |
-|----------------|----------|----------|-------|
-| Port | `--port` (default 4096) | `--port` / `-p` (default 4096) | Aligned default |
-| Bind host | `--hostname` | `--host` | **Compat alias** cheap win |
-| CORS | `--cors` (repeatable) | Missing | Needed for browser clients |
-| mDNS | `--mdns`, `--mdns-domain` | Missing | Optional / later |
-| Basic auth | `OPENCODE_SERVER_PASSWORD` (+ username) | Missing | Security-sensitive; decide before shipping |
-| Provider/model override | (via config / other cmds) | `--provider`, `--model` | jerekode-extra; keep |
-| Project root | TBD | `--project` | Keep; map to OpenCode `--dir` if applicable |
+| Work item | OpenCode behaviour | Gap today | Phase |
+|-----------|-------------------|-----------|-------|
+| Positional `run [message..]` | One-shot prompt, print reply, exit | Bootstrap stub | **CLI-P0** (minimal one-shot) → **CLI-P2** (full) |
+| Remove silent stub | Never advertise bootstrap-and-exit as `run` | Current behaviour | **CLI-P0** (fail loud *or* one-shot — prefer one-shot ASAP) |
+| `--model`/`-m`, `--agent`, `--variant` | `provider/model` + agent + reasoning variant | Split `--provider`/`--model` | **CLI-P0–P1** |
+| Session continuity | `--continue`, `--session`, `--fork`, `--title`, `--share` | Missing | **CLI-P1–P2** |
+| `--format default\|json` | Formatted vs raw JSON events | Missing | **CLI-P1** |
+| `--file`/`-f`, `--thinking`, `--auto`, `--command` | Attach files, show thinking, auto-approve, slash command | Missing | **CLI-P2** |
+| `--attach` + basic auth flags | Attach to running `serve`; `--password`/`--username` | Missing | **CLI-P2** (recommended lock #8) |
+| `--port` for local server | Local ephemeral server port | Missing | **CLI-P1–P2** |
+| Agent loop + tools | Tools, permissions, streaming stdout | Sidecar only stub | **CLI-P2** |
 
-### Flag spotlight: `run`
+### C. `serve` & `attach`
 
-| Flag / concern | OpenCode | jerekode | Notes |
-|----------------|----------|----------|-------|
-| Prompt args | `run [message..]` | None | **Core gap** |
-| `--attach` | Attach to running server | Missing | Depends on durable `serve` |
-| `--continue` / `--session` / `--fork` | Session continuity | Missing | Needs session UX |
-| `--model` / `-m` | `provider/model` | `--model` (+ separate `--provider`) | Align form **TBD** |
-| `--format json` | Event stream JSON | Missing | Automation seam |
-| `--file` / `--thinking` / `--auto` | Rich run UX | Missing | Phase after prompt works |
-| Sidecar lifecycle | Stays for TUI / attach | Bootstrap then exit | Must become real interactive or headless runner |
+| Work item | OpenCode behaviour | Gap today | Phase |
+|-----------|-------------------|-----------|-------|
+| `--hostname` alias | Bind hostname | `--host` only | **CLI-P0** |
+| `--cors` (repeatable) | Extra CORS origins | Missing | **CLI-P1** |
+| `--mdns`, `--mdns-domain` | Discovery | Missing | **CLI-P2** |
+| Basic auth | `OPENCODE_SERVER_PASSWORD` (+ username env) | Missing | **CLI-P1–P2** (**recommended lock #8**) |
+| `attach [url]` | TUI against remote serve | Missing | **CLI-P2** |
+| `attach` flags | `--dir`, session continue/fork, `--password`/`-p`, `--username`/`-u` | Missing | **CLI-P2** |
+
+### D. Discovery & session management CLIs
+
+| Work item | OpenCode behaviour | Gap today | Phase |
+|-----------|-------------------|-----------|-------|
+| `models [provider]` | List `provider/model`; `--refresh`, `--verbose` | Missing | **CLI-P1** |
+| `session list` | Table/json; `--max-count`/`-n`, `--format` | HTTP only | **CLI-P1** |
+| `session delete <id>` | Delete session | HTTP only | **CLI-P1** |
+| `export` / `import` | Session JSON / share URL; `--sanitize` | Missing | **CLI-P2** |
+| `stats` | Token/cost; `--days`, `--tools`, `--models`, `--project` | Missing | **CLI-P3** |
+
+### E. Auth
+
+| Work item | OpenCode behaviour | Gap today | Phase |
+|-----------|-------------------|-----------|-------|
+| `auth login` | Interactive / `--provider` / `--method` | Missing | **CLI-P2** |
+| `auth list` / `ls` | List authenticated providers | Missing | **CLI-P2** |
+| `auth logout` | Clear provider from store | Missing | **CLI-P2** |
+| Import OpenCode `auth.json` | Read `~/.local/share/opencode/auth.json` (and platform equivalents) | Missing | **CLI-P2** |
+| jerekode-specific store | Write credentials only under jerekode data dir | Missing | **CLI-P2** |
+
+### F. MCP, plugins, agents, db
+
+| Work item | OpenCode behaviour | Gap today | Phase |
+|-----------|-------------------|-----------|-------|
+| `mcp add` / `list`/`ls` | Config + connection status | HTTP extensions only | **CLI-P2** |
+| `mcp auth` / `logout` / `debug` | OAuth MCP flows | Missing | **CLI-P2–P3** |
+| `plugin` / `plug <module>` | Install into config; `--global`, `--force` | Orchestrator loads; no CLI | **CLI-P2** |
+| `agent create` / `list` | Agent files + permissions; non-interactive flags | Missing | **CLI-P2–P3** |
+| `db` / `db path` | DB query tools / print path | Optional `sessionDb` | **CLI-P2** |
+| `debug` | Troubleshooting subcommands | Missing | **CLI-P3** |
+
+### G. Environment & config fidelity
+
+| Work item | OpenCode behaviour | Gap today | Phase |
+|-----------|-------------------|-----------|-------|
+| Core `OPENCODE_*` | Config path, config dir, inline config, permissions, client id, server password/username, models URL, etc. | Partial merge | **CLI-P1+** (document + implement toward mirror) |
+| Feature toggles | Disable plugins/LSP download/autocompact/Claude-code/mouse/… | Partial | **CLI-P2–P3** |
+| Experimental env | Umbrella + specific experimental flags | Mostly missing | **CLI-P4** / as needed (not all required for 1.0 marketing if documented deltas) |
+
+### H. Packaging (owned by releases roadmap)
+
+| Work item | Decision / gap | Phase |
+|-----------|----------------|-------|
+| Default download = **full (Bun included)** | **Locked #9** | Rel / CLI-P3 messaging |
+| Native-only artifacts | Advanced / future; clear labeling; error if Bun plugin required | Rel-P1+ |
+| arm64, brew/winget/Nix, signing | See [roadmap-releases.md](./roadmap-releases.md) | Rel-P1–P4 |
+
+### I. Post-v1 (explicitly out of 1.0 CLI parity)
+
+| Work item | Notes |
+|-----------|-------|
+| `web` | Serve + browser UI |
+| `acp` | Agent Client Protocol stdio |
+| `github` / `pr` | GH Actions agent / PR checkout |
+| `upgrade` / `uninstall` | Prefer package managers; optional later |
+
+### J. Related runtime (needed by CLI for drop-in)
+
+These are not separate “CLI-only” tasks — they are the runtime depth OpenCode-equivalent commands require. Track here so foundation board stays closed.
+
+| Work item | Why CLI needs it | Phase |
+|-----------|------------------|-------|
+| Durable non-interactive agent / prompt loop | Core of OpenCode `run` | **CLI-P0–P2** |
+| TUI ↔ local server lifecycle (port/hostname flags) | Bare invoke / attach | **CLI-P0–P1** |
+| Session continue / fork end-to-end | `--continue` / `--session` / `--fork` | **CLI-P1–P2** |
+| Provider auth load + OpenCode import | `auth` + first-run `run`/TUI | **CLI-P2** |
+| HTTP basic auth (env-gated) + client flags | Remote attach (recommended lock #8) | **CLI-P1–P2** |
+| CORS middleware | `serve --cors`; future `web` | **CLI-P1** |
+| Models list/refresh without TUI | `models` CLI | **CLI-P1** |
+| MCP/plugin config writers + live status | `mcp` / `plugin` CLIs | **CLI-P2** |
+| Permission / `--auto` vs sandbox engine | `run` / TUI `--auto` | **CLI-P2** |
+| Exit codes + stdout/stderr contracts | `run --format json` automation | **CLI-P1–P2** |
+
+**Dependency sketch:**
+
+```text
+CLI-P0  bare TUI + version/help + serve --hostname + run entry (one-shot start)
+          │
+          ▼
+CLI-P1  cors / logging / models / session CLI + run essentials
+          + start serve basic auth (recommended #8)
+          │
+          ├──────────────────────────────┐
+          ▼                              ▼
+CLI-P2  durable run + attach      packaging Rel-* (full default)
+          + auth import/store       native-only advanced/future
+          + mcp / plugin / export-import / db / mdns
+          │
+          ▼
+CLI-P3  stats / debug + releases Rel-P3/P4 as ready
+          │
+          ▼
+CLI-P4  post-v1: web / acp / github / pr
+```
 
 ---
 
 ## Closed parity checklist vs CLI lag
 
-From [roadmap-parity.md](./roadmap-parity.md) — **runtime slices are Done**; CLI still lags:
-
-| Slice | Runtime claim | CLI lag |
-|-------|---------------|---------|
-| R0–P0a | Release + CI hard-gates | N/A |
-| P0b / P3a | Tools + HTTP surface | No `session`/`models` CLI wrappers |
-| P1a–P1b | Streaming + Bun plugins | `run` does not expose streaming chat UX |
-| P2a–P2d | MCP/LSP/PTY/WASM | No `mcp` / `plugin` CLIs |
-| P3b–P3d | Providers, sandbox, native-tui | Bare TUI default missing; `native-tui` feature not CLI-documented as OpenCode path |
-| P3e / DOC | Criterion + docs | Docs correctly call CLI “smoke” only |
-
-**Verdict:** Treat R0–P3e as **closed foundation**. Do **not** reopen that board; track CLI work with new IDs here (`CLI-P0` …).
+From [roadmap-parity.md](./roadmap-parity.md) — **runtime slices are Done**; CLI still lags. Do **not** reopen that board; track work with `CLI-P0` … here and the inventory above.
 
 ---
 
 ## Phased plan
 
-### CLI-P0 — Command surface & honesty (compatibility entry)
+### CLI-P0 — Entry surface (bare TUI, honesty, `run` start)
 
-**Outcome:** Users can invoke jerekode like OpenCode for the three primary modes without false advertising.
+**Outcome:** Drop-in invoke works; help is honest; `run` begins real parity (one-shot), not a silent stub.
 
-- [ ] **Bare invoke** → default interactive path (Bun TUI), matching OpenCode’s no-args TUI (or explicit `tui` subcommand + bare alias).
-- [ ] **`run` honesty:** either implement minimal non-interactive `run [message..]` (create session → send message → print reply → exit) **or** fail loudly with “not implemented” until ready — remove silent bootstrap-and-exit as the only behavior.
-- [ ] **`serve` flag aliases:** add `--hostname` as alias of `--host`; document jerekode `--host` as preferred or dual-supported.
-- [ ] **Version UX:** enable `-v` / `--version`; clean `version` subcommand output (drop “Phase 0 scaffold”).
-- [ ] **Help matrix:** `--help` lists intended OpenCode-facing commands (even if some are stubs that exit non-zero with a stable message — **decision:** stubs vs omit; see open questions).
-- [ ] Conformance: extend Layer 6 — help text fixtures; version flag; serve `--hostname` smoke.
+- [ ] Bare invoke → Bun TUI (Decided #2).
+- [ ] Enable `-v` / `--version`; clean `version` output.
+- [ ] `serve --hostname` alias for `--host`.
+- [ ] Help lists **only** implemented commands (Decided #6).
+- [ ] Start **real `run`**: positional message + OpenCode `--model` form; remove silent bootstrap-and-exit (Decided #3). Interim loud “not implemented” only if one-shot cannot land in the same slice — never as the end state.
+- [ ] Smoke: version flag; hostname; bare invoke / help honesty. Fixtures wait for seam approval (#10).
 
-### CLI-P1 — Flag / compat aliases & thin management CLIs
+### CLI-P1 — Compat flags & thin management CLIs
 
-**Outcome:** Common automation and discovery commands work against the existing HTTP/config seams.
+**Outcome:** Automation/discovery CLIs and serve hardening toward attach.
 
-- [ ] `serve`: `--cors` (and document security defaults); map logging flags ↔ `RUST_LOG` / `--log-level` if adopted.
-- [ ] `models [provider]` — list from provider registry (table + optional `--format json`).
-- [ ] `session list` / `session delete` — CLI over session store or local `serve` HTTP.
-- [ ] `run` essentials: positional message, `--model` / provider form, `--format default|json`, exit codes.
-- [ ] Document supported `OPENCODE_*` / jerekode env subset in [distribution.md](./distribution.md) or a new `docs/cli.md`.
-- [ ] Conformance: argv fixtures under `conformance/fixtures/cli/` (see test strategy).
+- [ ] `serve --cors`; logging flags ↔ `--log-level` / `RUST_LOG`.
+- [ ] Begin **basic auth** on `serve` (recommended lock #8) — complete before remote attach.
+- [ ] `models` (`--refresh`, `--verbose`); `session list` / `delete`.
+- [ ] `run` essentials: `--format`, session continue flags, `--dir`.
+- [ ] Global `--pure` / document core `OPENCODE_*` in `docs/cli.md` or [distribution.md](./distribution.md).
+- [ ] After seam approval: `conformance/fixtures/cli/` argv fixtures.
 
-### CLI-P2 — Behavioral parity (agent loop & attach)
+### CLI-P2 — Behavioral parity (agent loop, attach, auth, ecosystem CLIs)
 
-**Outcome:** Headless and attached workflows match OpenCode’s mental model for day-to-day use.
+**Outcome:** Day-to-day OpenCode workflows work as a drop-in.
 
-- [ ] Durable `run` agent loop (tools, streaming stdout, permissions/`--auto` policy **TBD**).
-- [ ] `run --attach` / `attach` against `jerekode serve`.
-- [ ] `auth login|list|logout` — credential store design (**TBD** path; do not copy upstream files).
-- [ ] `mcp list|add` thin UX over config + extension health.
-- [ ] `plugin` / `plug` install into config (Bun string + native/wasm forms per ADR 002).
-- [ ] `export` / `import` session JSON (owned schema fixtures).
-- [ ] `db path` when `sessionDb` configured.
-- [ ] Optional: basic auth for `serve` (`OPENCODE_SERVER_PASSWORD` compatibility).
+- [ ] Full `run` agent loop (tools, streaming, `--auto`, `--file`, `--thinking`, `--attach` + auth flags).
+- [ ] `attach` against `jerekode serve` (requires basic auth — recommended lock #8).
+- [ ] `auth login|list|logout` — import OpenCode credentials; jerekode-specific store (#5).
+- [ ] `mcp` add/list/auth; `plugin`/`plug`; `export`/`import`; `db path`; `agent` create/list.
+- [ ] `serve --mdns` / `--mdns-domain` as needed for mirror.
 
-### CLI-P3 — Packaging / distribution (from releases roadmap)
+### CLI-P3 — Packaging integration + remaining 1.0 depth
 
-**Ownership:** Implementation and checkboxes remain in [roadmap-releases.md](./roadmap-releases.md). This phase is the **integration order** relative to CLI work.
+**Ownership of packaging checkboxes:** [roadmap-releases.md](./roadmap-releases.md).
 
-| Releases ID | Item | When relative to CLI |
-|-------------|------|----------------------|
-| Rel-P1 (remaining) | linux/windows **arm64**; optional **native-only** artifacts + `bun-sidecar` Cargo feature | Parallel with CLI-P1; native-only binary must error clearly if Bun plugins required |
-| Rel-P2 | Installers (largely shipped) | Keep docs aligned with CLI command names |
-| Rel-P3 | Homebrew / winget / Nix; AUR publish; expand native-only; Bun bundling revisit | Prefer after CLI-P0 so formulae don’t document a stub `run` |
-| Rel-P4 | Apple notarization / Authenticode | After installers stable; unsigned OK until then |
+- [ ] Lead install/docs with **full (Bun)** default (Decided #9); native-only advanced/future.
+- [ ] `stats`, `debug`; remaining env fidelity for advertised drop-in.
+- [ ] Prefer CLI-P0+ honesty before “OpenCode-compatible CLI” marketing.
 
-**Do not** block CLI-P0 on signing or brew taps. **Do** avoid publishing “OpenCode-compatible CLI” marketing until CLI-P0 honesty items land.
+| Releases ID | When relative to CLI |
+|-------------|----------------------|
+| Rel-P1 arm64 / native-only feature | Parallel; native-only clearly secondary |
+| Rel-P2 installers | Align command names / download tables |
+| Rel-P3 package managers | After CLI-P0; formulae describe real commands |
+| Rel-P4 signing | Independent |
 
-### CLI-P4 — Deferred / product decisions
+### CLI-P4 — Post-v1
 
-- `web`, `acp`, `github`, `pr`, `stats`, `upgrade`, `uninstall`, experimental env umbrella.
-- Full OpenCode env parity.
-- Pinokio / Gepeto / Cursor SDK productization ([architecture.md](./architecture.md) future notes).
+- `web`, `acp`, `github`, `pr` (Decided #7).
+- Optional `upgrade`/`uninstall`; experimental env umbrella; Pinokio / Gepeto / Cursor SDK productization.
 
 ---
 
-## Releases roadmap — remaining work (explicit fold-in)
+## Releases roadmap — fold-in
 
-From [roadmap-releases.md](./roadmap-releases.md) as of this doc:
-
-| ID | Status | Owner doc | Notes for CLI plan |
-|----|--------|-----------|--------------------|
-| Rel-P0 (notes + wipe + policy A) | **Done** | releases | Historical |
-| Rel-P1 multi-arch / naming | Partial — naming done; arm64 & native-only **open** | releases | CLI-P3 linkage |
-| Rel-P2 installers | Largely **done** | releases | Keep README/CLI help consistent |
-| Rel-P3 package managers | Mostly **open** (AUR in-repo) | releases | After CLI-P0 |
-| Rel-P4 signing | **Open** | releases | Independent |
-| Dual-build `bun-sidecar` feature | **Planned, not implemented** | releases + ADR 003 | Required before native-only claims |
-
-Open packaging questions (signing certs, brew tap name, default full vs native-only, Bun bundling) stay in the releases doc; CLI open questions are listed below.
+| ID | Status | Notes for CLI |
+|----|--------|---------------|
+| Rel-P0 | **Done** | Historical |
+| Rel-P1 | Partial — arm64 & native-only **open** | Native-only = advanced/future (#9) |
+| Rel-P2 | Largely **done** | Default artifact messaging = **full** |
+| Rel-P3–P4 | Open | After CLI-P0; signing independent |
+| Dual-build `bun-sidecar` | Planned | Required before shipping native-only claims |
 
 ---
 
 ## Conformance / test strategy (CLI)
 
-Aligned with [conformance.md](./conformance.md). **New seams require maintainer confirmation** before landing outside the table — proposed additions:
+**Process (Decided #10):** Propose CLI seams for approval **before** the first CLI fixture PR. Until then expand `crates/jerekode-cli/tests/cli_smoke.rs` only.
 
-| Proposed seam | Location | Style | Fixtures |
-|---------------|----------|-------|----------|
-| CLI argv / help / version | `jerekode-cli` binary | Black-box (`CARGO_BIN_EXE_jerekode`) | `conformance/fixtures/cli/help_*.txt` or structured JSON expectations |
-| CLI `serve` flag contract | binary + HTTP | Black-box | Bind via `--hostname`/`--port`; `/health` |
-| CLI `run` stdout contract | binary | Black-box | Golden **shape** fixtures for `--format json` events (ids dynamic) |
-| CLI `models` / `session` | binary | Black-box or in-process later | Owned lists / exit codes |
-| Alias argv | `opencode`/`opencode2` if present on PATH in install tests | Optional smoke | Same as `jerekode` |
+**Draft seams — pending approval (not yet in conformance.md):**
 
-**Rules (unchanged):**
+| Seam (proposed) | Style | Fixture idea |
+|-----------------|-------|--------------|
+| CLI help / version argv | Black-box binary | Exit 0; stdout contains version; help omits unfinished cmds |
+| `serve` bind + `/health` | Black-box + HTTP | Extend smoke; add `--hostname` |
+| `run` one-shot prompt | Black-box | Owned prompt → expected shape/exit (after loop exists) |
+| `models` list shape | Black-box or HTTP | Independent provider/model list fixture |
+| `session list` table/json | Black-box | Seeded session store fixture |
 
-1. Independent expected values — never “capture current stdout as truth” without review.
-2. No upstream OpenCode clones, dumps, or copied source as fixtures.
-3. Prefer shape fixtures when IDs/timestamps vary.
-4. Vertical slices: one failing CLI fixture → minimal clap/command impl → green CI.
-5. Do not weaken Bun/native hard-gates.
-6. Until seams are approved, keep expanding `crates/jerekode-cli/tests/cli_smoke.rs` for thin checks; migrate durable contracts into `conformance/fixtures/cli/` once confirmed.
-
-**Suggested fixture layout:**
-
-```text
-conformance/fixtures/cli/
-  help_toplevel.json          # required subcommand names / exit code
-  version_flag.json           # -v / version stdout shape
-  serve_hostname_alias.json   # --hostname binds like --host
-  run_prompt_shape.json       # TBD after CLI-P0 decision
-```
+**Rules:** Independent expected values; no upstream OpenCode source as fixtures; shape fixtures when IDs vary; vertical slices; do not weaken Bun/native hard-gates.
 
 ---
 
@@ -271,26 +340,36 @@ conformance/fixtures/cli/
 
 | Doc | Change |
 |-----|--------|
-| [CONTEXT.md](../CONTEXT.md) | Point “active forward plan” at this file **and** releases |
-| [README.md](../README.md) | CLI section: real commands vs OpenCode deltas |
-| [conformance.md](./conformance.md) | Add approved CLI seams to the table |
-| [roadmap-parity.md](./roadmap-parity.md) | Keep closed; link here as active CLI track |
-| New `docs/cli.md` (optional) | User-facing command reference + compatibility notes |
+| [CONTEXT.md](../CONTEXT.md) | Active plan → this file + releases |
+| [README.md](../README.md) | Commands vs OpenCode; full download default |
+| [conformance.md](./conformance.md) | Approved CLI seams only |
+| [roadmap-parity.md](./roadmap-parity.md) | Keep closed; link here |
+| New `docs/cli.md` | User command reference + auth import/store paths |
 
 ---
 
-## Open questions (need user / maintainer decisions)
+## Open questions (narrow)
 
-1. **Compatibility bar:** Full OpenCode CLI mirror, or **documented subset** (serve + TUI + run + models + auth + session)? *(Recommendation: subset with explicit non-goals.)*
-2. **Bare `jerekode`:** Must start Bun TUI like OpenCode, or is `jerekode run` / `jerekode tui` enough if documented?
-3. **`run` stub:** Ship failing-not-implemented until agent loop exists, or prioritize minimal one-shot prompt in CLI-P0?
-4. **Model flag form:** Adopt OpenCode `--model provider/model` only, keep split `--provider`/`--model`, or support both?
-5. **Auth store location:** Compatible path with OpenCode’s credentials file, jerekode-specific path, or env-only for v1?
-6. **Help stubs:** List unimplemented OpenCode commands in `--help` with “not yet”, or omit until implemented?
-7. **`web` / `acp` / `github`:** Explicitly out of scope for 1.0 CLI parity?
-8. **Basic auth on `serve`:** Required for OpenCode attach compatibility — implement in CLI-P2 or earlier?
-9. **Native-only default download** (releases Q7) vs “full OpenCode fidelity” messaging once CLI aliases are advertised.
-10. **Approve new conformance seams** in the table above before first CLI fixture PR?
+Most compatibility questions are **locked** above. Remaining:
+
+### 8 — Serve basic auth (still open; recommended lock)
+
+OpenCode enables HTTP basic auth on `serve`/`web` when `OPENCODE_SERVER_PASSWORD` is set (`OPENCODE_SERVER_USERNAME` defaults to `opencode`). `attach` and `run --attach` expose `--password` / `--username` for that path.
+
+**Recommended lock:** **Required for drop-in attach** — schedule server + client support in **CLI-P1–P2** with `attach` / `run --attach`. Local serve without a password can stay open by default (env-gated, same as OpenCode), but the **mechanism** must exist for remote attach parity.
+
+**Choice (awaiting maintainer confirm):**
+
+- **A.** Required for drop-in attach → implement with serve/attach (CLI-P1–P2) — **recommended**.
+- **B.** Defer auth codepaths until someone needs remote attach.
+
+### Other
+
+1. **Exact jerekode auth data path** (platform dirs) — pick when implementing `auth` (must not write OpenCode’s `auth.json`).
+2. **Conformance seam table** — propose for approval at first CLI fixture PR (#10); draft below is not approved.
+3. **Experimental `OPENCODE_EXPERIMENTAL_*` matrix** — which flags are required for “drop-in” vs documented deltas for 1.0.
+4. **`upgrade` / `uninstall`** — stay non-goal for 1.0, or thin wrappers after package-manager story?
+5. Releases-only: signing certs, Homebrew tap name, whether to **bundle** Bun inside full installers later (default remains system Bun until revisited).
 
 ---
 
@@ -298,9 +377,10 @@ conformance/fixtures/cli/
 
 1. **PR-only** to `main`; Conventional Commits (`feat(cli):`, `test(cli):`, `docs:`).
 2. **No upstream OpenCode source** in-repo — public docs + owned fixtures only.
-3. Prefer vertical slices that deepen existing HTTP/plugin seams rather than parallel reimplementations.
-4. Packaging/signing work stays on [roadmap-releases.md](./roadmap-releases.md); update both docs when sequencing changes.
-5. Treat [roadmap-parity.md](./roadmap-parity.md) as historical/closed foundation unless a maintainer reopens an ID.
+3. Prefer vertical slices that deepen existing HTTP/plugin seams.
+4. Packaging stays on [roadmap-releases.md](./roadmap-releases.md); keep both docs aligned on **default = full**.
+5. Treat [roadmap-parity.md](./roadmap-parity.md) as closed foundation.
+6. Honor [Decided](#decided--locked-compatibility-contract); do not downgrade to subset parity or permanent `run` stub.
 
 ---
 
@@ -308,7 +388,7 @@ conformance/fixtures/cli/
 
 - Public OpenCode CLI: https://opencode.ai/docs/cli/
 - Public OpenCode server: https://opencode.ai/docs/server/
-- [releases.md](./releases.md) — current auto-release ops  
+- [releases.md](./releases.md) — auto-release ops  
 - [distribution.md](./distribution.md) — aliases and runtime deps  
 - [ADR 002](./adr/002-dual-plugin-runtime.md) — Bun / native / WASM  
 - [ADR 003](./adr/003-release-packaging-and-changelogs.md) — packaging / dual-build  
