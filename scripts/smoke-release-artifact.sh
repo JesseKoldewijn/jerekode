@@ -18,11 +18,17 @@ WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
 if [[ "$ARCHIVE" == *.zip ]]; then
-  if command -v unzip >/dev/null 2>&1; then
+  # Git Bash `unzip` exits 1 on Windows-created zips (backslash path separators).
+  if command -v powershell.exe >/dev/null 2>&1; then
+    win_archive="$(cygpath -w "$ARCHIVE" 2>/dev/null || echo "$ARCHIVE")"
+    win_workdir="$(cygpath -w "$WORKDIR" 2>/dev/null || echo "$WORKDIR")"
+    powershell.exe -NoProfile -Command \
+      "Expand-Archive -LiteralPath '${win_archive}' -DestinationPath '${win_workdir}' -Force"
+  elif command -v unzip >/dev/null 2>&1; then
     unzip -q "$ARCHIVE" -d "$WORKDIR"
   else
-    powershell.exe -NoProfile -Command \
-      "Expand-Archive -Path '$(cygpath -w "$ARCHIVE" 2>/dev/null || echo "$ARCHIVE")' -DestinationPath '$(cygpath -w "$WORKDIR" 2>/dev/null || echo "$WORKDIR")' -Force"
+    echo "error: need powershell or unzip to extract $ARCHIVE" >&2
+    exit 1
   fi
 else
   tar -xzf "$ARCHIVE" -C "$WORKDIR"
