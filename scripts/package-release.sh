@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Package the jereko binary into a named archive.
+# Package the jerekode binary into a named archive.
 #
 # Usage:
 #   package-release.sh <archive_stem> <binary-path> <out-dir> [profile]
@@ -9,8 +9,8 @@
 #   {archive_stem}.zip     (when archive_stem contains "-windows-")
 #
 # Convention for archive_stem:
-#   Release:  jereko-{version}-release-{os}-{arch}
-#   PR build: jereko-pr{N}-{profile}-{os}-{arch}
+#   Release:  jerekode-{version}-release-{os}-{arch}
+#   PR build: jerekode-pr{N}-{profile}-{os}-{arch}
 #
 # Archive contents: binary, README snippet, sidecar notes.
 
@@ -40,7 +40,7 @@ if [[ "$STEM" != *-windows-* ]]; then
 fi
 
 cat >"${STAGE_ROOT}/README.txt" <<EOF
-jereko (${PROFILE} profile)
+jerekode (${PROFILE} profile)
 Archive: ${STEM}
 
 Binary: ${BIN_BASENAME}
@@ -50,7 +50,7 @@ Quick start:
   ./${BIN_BASENAME} serve
   ./${BIN_BASENAME} run
 
-Docs: https://github.com/jerekode/jerekode
+Docs: https://github.com/JesseKoldewijn/jerekode
 Releases: docs/releases.md in the repository.
 EOF
 

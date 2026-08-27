@@ -317,11 +317,11 @@ jobs:
           set -euo pipefail
           chmod +x scripts/package-release.sh
           if [[ "${TARGET_OS}" == "windows" ]]; then
-            BIN="target/release/jereko.exe"
+            BIN="target/release/jerekode.exe"
           else
-            BIN="target/release/jereko"
+            BIN="target/release/jerekode"
           fi
-          STEM="jereko-${VERSION}-release-${TARGET_OS}-${ARCH}"
+          STEM="jerekode-${VERSION}-release-${TARGET_OS}-${ARCH}"
           mkdir -p dist
           ./scripts/package-release.sh "${STEM}" "${BIN}" dist release
 
@@ -335,16 +335,16 @@ jobs:
           set -euo pipefail
           chmod +x scripts/package-installers.sh
           if [[ "${TARGET_OS}" == "windows" ]]; then
-            BIN="target/release/jereko.exe"
+            BIN="target/release/jerekode.exe"
           else
-            BIN="target/release/jereko"
+            BIN="target/release/jerekode"
           fi
           ./scripts/package-installers.sh "${TARGET_OS}" "${ARCH}" "${BIN}" dist "${VERSION}"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jereko-${{ needs.prepare.outputs.version }}-release-${{ matrix.target_os }}-${{ matrix.arch }}
+          name: jerekode-${{ needs.prepare.outputs.version }}-release-${{ matrix.target_os }}-${{ matrix.arch }}
           path: dist/*
           if-no-files-found: error
           retention-days: 30
@@ -362,7 +362,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: jereko-${{ needs.prepare.outputs.version }}-release-*
+          pattern: jerekode-${{ needs.prepare.outputs.version }}-release-*
           path: dist
           merge-multiple: true
 
@@ -383,13 +383,13 @@ jobs:
           chmod +x scripts/filter-release-notes.py
 
           cat > /tmp/release-notes.md <<EOF
-          Release **jereko ${VERSION}** at \`${SHA}\` (\`${SHORT_SHA}\`).
+          Release **jerekode ${VERSION}** at \`${SHA}\` (\`${SHORT_SHA}\`).
 
           ### Artifacts
-          Portable archives: \`jereko-{version}-release-{os}-{arch}\` (\`.tar.gz\` / \`.zip\`).
+          Portable archives: \`jerekode-{version}-release-{os}-{arch}\` (\`.tar.gz\` / \`.zip\`).
 
           **Installers (unsigned pre-1.0):**
-          - **Windows:** \`jereko-{version}-release-windows-x64-setup.exe\` or stable \`jereko-x64-setup.exe\`
+          - **Windows:** \`jerekode-{version}-release-windows-x64-setup.exe\` or stable \`jerekode-x64-setup.exe\`
           - **Linux:** \`.deb\`, \`.rpm\`, \`.AppImage\`, Arch \`.pkg.tar.zst\` (plus \`.tar.gz\`)
           - **macOS:** \`.pkg\` (plus \`.tar.gz\`)
 
@@ -440,7 +440,7 @@ jobs:
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
           target_commitish: ${{ needs.prepare.outputs.sha }}
-          name: jereko ${{ needs.prepare.outputs.version }}
+          name: jerekode ${{ needs.prepare.outputs.version }}
           generate_release_notes: false
           draft: false
           prerelease: ${{ contains(needs.prepare.outputs.version, '-') || contains(needs.prepare.outputs.version, 'alpha') || contains(needs.prepare.outputs.version, 'beta') || contains(needs.prepare.outputs.version, 'rc') }}

@@ -1,5 +1,5 @@
 # nfpm config — version/arch substituted by scripts/package-installers.sh
-name: jereko
+name: jerekode
 arch: "${NFPM_ARCH}"
 platform: linux
 version: "${NFPM_VERSION}"
@@ -12,11 +12,11 @@ vendor: jerekode
 homepage: https://github.com/JesseKoldewijn/jerekode
 license: MIT
 contents:
-  - src: ./staging/jereko
-    dst: /usr/bin/jereko
+  - src: ./staging/jerekode
+    dst: /usr/bin/jerekode
     file_info:
       mode: 0755
   - src: ./staging/README.txt
-    dst: /usr/share/doc/jereko/README.txt
+    dst: /usr/share/doc/jerekode/README.txt
   - src: ./staging/SIDECAR.txt
-    dst: /usr/share/doc/jereko/SIDECAR.txt
+    dst: /usr/share/doc/jerekode/SIDECAR.txt

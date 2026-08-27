@@ -63,12 +63,12 @@ to_native_path() {
 
 write_readme_files() {
   cat >"${STAGING}/README.txt" <<EOF
-jereko ${VERSION} (release)
+jerekode ${VERSION} (release)
 OpenCode-compatible AI coding agent runtime (Rust).
 
-  jereko version
-  jereko serve
-  jereko run
+  jerekode version
+  jerekode serve
+  jerekode run
 
 Docs: https://github.com/JesseKoldewijn/jerekode
 EOF
@@ -79,9 +79,9 @@ EOF
 }
 
 copy_binary() {
-  local dest_name="jereko"
+  local dest_name="jerekode"
   if [[ "$TARGET_OS" == "windows" ]]; then
-    dest_name="jereko.exe"
+    dest_name="jerekode.exe"
   fi
   cp "$BINARY" "${STAGING}/${dest_name}"
   if [[ "$TARGET_OS" != "windows" ]]; then
@@ -92,7 +92,7 @@ copy_binary() {
 package_linux() {
   write_readme_files
   copy_binary
-  cp "${STAGING}/jereko" "${STAGING}/jereko.bin"
+  cp "${STAGING}/jerekode" "${STAGING}/jerekode.bin"
 
   NFPM_ARCH="amd64"
   [[ "$ARCH" == "arm64" ]] && NFPM_ARCH="arm64"
@@ -113,13 +113,13 @@ package_linux() {
   fi
 
   NFPM_CFG="${STAGING}/nfpm.yaml"
-  envsubst '${NFPM_VERSION} ${NFPM_ARCH}' < packaging/nfpm/jereko.yaml >"$NFPM_CFG"
+  envsubst '${NFPM_VERSION} ${NFPM_ARCH}' < packaging/nfpm/jerekode.yaml >"$NFPM_CFG"
   mkdir -p "${STAGING}/staging"
-  cp "${STAGING}/jereko" "${STAGING}/staging/jereko"
+  cp "${STAGING}/jerekode" "${STAGING}/staging/jerekode"
   cp "${STAGING}/README.txt" "${STAGING}/staging/"
   cp "${STAGING}/SIDECAR.txt" "${STAGING}/staging/"
-  (cd "$STAGING" && "$NFPM_BIN" pkg --config nfpm.yaml --packager deb --target "${OUT_DIR}/jereko-${VERSION}-release-linux-${ARCH}.deb")
-  (cd "$STAGING" && "$NFPM_BIN" pkg --config nfpm.yaml --packager rpm --target "${OUT_DIR}/jereko-${VERSION}-release-linux-${ARCH}.rpm")
+  (cd "$STAGING" && "$NFPM_BIN" pkg --config nfpm.yaml --packager deb --target "${OUT_DIR}/jerekode-${VERSION}-release-linux-${ARCH}.deb")
+  (cd "$STAGING" && "$NFPM_BIN" pkg --config nfpm.yaml --packager rpm --target "${OUT_DIR}/jerekode-${VERSION}-release-linux-${ARCH}.rpm")
 
   # AppImage
   APPIMAGETOOL="${APPIMAGETOOL:-${HOME}/.cache/appimagetool/appimagetool-x86_64.AppImage}"
@@ -129,33 +129,33 @@ package_linux() {
       "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
     chmod +x "$APPIMAGETOOL"
   fi
-  APPDIR="${STAGING}/jereko.AppDir"
+  APPDIR="${STAGING}/jerekode.AppDir"
   rm -rf "$APPDIR"
-  mkdir -p "${APPDIR}/usr/bin" "${APPDIR}/usr/share/doc/jereko"
-  cp "${STAGING}/jereko" "${APPDIR}/usr/bin/jereko"
-  cp "${STAGING}/README.txt" "${STAGING}/SIDECAR.txt" "${APPDIR}/usr/share/doc/jereko/"
-  cat >"${APPDIR}/jereko.desktop" <<EOF
+  mkdir -p "${APPDIR}/usr/bin" "${APPDIR}/usr/share/doc/jerekode"
+  cp "${STAGING}/jerekode" "${APPDIR}/usr/bin/jerekode"
+  cp "${STAGING}/README.txt" "${STAGING}/SIDECAR.txt" "${APPDIR}/usr/share/doc/jerekode/"
+  cat >"${APPDIR}/jerekode.desktop" <<EOF
 [Desktop Entry]
-Name=jereko
+Name=jerekode
 Comment=OpenCode-compatible AI coding agent runtime
-Exec=jereko
-Icon=jereko
+Exec=jerekode
+Icon=jerekode
 Terminal=true
 Type=Application
 Categories=Development;
 EOF
   # Minimal icon silences appimagetool missing-icon warnings
-  printf '\x89PNG\r\n\x1a\n' > "${APPDIR}/jereko.png" 2>/dev/null || touch "${APPDIR}/jereko.png"
+  printf '\x89PNG\r\n\x1a\n' > "${APPDIR}/jerekode.png" 2>/dev/null || touch "${APPDIR}/jerekode.png"
   cat >"${APPDIR}/AppRun" <<'EOF'
 #!/bin/sh
 HERE="$(dirname "$(readlink -f "$0")")"
 export PATH="${HERE}/usr/bin:${PATH}"
-exec "${HERE}/usr/bin/jereko" "$@"
+exec "${HERE}/usr/bin/jerekode" "$@"
 EOF
-  chmod +x "${APPDIR}/AppRun" "${APPDIR}/usr/bin/jereko"
+  chmod +x "${APPDIR}/AppRun" "${APPDIR}/usr/bin/jerekode"
   # appimagetool requires fuse on some hosts; --appimage-extract-and-run works without fuse in CI
   ARCH=x86_64 "$APPIMAGETOOL" --appimage-extract-and-run "$APPDIR" \
-    "${OUT_DIR}/jereko-${VERSION}-release-linux-${ARCH}.AppImage"
+    "${OUT_DIR}/jerekode-${VERSION}-release-linux-${ARCH}.AppImage"
 
   # Arch .pkg.tar.zst via Docker (makepkg on Arch Linux).
   # Use a separate temp dir: makepkg leaves root-owned files that break STAGING trap cleanup.
@@ -164,7 +164,7 @@ EOF
     ARCH_PKG_DIR="${ARCH_STAGING}/archpkg"
     mkdir -p "$ARCH_PKG_DIR"
     cp packaging/arch/PKGBUILD "$ARCH_PKG_DIR/"
-    cp "${STAGING}/jereko" "${STAGING}/README.txt" "${STAGING}/SIDECAR.txt" "$ARCH_PKG_DIR/"
+    cp "${STAGING}/jerekode" "${STAGING}/README.txt" "${STAGING}/SIDECAR.txt" "$ARCH_PKG_DIR/"
     sed -i "s/^pkgver=.*/pkgver=${VERSION}/" "$ARCH_PKG_DIR/PKGBUILD"
     docker run --rm \
       -v "${ARCH_PKG_DIR}:/build" \
@@ -176,9 +176,9 @@ EOF
         chown -R builder:builder /build
         su builder -c "cd /build && makepkg --noconfirm --skippgpcheck"
       ' || true
-    PKG="$(find "$ARCH_PKG_DIR" -maxdepth 1 -name 'jereko-*.pkg.tar.zst' | head -n1 || true)"
+    PKG="$(find "$ARCH_PKG_DIR" -maxdepth 1 -name 'jerekode-*.pkg.tar.zst' | head -n1 || true)"
     if [[ -n "$PKG" ]]; then
-      cp "$PKG" "${OUT_DIR}/jereko-${VERSION}-release-linux-${ARCH}.pkg.tar.zst"
+      cp "$PKG" "${OUT_DIR}/jerekode-${VERSION}-release-linux-${ARCH}.pkg.tar.zst"
     else
       echo "warning: Arch package build skipped or failed (docker/makepkg)" >&2
     fi
@@ -195,15 +195,15 @@ package_macos() {
   copy_binary
   PKG_ROOT="${STAGING}/pkgroot"
   rm -rf "$PKG_ROOT"
-  mkdir -p "${PKG_ROOT}/usr/local/bin" "${PKG_ROOT}/usr/local/share/doc/jereko"
-  cp "${STAGING}/jereko" "${PKG_ROOT}/usr/local/bin/jereko"
-  cp "${STAGING}/README.txt" "${STAGING}/SIDECAR.txt" "${PKG_ROOT}/usr/local/share/doc/jereko/"
-  chmod +x "${PKG_ROOT}/usr/local/bin/jereko"
+  mkdir -p "${PKG_ROOT}/usr/local/bin" "${PKG_ROOT}/usr/local/share/doc/jerekode"
+  cp "${STAGING}/jerekode" "${PKG_ROOT}/usr/local/bin/jerekode"
+  cp "${STAGING}/README.txt" "${STAGING}/SIDECAR.txt" "${PKG_ROOT}/usr/local/share/doc/jerekode/"
+  chmod +x "${PKG_ROOT}/usr/local/bin/jerekode"
   pkgbuild --root "$PKG_ROOT" \
-    --identifier "com.jerekode.jereko" \
+    --identifier "com.jerekode.jerekode" \
     --version "$VERSION" \
     --install-location "/" \
-    "${OUT_DIR}/jereko-${VERSION}-release-macos-${ARCH}.pkg"
+    "${OUT_DIR}/jerekode-${VERSION}-release-macos-${ARCH}.pkg"
 }
 
 package_windows() {
@@ -225,11 +225,11 @@ package_windows() {
     echo "warning: makensis not found; skipping NSIS installer" >&2
     return 0
   fi
-  NSIS_OUT="${OUT_DIR}/jereko-${VERSION}-release-windows-${ARCH}-setup.exe"
-  NSIS_BINARY="$(to_native_path "${STAGING}/jereko.exe")"
+  NSIS_OUT="${OUT_DIR}/jerekode-${VERSION}-release-windows-${ARCH}-setup.exe"
+  NSIS_BINARY="$(to_native_path "${STAGING}/jerekode.exe")"
   NSIS_OUTFILE="$(to_native_path "$NSIS_OUT")"
-  if [[ ! -f "${STAGING}/jereko.exe" ]]; then
-    echo "error: staged binary missing: ${STAGING}/jereko.exe" >&2
+  if [[ ! -f "${STAGING}/jerekode.exe" ]]; then
+    echo "error: staged binary missing: ${STAGING}/jerekode.exe" >&2
     exit 1
   fi
   # Git Bash converts /V2 to a path under Program Files/Git; exclude NSIS /D defines too.
@@ -238,8 +238,8 @@ package_windows() {
     /DVERSION="$VERSION" \
     /DBINARY="$NSIS_BINARY" \
     /DOUTFILE="$NSIS_OUTFILE" \
-    packaging/nsis/jereko.nsi
-  cp "$NSIS_OUT" "${OUT_DIR}/jereko-x64-setup.exe"
+    packaging/nsis/jerekode.nsi
+  cp "$NSIS_OUT" "${OUT_DIR}/jerekode-x64-setup.exe"
 }
 
 case "$TARGET_OS" in

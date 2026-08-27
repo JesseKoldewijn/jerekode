@@ -5,8 +5,8 @@ use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
 #[command(
-    name = "jereko",
-    about = "Jereko — AI coding agent runtime",
+    name = "jerekode",
+    about = "Jerekode — AI coding agent runtime",
     version,
     disable_version_flag = true
 )]

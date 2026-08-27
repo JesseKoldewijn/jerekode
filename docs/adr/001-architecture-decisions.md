@@ -10,9 +10,9 @@ Jereko is built as a **Rust core + Bun sidecar** runtime targeting OpenCode API 
 
 ## Decisions Recorded
 
-### 1. Primary binary: `jereko`
+### 1. Primary binary: `jerekode`
 
-- The CLI binary is named **`jereko`**.
+- The CLI binary is named **`jerekode`** (crate remains `jereko-cli`).
 - Optional aliases **`opencode`** and **`opencode2`** point to the same binary (symlinks or install-time aliases).
 - Aliases are not separate implementations.
 
@@ -68,7 +68,7 @@ Jereko is built as a **Rust core + Bun sidecar** runtime targeting OpenCode API 
 | Agent context | `CONTEXT.md` + `AGENTS.md` at repo root |
 | ADRs | `docs/adr/` created now; new decisions get numbered ADRs |
 | Skills | `.agents/skills/` committed with `skills-lock.json` |
-| HTTP tests | Both in-process router tests (fast) and black-box `jereko serve` tests (Layer 3 conformance) |
+| HTTP tests | Both in-process router tests (fast) and black-box `jerekode serve` tests (Layer 3 conformance) |
 | Snapshot testing | JSON fixtures primary; `cargo insta` optional for adapter round-trips later |
 | Refactor stage | PR review until `code-review` skill is added |
 | Distribution | Cargo/install for now; Pinokio/Gepeto launchers and Cursor SDK integration noted as future paths |

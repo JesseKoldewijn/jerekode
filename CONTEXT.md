@@ -15,7 +15,7 @@ Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.
 | `jereko-core` | `crates/jereko-core/` | Domain types, session models, shared errors |
 | `jereko-config` | `crates/jereko-config/` | Config loading, merge precedence, `opencode.json` / `tui.json` types |
 | `jereko-server` | `crates/jereko-server/` | Axum HTTP server, v1/v2 wire adapters, tools, extensions, policy |
-| `jereko-cli` | `crates/jereko-cli/` | CLI binary (`jereko`; aliases `opencode`, `opencode2`) |
+| `jereko-cli` | `crates/jereko-cli/` | CLI binary (`jerekode`; aliases `opencode`, `opencode2`) |
 | `jereko-providers` | `crates/jereko-providers/` | `Provider` trait, registry, streaming, HTTP adapters |
 | `jereko-plugins` | `crates/jereko-plugins/` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
 | `jereko-plugin-sdk` | `crates/jereko-plugin-sdk/` | Native plugin C ABI / Rust SDK |
@@ -68,10 +68,10 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | Bun plugins | Real sidecar spawn, dynamic import, `invoke_hook`; CI hard-gates |
 | Native plugins | libloading + test cdylib; CI hard-gates |
 | RTK adapter | `@jerekode/rtk` OpenCode2 + `jereko-rtk-plugin` native; true Bun+native e2e ([ADR 004](docs/adr/004-rtk-dual-adapter.md)) |
-| CLI smoke | `jereko version` + `jereko serve` v1/v2 session create (binary e2e) |
+| CLI smoke | `jerekode version` + `jerekode serve` v1/v2 session create (binary e2e) |
 | WASM | Module load + `jereko_hook` ABI |
 | MCP / LSP / PTY | call_tool, initialize/hover, portable-pty I/O |
-| TUI | Bun `jereko run` default; optional `native-tui` interactive MVP |
+| TUI | Bun `jerekode run` default; optional `native-tui` interactive MVP |
 | Release | Auto-release on `main` merge (`0.0.<run_number>` after wipe; seed `0.0.1`); archives only — see [roadmap-releases.md](docs/roadmap-releases.md) |
 
 Historical phase notes and foundation archive: [docs/roadmap-remaining.md](docs/roadmap-remaining.md).  

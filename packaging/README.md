@@ -6,7 +6,7 @@ Installers ship alongside portable archives on GitHub Releases. Unsigned pre-1.0
 
 | Platform | Formats on Releases |
 |----------|---------------------|
-| Windows x64 | `.zip` (portable) + NSIS `*-setup.exe` + stable alias `jereko-x64-setup.exe` |
+| Windows x64 | `.zip` (portable) + NSIS `*-setup.exe` + stable alias `jerekode-x64-setup.exe` |
 | Linux x64 | `.tar.gz` + `.deb` + `.rpm` + AppImage + Arch `.pkg.tar.zst` |
 | macOS x64 / arm64 | `.tar.gz` + unsigned `.pkg` |
 
@@ -18,8 +18,8 @@ See [packaging/arch/README.md](arch/README.md). In-repo `PKGBUILD` mirrors the C
 
 ## Homebrew / winget (P3 — templates)
 
-- [packaging/homebrew/jereko.rb.template](homebrew/jereko.rb.template)
-- [packaging/winget/jereko.yaml.template](winget/jereko.yaml.template)
+- [packaging/homebrew/jerekode.rb.template](homebrew/jerekode.rb.template)
+- [packaging/winget/jerekode.yaml.template](winget/jerekode.yaml.template)
 
 Update version + SHA256 after each release; submit via tap / winget-pkgs PR.
 
@@ -31,5 +31,5 @@ Apple notarization and Windows Authenticode are tracked in [docs/roadmap-release
 
 ```bash
 cargo build --release -p jereko-cli --locked
-VERSION=0.0.0-local ./scripts/package-installers.sh linux x64 target/release/jereko dist
+VERSION=0.0.0-local ./scripts/package-installers.sh linux x64 target/release/jerekode dist
 ```

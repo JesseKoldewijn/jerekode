@@ -22,7 +22,7 @@ cargo test --workspace --locked
 cargo build -p jereko-cli --release
 ```
 
-CLI runtime smoke (included in workspace tests): `jereko version` + `jereko serve` v1/v2 session create — see `crates/jereko-cli/tests/cli_smoke.rs`.
+CLI runtime smoke (included in workspace tests): `jerekode version` + `jerekode serve` v1/v2 session create — see `crates/jereko-cli/tests/cli_smoke.rs`.
 
 First-party plugins (e.g. `@jerekode/rtk`) need **true e2e** against Bun process + native dylib — see [conformance.md](./conformance.md) Layer 5.
 

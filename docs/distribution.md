@@ -5,28 +5,28 @@
 ```bash
 ./scripts/install.sh
 # or
-JEREKO_PREFIX=$HOME/.local ./scripts/install.sh
+JEREKODE_PREFIX=$HOME/.local ./scripts/install.sh
 ```
 
-Installs `jereko` plus aliases `opencode` and `opencode2` into `$JEREKO_PREFIX/bin` (default `~/.local/bin`).
+Installs `jerekode` plus aliases `opencode` and `opencode2` into `$JEREKODE_PREFIX/bin` (default `~/.local/bin`).
 
 ## Manual aliases
 
 ```bash
 cargo build -p jereko-cli --release
-ln -s "$(pwd)/target/release/jereko" ~/.local/bin/opencode
-ln -s "$(pwd)/target/release/jereko" ~/.local/bin/opencode2
+ln -s "$(pwd)/target/release/jerekode" ~/.local/bin/opencode
+ln -s "$(pwd)/target/release/jerekode" ~/.local/bin/opencode2
 ```
 
 ## Windows
 
-Copy or hardlink `jereko.exe` as `opencode.exe` / `opencode2.exe` onto a directory in `%PATH%`, or use PowerShell:
+Copy or hardlink `jerekode.exe` as `opencode.exe` / `opencode2.exe` onto a directory in `%PATH%`, or use PowerShell:
 
 ```powershell
 cargo build -p jereko-cli --release
-Copy-Item target\release\jereko.exe $env:USERPROFILE\.local\bin\jereko.exe
-Copy-Item target\release\jereko.exe $env:USERPROFILE\.local\bin\opencode.exe
-Copy-Item target\release\jereko.exe $env:USERPROFILE\.local\bin\opencode2.exe
+Copy-Item target\release\jerekode.exe $env:USERPROFILE\.local\bin\jerekode.exe
+Copy-Item target\release\jerekode.exe $env:USERPROFILE\.local\bin\opencode.exe
+Copy-Item target\release\jerekode.exe $env:USERPROFILE\.local\bin\opencode2.exe
 ```
 
 ## Runtime deps
@@ -34,7 +34,7 @@ Copy-Item target\release\jereko.exe $env:USERPROFILE\.local\bin\opencode2.exe
 | Component | Requirement |
 |-----------|-------------|
 | Core CLI / server | Rust-built binary only |
-| `jereko run` sidecar | Bun >= 1.1 on PATH |
+| `jerekode run` sidecar | Bun >= 1.1 on PATH |
 | SQLite sessions | Optional `sessionDb` in `opencode.json` |
 | Native plugins | Platform dylib built against `jereko-plugin-sdk` |
 
@@ -52,4 +52,3 @@ See [releases.md](./releases.md) for tagged GitHub Releases and PR `/build` work
 ## Upcoming packaging
 
 Installer formats, version reset, changelog quality, and full vs native-only builds: [roadmap-releases.md](./roadmap-releases.md) / [ADR 003](./adr/003-release-packaging-and-changelogs.md).
-
