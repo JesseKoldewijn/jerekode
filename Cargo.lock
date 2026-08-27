@@ -1568,7 +1568,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "jereko-cli"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "anyhow",
  "clap",
@@ -1585,7 +1585,7 @@ dependencies = [
 
 [[package]]
 name = "jereko-config"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "jsonc-parser",
  "serde",
@@ -1597,7 +1597,7 @@ dependencies = [
 
 [[package]]
 name = "jereko-conformance"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "jereko-config",
  "jereko-core",
@@ -1612,7 +1612,7 @@ dependencies = [
 
 [[package]]
 name = "jereko-core"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "serde",
  "serde_json",
@@ -1622,7 +1622,7 @@ dependencies = [
 
 [[package]]
 name = "jereko-plugin-sdk"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "serde",
  "serde_json",
@@ -1630,7 +1630,7 @@ dependencies = [
 
 [[package]]
 name = "jereko-plugins"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "async-trait",
  "criterion",
@@ -1651,7 +1651,7 @@ dependencies = [
 
 [[package]]
 name = "jereko-providers"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "async-trait",
  "jereko-core",
@@ -1666,7 +1666,7 @@ dependencies = [
 
 [[package]]
 name = "jereko-rtk-plugin"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "jereko-plugin-sdk",
  "regex",
@@ -1676,7 +1676,7 @@ dependencies = [
 
 [[package]]
 name = "jereko-server"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "axum",
  "http-body-util",
@@ -1697,7 +1697,7 @@ dependencies = [
 
 [[package]]
 name = "jereko-test-native-plugin"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "jereko-plugin-sdk",
  "serde_json",
