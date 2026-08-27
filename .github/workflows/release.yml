@@ -331,11 +331,12 @@ jobs:
           VARIANT: ${{ matrix.variant }}
         run: |
           set -euo pipefail
-          EXTRA=()
+          # macOS runners ship bash 3.2; empty "${EXTRA[@]}" trips `set -u`.
           if [[ "${VARIANT}" == "native" ]]; then
-            EXTRA+=(--no-default-features)
+            cargo build --release -p jerekode-cli --locked --no-default-features
+          else
+            cargo build --release -p jerekode-cli --locked
           fi
-          cargo build --release -p jerekode-cli --locked "${EXTRA[@]}"
 
       - name: Package artifact
         shell: bash
