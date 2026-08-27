@@ -87,6 +87,9 @@ mod tests {
         }
         handle.abort();
         let _ = handle.await;
-        assert!(healthy, "serve execute did not become healthy on port {port}");
+        assert!(
+            healthy,
+            "serve execute did not become healthy on port {port}"
+        );
     }
 }

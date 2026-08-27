@@ -143,7 +143,12 @@ mod tests {
         let version = CString::new("1.2.3").unwrap();
         let info = make_plugin_info(name.as_ptr(), version.as_ptr());
         assert_eq!(info.abi_version, ABI_VERSION);
-        assert_eq!(unsafe { std::ffi::CStr::from_ptr(info.name) }.to_str().unwrap(), "demo");
+        assert_eq!(
+            unsafe { std::ffi::CStr::from_ptr(info.name) }
+                .to_str()
+                .unwrap(),
+            "demo"
+        );
         assert_eq!(
             unsafe { std::ffi::CStr::from_ptr(info.version) }
                 .to_str()
