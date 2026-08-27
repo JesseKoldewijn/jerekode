@@ -248,15 +248,8 @@ async fn cli_session_list_against_serve() {
 
 #[test]
 fn cli_version_flag_short_v() {
-    let output = Command::new(jerekode_bin())
-        .arg("-v")
-        .output()
-        .expect("spawn jerekode -v");
-    assert!(
-        output.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&output.stderr)
-    );
+    let output = run_cli(&["-v"], &[]);
+    assert_exit(&output, true);
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
         stdout.contains(env!("CARGO_PKG_VERSION")),
@@ -266,15 +259,8 @@ fn cli_version_flag_short_v() {
 
 #[test]
 fn cli_version_flag_long() {
-    let output = Command::new(jerekode_bin())
-        .arg("--version")
-        .output()
-        .expect("spawn jerekode --version");
-    assert!(
-        output.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&output.stderr)
-    );
+    let output = run_cli(&["--version"], &[]);
+    assert_exit(&output, true);
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
         stdout.contains(env!("CARGO_PKG_VERSION")),
@@ -297,7 +283,7 @@ fn cli_bare_invoke_starts_tui_smoke() {
         return;
     }
 
-    let output = Command::new(jerekode_bin())
+    let output = Command::new(env!("CARGO_BIN_EXE_jerekode"))
         .env("JEREKODE_TUI_SMOKE", "1")
         .output()
         .expect("spawn bare jerekode");
@@ -311,5 +297,212 @@ fn cli_bare_invoke_starts_tui_smoke() {
     assert!(
         stdout.contains("jerekode TUI"),
         "expected TUI banner, got: {stdout}"
+    );
+}
+
+#[test]
+fn cli_auth_login_list_logout_and_import() {
+    let dir = tempfile::tempdir().unwrap();
+    let jk = dir.path().join("jerekode-auth.json");
+    let oc = dir.path().join("opencode-auth.json");
+    std::fs::write(&oc, r#"{"groq":{"api_key":"from-opencode"}}"#).unwrap();
+
+    let login = Command::new(env!("CARGO_BIN_EXE_jerekode"))
+        .args([
+            "auth",
+            "login",
+            "--provider",
+            "openai",
+            "--api-key",
+            "sk-test",
+        ])
+        .env("JEREKODE_AUTH_PATH", &jk)
+        .output()
+        .expect("auth login");
+    assert!(
+        login.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&login.stderr)
+    );
+
+    let list = Command::new(env!("CARGO_BIN_EXE_jerekode"))
+        .args(["auth", "list"])
+        .env("JEREKODE_AUTH_PATH", &jk)
+        .output()
+        .expect("auth list");
+    assert!(list.status.success());
+    let stdout = String::from_utf8_lossy(&list.stdout);
+    assert!(stdout.contains("openai"), "stdout: {stdout}");
+
+    let import = Command::new(env!("CARGO_BIN_EXE_jerekode"))
+        .args(["auth", "import"])
+        .env("JEREKODE_AUTH_PATH", &jk)
+        .env("OPENCODE_AUTH_PATH", &oc)
+        .output()
+        .expect("auth import");
+    assert!(
+        import.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&import.stderr)
+    );
+    let list2 = Command::new(env!("CARGO_BIN_EXE_jerekode"))
+        .args(["auth", "ls"])
+        .env("JEREKODE_AUTH_PATH", &jk)
+        .output()
+        .unwrap();
+    let out2 = String::from_utf8_lossy(&list2.stdout);
+    assert!(out2.contains("groq"), "stdout: {out2}");
+    assert!(out2.contains("openai"), "stdout: {out2}");
+
+    let logout = Command::new(env!("CARGO_BIN_EXE_jerekode"))
+        .args(["auth", "logout", "openai"])
+        .env("JEREKODE_AUTH_PATH", &jk)
+        .output()
+        .unwrap();
+    assert!(logout.status.success());
+}
+
+#[test]
+fn cli_db_path_prints_default() {
+    let output = run_cli(&["db", "path"], &[]);
+    assert_exit(&output, true);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("jerekode"), "stdout: {stdout}");
+}
+
+#[test]
+fn cli_run_file_flag_appends_contents() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("note.txt");
+    std::fs::write(&file, "file-body-xyz").unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_jerekode"))
+        .args(["run", "--file", file.to_str().unwrap(), "prefix"])
+        .env("JEREKO_USE_STUB_PROVIDERS", "1")
+        .output()
+        .expect("run --file");
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn cli_agent_list_smoke() {
+    let output = run_cli(&["agent", "list"], &[]);
+    assert_exit(&output, true);
+    assert!(
+        String::from_utf8_lossy(&output.stdout).contains("no custom agents"),
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+}
+
+#[test]
+fn cli_mcp_list_smoke() {
+    let output = run_cli(&["mcp", "list"], &[]);
+    assert_exit(&output, true);
+    assert!(
+        String::from_utf8_lossy(&output.stdout).contains("no MCP servers"),
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+}
+
+#[test]
+fn cli_auth_list_empty_store() {
+    let dir = tempfile::tempdir().unwrap();
+    let jk = dir.path().join("empty-auth.json");
+    let output = run_cli(
+        &["auth", "list"],
+        &[("JEREKODE_AUTH_PATH", jk.to_str().unwrap())],
+    );
+    assert_exit(&output, true);
+    assert!(
+        String::from_utf8_lossy(&output.stdout).contains("no credentials"),
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+}
+
+#[test]
+fn cli_auth_logout_unknown_provider() {
+    let dir = tempfile::tempdir().unwrap();
+    let jk = dir.path().join("auth.json");
+    let output = run_cli(
+        &["auth", "logout", "missing-provider"],
+        &[("JEREKODE_AUTH_PATH", jk.to_str().unwrap())],
+    );
+    assert_exit(&output, false);
+}
+
+#[test]
+fn cli_auth_import_no_opencode_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let jk = dir.path().join("auth.json");
+    let output = Command::new(env!("CARGO_BIN_EXE_jerekode"))
+        .args(["auth", "import"])
+        .env("JEREKODE_AUTH_PATH", &jk)
+        .env("HOME", dir.path())
+        .env_remove("OPENCODE_AUTH_PATH")
+        .env_remove("USERPROFILE")
+        .output()
+        .expect("auth import");
+    assert_exit(&output, true);
+    assert!(
+        String::from_utf8_lossy(&output.stdout).contains("no OpenCode auth.json found"),
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+}
+
+#[test]
+fn cli_attach_starts_tui_smoke_mode() {
+    let bun_ok = Command::new("bun")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+    if !bun_ok {
+        if std::env::var_os("CI").is_some() {
+            panic!("cli_attach_starts_tui_smoke_mode requires bun on PATH");
+        }
+        eprintln!("skipping: bun unavailable");
+        return;
+    }
+
+    let output = Command::new(env!("CARGO_BIN_EXE_jerekode"))
+        .args(["attach", "http://127.0.0.1:4096"])
+        .env("JEREKODE_TUI_SMOKE", "1")
+        .output()
+        .expect("attach");
+    assert!(
+        output.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&output.stderr),
+        String::from_utf8_lossy(&output.stdout)
+    );
+}
+
+#[tokio::test]
+async fn cli_run_attach_against_serve() {
+    let port = pick_port();
+    let child = spawn_serve("--host", "127.0.0.1", port, &[]);
+    let _guard = KillOnDrop(child);
+
+    let client = reqwest::Client::new();
+    wait_health(&client, port).await;
+
+    let url = format!("http://127.0.0.1:{port}");
+    let output = Command::new(env!("CARGO_BIN_EXE_jerekode"))
+        .args(["run", "--attach", &url, "hello attach"])
+        .env("JEREKO_USE_STUB_PROVIDERS", "1")
+        .output()
+        .expect("run --attach");
+    assert!(
+        output.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&output.stderr),
+        String::from_utf8_lossy(&output.stdout)
     );
 }

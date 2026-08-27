@@ -27,12 +27,34 @@ enum Commands {
     Serve(commands::serve::ServeArgs),
     /// Run a one-shot agent prompt (non-interactive)
     Run(commands::run::RunArgs),
+    /// Attach the TUI to a running serve instance
+    Attach(commands::attach::AttachArgs),
     /// List available models (`provider/model`)
     Models(commands::models::ModelsArgs),
     /// Session management (thin HTTP client)
     Session {
         #[command(subcommand)]
         command: commands::session::SessionCommand,
+    },
+    /// Provider credentials (jerekode-specific store)
+    Auth {
+        #[command(subcommand)]
+        command: commands::auth::AuthCommand,
+    },
+    /// MCP server management
+    Mcp {
+        #[command(subcommand)]
+        command: commands::mcp::McpCommand,
+    },
+    /// Agent management
+    Agent {
+        #[command(subcommand)]
+        command: commands::agent::AgentCommand,
+    },
+    /// Database tools
+    Db {
+        #[command(subcommand)]
+        command: commands::db::DbCommand,
     },
     /// Print version information
     Version,
@@ -46,7 +68,6 @@ async fn main() -> anyhow::Result<ExitCode> {
 
     let cli = Cli::parse();
     if cli.version {
-        // OpenCode-compatible `-v` / `--version` (clap default short is `-V`).
         println!("{}", env!("CARGO_PKG_VERSION"));
         return Ok(ExitCode::SUCCESS);
     }
@@ -58,6 +79,7 @@ async fn main() -> anyhow::Result<ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Some(Commands::Run(args)) => commands::run::execute(args).await,
+        Some(Commands::Attach(args)) => commands::attach::execute(args).await,
         Some(Commands::Models(args)) => {
             commands::models::execute(args).await?;
             Ok(ExitCode::SUCCESS)
@@ -66,6 +88,10 @@ async fn main() -> anyhow::Result<ExitCode> {
             commands::session::execute(command).await?;
             Ok(ExitCode::SUCCESS)
         }
+        Some(Commands::Auth { command }) => commands::auth::execute(command).await,
+        Some(Commands::Mcp { command }) => commands::mcp::execute(command).await,
+        Some(Commands::Agent { command }) => commands::agent::execute(command).await,
+        Some(Commands::Db { command }) => commands::db::execute(command).await,
         Some(Commands::Version) => {
             commands::version::execute();
             Ok(ExitCode::SUCCESS)

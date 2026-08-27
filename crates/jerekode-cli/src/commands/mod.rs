@@ -1,3 +1,8 @@
+pub mod agent;
+pub mod attach;
+pub mod auth;
+pub mod db;
+pub mod mcp;
 pub mod models;
 pub mod run;
 pub mod serve;

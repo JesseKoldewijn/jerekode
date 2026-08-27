@@ -15,11 +15,16 @@
 //!
 //! Config files use JSONC on disk (comments, trailing commas supported).
 
+mod auth;
 mod error;
 mod jsonc;
 mod loader;
 mod types;
 
+pub use auth::{
+    AuthCredential, AuthStore, import_opencode_into, jerekode_auth_path, load_store,
+    opencode_auth_candidates, save_store,
+};
 pub use error::{ConfigError, ConfigResult};
 pub use loader::{CliOverrides, ConfigLayer, ConfigLoader, MergeStrategy};
 pub use types::{OpenCodeConfig, PluginEntry, TuiConfig};
