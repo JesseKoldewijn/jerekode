@@ -164,18 +164,50 @@ mod tests {
     use std::path::PathBuf;
 
     fn test_dylib_path() -> PathBuf {
-        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        path.pop();
-        path.pop();
-        path.push("target");
-        path.push("debug");
-        #[cfg(target_os = "windows")]
-        path.push("jerekode_test_native_plugin.dll");
-        #[cfg(target_os = "macos")]
-        path.push("libjerekode_test_native_plugin.dylib");
-        #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
-        path.push("libjerekode_test_native_plugin.so");
-        path
+        let file_name = {
+            #[cfg(target_os = "windows")]
+            {
+                "jerekode_test_native_plugin.dll"
+            }
+            #[cfg(target_os = "macos")]
+            {
+                "libjerekode_test_native_plugin.dylib"
+            }
+            #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+            {
+                "libjerekode_test_native_plugin.so"
+            }
+        };
+
+        let mut candidates = Vec::new();
+        if let Ok(target_dir) = std::env::var("CARGO_TARGET_DIR") {
+            candidates.push(PathBuf::from(target_dir).join("debug").join(file_name));
+        }
+        let mut workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        workspace.pop();
+        workspace.pop();
+        candidates.push(workspace.join("target").join("debug").join(file_name));
+        // cargo-llvm-cov may stage artifacts under a nested target dir.
+        candidates.push(
+            workspace
+                .join("target")
+                .join("llvm-cov-target")
+                .join("debug")
+                .join(file_name),
+        );
+
+        candidates
+            .into_iter()
+            .find(|p| p.exists())
+            .unwrap_or_else(|| {
+                let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+                path.pop();
+                path.pop();
+                path.push("target");
+                path.push("debug");
+                path.push(file_name);
+                path
+            })
     }
 
     #[tokio::test]

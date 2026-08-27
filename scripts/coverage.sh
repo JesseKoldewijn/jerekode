@@ -13,6 +13,24 @@ OUT_DIR="$(cd "$OUT_DIR" && pwd)"
 COMPARE_BRANCH="${COMPARE_BRANCH:-origin/main}"
 DIFF_FAIL_UNDER="${DIFF_COVERAGE_FAIL_UNDER:-80}"
 
+strip_ansi_file() {
+  # Remove CSI/OSC escapes so sticky PR comments stay UTF-8 plain text.
+  python3 - "$1" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+if not path.is_file():
+    raise SystemExit(0)
+ansi = re.compile(
+    r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\][^\x07\x1B]*(?:\x07|\x1B\\))"
+)
+text = path.read_text(encoding="utf-8", errors="replace")
+path.write_text(ansi.sub("", text), encoding="utf-8", newline="\n")
+PY
+}
+
 run_diff_cover() {
   local label="$1"
   local lcov_path="$2"
@@ -22,7 +40,8 @@ run_diff_cover() {
 
   echo "==> diff-cover ${label} vs ${COMPARE_BRANCH} (fail-under=${DIFF_FAIL_UNDER}%)"
   set +e
-  "${DIFF_COVER}" "${lcov_path}" \
+  # Disable pygments/terminal colors so tee'd text and PR comments stay clean.
+  env NO_COLOR=1 TERM=dumb PYGMENTIZE_STYLE=none "${DIFF_COVER}" "${lcov_path}" \
     --diff-file="$OUT_DIR/pr.diff" \
     --fail-under="${DIFF_FAIL_UNDER}" \
     --ignore-staged \
@@ -33,6 +52,9 @@ run_diff_cover() {
   local status=${PIPESTATUS[0]}
   set -e
 
+  strip_ansi_file "${txt_out}"
+  strip_ansi_file "${md_out}"
+
   [[ -s "${json_out}" ]] || echo '{}' > "${json_out}"
   [[ -s "${md_out}" ]] || echo "_diff-cover markdown unavailable_" > "${md_out}"
 
@@ -40,6 +62,8 @@ run_diff_cover() {
 }
 
 echo "==> cargo llvm-cov (workspace)"
+# Ensure the native test dylib exists where host tests look (incl. llvm-cov target dir).
+cargo build -p jerekode-test-native-plugin --locked
 cargo llvm-cov --workspace --locked \
   --lcov --output-path "$OUT_DIR/lcov.info"
 

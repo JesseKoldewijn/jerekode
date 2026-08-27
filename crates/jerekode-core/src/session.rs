@@ -84,4 +84,14 @@ mod tests {
         let restored: Session = serde_json::from_str(&json).unwrap();
         assert_eq!(session.id, restored.id);
     }
+
+    #[test]
+    fn session_and_id_default_construct() {
+        let id = SessionId::default();
+        assert!(!id.0.is_empty());
+        let session = Session::default();
+        assert_eq!(session.status, SessionStatus::Active);
+        assert!(session.messages.is_empty());
+        assert!(!session.id.0.is_empty());
+    }
 }

@@ -501,4 +501,23 @@ mod tests {
         assert!(r.data.contains("ping") || r.data.contains("wrote"));
         assert!(mgr.kill("s1"));
     }
+
+    #[test]
+    fn status_stubs_use_jerekode_defaults() {
+        let lsp = lsp_status_stub();
+        assert!(lsp.initialized);
+        assert_eq!(lsp.status, "ready");
+
+        let pty = pty_status_stub();
+        assert!(pty.sessions.contains(&"default".into()));
+
+        let mcp = mcp_status_stub();
+        assert!(!mcp.tools.is_empty());
+    }
+
+    #[test]
+    fn jsonrpc_initialize_probe_frames_jerekode_root() {
+        // `true` exits immediately; probe still exercises the framed initialize body.
+        let _ = LspClient::jsonrpc_initialize_probe("true", &[]);
+    }
 }

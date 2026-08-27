@@ -311,3 +311,44 @@ async fn session_list_get_delete_via_router() {
         .unwrap();
     assert_eq!(gone.status(), StatusCode::NOT_FOUND);
 }
+
+#[tokio::test]
+async fn extension_defaults_apply_when_fields_omitted() {
+    let app = build_router(AppState::default());
+
+    let init = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/extensions/lsp/initialize")
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(init.status(), StatusCode::OK);
+    let init_body = init.into_body().collect().await.unwrap().to_bytes();
+    let init_json: Value = serde_json::from_slice(&init_body).unwrap();
+    assert_eq!(init_json["initialized"], true);
+
+    let spawn = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/extensions/pty/spawn")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::json!({"session_id": "defaults"}).to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(spawn.status(), StatusCode::OK);
+    let spawn_body = spawn.into_body().collect().await.unwrap().to_bytes();
+    let spawn_json: Value = serde_json::from_slice(&spawn_body).unwrap();
+    assert_eq!(spawn_json["ok"], true);
+    assert_eq!(spawn_json["session_id"], "defaults");
+}
