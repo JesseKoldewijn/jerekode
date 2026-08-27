@@ -351,6 +351,12 @@ mod tests {
     use std::path::PathBuf;
     #[cfg(feature = "bun-sidecar")]
     use std::process::Command as StdCommand;
+    #[cfg(feature = "bun-sidecar")]
+    use std::sync::Mutex;
+
+    /// Serializes PATH mutation vs other Bun spawn tests (process-global env is shared).
+    #[cfg(feature = "bun-sidecar")]
+    static BUN_PATH_LOCK: Mutex<()> = Mutex::new(());
 
     #[tokio::test]
     async fn in_memory_sidecar_records_outbound() {
@@ -390,6 +396,7 @@ mod tests {
     #[cfg(feature = "bun-sidecar")]
     #[tokio::test]
     async fn bun_process_init_ready_and_shutdown() {
+        let _guard = BUN_PATH_LOCK.lock().expect("bun path lock");
         if !bun_available() {
             require_or_skip("bun_process_init_ready_and_shutdown requires bun on PATH");
             return;
@@ -431,6 +438,7 @@ mod tests {
     #[cfg(feature = "bun-sidecar")]
     #[tokio::test]
     async fn bun_process_loads_fixture_plugin_and_invokes_hook() {
+        let _guard = BUN_PATH_LOCK.lock().expect("bun path lock");
         if !bun_available() {
             require_or_skip("bun_process_loads_fixture_plugin_and_invokes_hook requires bun");
             return;
@@ -502,6 +510,7 @@ mod tests {
     #[cfg(feature = "bun-sidecar")]
     #[tokio::test]
     async fn bun_spawn_reports_not_found_hint_when_bun_missing() {
+        let _guard = BUN_PATH_LOCK.lock().expect("bun path lock");
         let previous = std::env::var_os("PATH");
         // SAFETY: test-only PATH mutation; restored below before returning.
         unsafe {
