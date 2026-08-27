@@ -1,0 +1,7 @@
+{
+  "description": "One-shot `run` with stub providers (no network). Reply prefix is the owned stub contract.",
+  "argv": ["run", "--provider", "openai", "--model", "stub-model", "hello"],
+  "env": { "JEREKO_USE_STUB_PROVIDERS": "1" },
+  "exit_success": true,
+  "stdout_contains": ["stub:openai"]
+}

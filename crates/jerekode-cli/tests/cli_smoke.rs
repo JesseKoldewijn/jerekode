@@ -1,13 +1,17 @@
 //! CLI runtime smoke — spawn the real `jerekode` binary (not in-process router).
+//! Expected shapes load from owned fixtures under `conformance/fixtures/cli/`.
 
+mod common;
+
+use common::{
+    assert_exit, assert_fixture_run, assert_session_list_shape, assert_stdout_contains,
+    assert_stdout_contains_ignore_case, assert_stdout_must_not_contain_line_prefix, load_json,
+    load_text, run_cli, spawn_serve,
+};
 use serde_json::Value;
 use std::net::TcpListener;
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, Command};
 use std::time::Duration;
-
-fn jerekode_bin() -> &'static str {
-    env!("CARGO_BIN_EXE_jerekode")
-}
 
 fn pick_port() -> u16 {
     TcpListener::bind("127.0.0.1:0")
@@ -41,33 +45,29 @@ async fn wait_health(client: &reqwest::Client, port: u16) {
 
 #[test]
 fn cli_version_prints_package_version() {
-    let output = Command::new(jerekode_bin())
-        .arg("version")
-        .output()
-        .expect("spawn jerekode version");
-    assert!(
-        output.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&output.stderr)
+    let shape = load_json("version_stdout_shape.json");
+    let output = run_cli(&["version"], &[]);
+    assert_exit(
+        &output,
+        shape
+            .get("exit_success")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true),
     );
     let stdout = String::from_utf8_lossy(&output.stdout);
+    if let Some(needles) = shape.get("stdout_contains").and_then(|v| v.as_array()) {
+        assert_stdout_contains(&stdout, needles);
+    }
     assert!(
         stdout.contains(env!("CARGO_PKG_VERSION")),
-        "stdout missing version: {stdout}"
+        "stdout missing crate version: {stdout}"
     );
-    assert!(stdout.contains("jerekode"), "stdout: {stdout}");
 }
 
 #[tokio::test]
 async fn cli_serve_health_and_v1_v2_session_smoke() {
     let port = pick_port();
-    let child = Command::new(jerekode_bin())
-        .args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()])
-        .env("JEREKO_USE_STUB_PROVIDERS", "1")
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .expect("spawn jerekode serve");
+    let child = spawn_serve("--host", "127.0.0.1", port, &[]);
     let _guard = KillOnDrop(child);
 
     let client = reqwest::Client::new();
@@ -79,7 +79,10 @@ async fn cli_serve_health_and_v1_v2_session_smoke() {
         .await
         .unwrap();
     assert!(health.status().is_success());
-    assert_eq!(health.text().await.unwrap(), "ok");
+    assert_eq!(
+        health.text().await.unwrap(),
+        load_text("serve_health_body.txt").trim()
+    );
 
     let v1 = client
         .post(format!("http://127.0.0.1:{port}/v1/session"))
@@ -115,19 +118,7 @@ async fn cli_serve_health_and_v1_v2_session_smoke() {
 #[tokio::test]
 async fn cli_serve_hostname_alias_binds() {
     let port = pick_port();
-    let child = Command::new(jerekode_bin())
-        .args([
-            "serve",
-            "--hostname",
-            "127.0.0.1",
-            "--port",
-            &port.to_string(),
-        ])
-        .env("JEREKO_USE_STUB_PROVIDERS", "1")
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .expect("spawn jerekode serve --hostname");
+    let child = spawn_serve("--hostname", "127.0.0.1", port, &[]);
     let _guard = KillOnDrop(child);
 
     let client = reqwest::Client::new();
@@ -137,26 +128,27 @@ async fn cli_serve_hostname_alias_binds() {
 #[tokio::test]
 async fn cli_serve_basic_auth_env_gates_health() {
     let port = pick_port();
-    let child = Command::new(jerekode_bin())
-        .args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()])
-        .env("JEREKO_USE_STUB_PROVIDERS", "1")
-        .env("OPENCODE_SERVER_PASSWORD", "test-secret")
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .expect("spawn jerekode serve with auth");
+    let child = spawn_serve(
+        "--host",
+        "127.0.0.1",
+        port,
+        &[("OPENCODE_SERVER_PASSWORD", "test-secret")],
+    );
     let _guard = KillOnDrop(child);
 
     let client = reqwest::Client::new();
     let url = format!("http://127.0.0.1:{port}/health");
-    // Wait until the server answers (401 still means it is up).
+    let mut saw_unauthorized = false;
     for _ in 0..50 {
         if let Ok(resp) = client.get(&url).send().await {
-            assert_eq!(resp.status(), reqwest::StatusCode::UNAUTHORIZED);
-            break;
+            if resp.status() == reqwest::StatusCode::UNAUTHORIZED {
+                saw_unauthorized = true;
+                break;
+            }
         }
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
+    assert!(saw_unauthorized, "expected 401 from /health before auth");
 
     let ok = client
         .get(&url)
@@ -165,117 +157,62 @@ async fn cli_serve_basic_auth_env_gates_health() {
         .await
         .unwrap();
     assert!(ok.status().is_success());
-    assert_eq!(ok.text().await.unwrap(), "ok");
+    assert_eq!(
+        ok.text().await.unwrap(),
+        load_text("serve_health_body.txt").trim()
+    );
 }
 
 #[test]
 fn cli_help_exits_zero() {
-    let output = Command::new(jerekode_bin())
-        .arg("--help")
-        .output()
-        .expect("spawn jerekode --help");
-    assert!(
-        output.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&output.stderr)
+    let shape = load_json("help_stdout_shape.json");
+    let output = run_cli(&["--help"], &[]);
+    assert_exit(
+        &output,
+        shape
+            .get("exit_success")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true),
     );
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.to_lowercase().contains("serve"), "stdout: {stdout}");
-    assert!(stdout.to_lowercase().contains("run"), "stdout: {stdout}");
-    assert!(stdout.to_lowercase().contains("models"), "stdout: {stdout}");
-    assert!(
-        stdout.to_lowercase().contains("session"),
-        "stdout: {stdout}"
-    );
-    assert!(
-        stdout.to_lowercase().contains("version"),
-        "stdout: {stdout}"
-    );
-    // Unfinished surface must stay omitted (Decided #6).
-    assert!(
-        !stdout.to_lowercase().contains("\n    auth"),
-        "help should omit unfinished auth: {stdout}"
-    );
+    if let Some(needles) = shape
+        .get("stdout_contains_ignore_case")
+        .and_then(|v| v.as_array())
+    {
+        assert_stdout_contains_ignore_case(&stdout, needles);
+    }
+    if let Some(prefixes) = shape
+        .get("stdout_must_not_contain_line_prefix")
+        .and_then(|v| v.as_array())
+    {
+        assert_stdout_must_not_contain_line_prefix(&stdout, prefixes);
+    }
 }
 
 #[test]
 fn cli_run_one_shot_with_stub_provider() {
-    let output = Command::new(jerekode_bin())
-        .args([
-            "run",
-            "--provider",
-            "openai",
-            "--model",
-            "stub-model",
-            "hello",
-        ])
-        .env("JEREKO_USE_STUB_PROVIDERS", "1")
-        .output()
-        .expect("spawn jerekode run");
-    assert!(
-        output.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(
-        stdout.contains("stub:openai"),
-        "expected stub reply, got: {stdout}"
-    );
+    assert_fixture_run("run_one_shot_stub.json");
 }
 
 #[test]
 fn cli_run_model_slash_form() {
-    let output = Command::new(jerekode_bin())
-        .args(["run", "-m", "anthropic/stub-model", "ping"])
-        .env("JEREKO_USE_STUB_PROVIDERS", "1")
-        .output()
-        .expect("spawn jerekode run -m");
-    assert!(
-        output.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("stub:anthropic"), "stdout: {stdout}");
+    assert_fixture_run("run_model_slash_form.json");
 }
 
 #[test]
 fn cli_run_without_message_exits_nonzero() {
-    let output = Command::new(jerekode_bin())
-        .args(["run"])
-        .env("JEREKO_USE_STUB_PROVIDERS", "1")
-        .output()
-        .expect("spawn jerekode run empty");
-    assert!(!output.status.success());
+    assert_fixture_run("run_missing_message.json");
 }
 
 #[test]
 fn cli_models_lists_provider_model() {
-    let output = Command::new(jerekode_bin())
-        .args(["models"])
-        .env("JEREKO_USE_STUB_PROVIDERS", "1")
-        .output()
-        .expect("spawn jerekode models");
-    assert!(
-        output.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("openai/stub-model"), "stdout: {stdout}");
+    assert_fixture_run("models_stdout_contains.json");
 }
 
 #[tokio::test]
 async fn cli_session_list_against_serve() {
     let port = pick_port();
-    let child = Command::new(jerekode_bin())
-        .args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()])
-        .env("JEREKO_USE_STUB_PROVIDERS", "1")
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .expect("spawn serve for session list");
+    let child = spawn_serve("--host", "127.0.0.1", port, &[]);
     let _guard = KillOnDrop(child);
 
     let client = reqwest::Client::new();
@@ -289,7 +226,7 @@ async fn cli_session_list_against_serve() {
         .unwrap();
     assert_eq!(created.status(), 201);
 
-    let list = Command::new(jerekode_bin())
+    let list = Command::new(env!("CARGO_BIN_EXE_jerekode"))
         .args([
             "session",
             "list",
@@ -306,11 +243,5 @@ async fn cli_session_list_against_serve() {
         String::from_utf8_lossy(&list.stderr)
     );
     let body: Value = serde_json::from_slice(&list.stdout).unwrap();
-    assert!(
-        body["sessions"]
-            .as_array()
-            .map(|a| !a.is_empty())
-            .unwrap_or(false),
-        "expected sessions in {body}"
-    );
+    assert_session_list_shape(&body, "session_list_json_shape.json");
 }

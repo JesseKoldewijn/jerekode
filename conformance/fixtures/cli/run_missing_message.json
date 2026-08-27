@@ -1,0 +1,6 @@
+{
+  "description": "`run` without a positional message must fail non-zero.",
+  "argv": ["run"],
+  "env": { "JEREKO_USE_STUB_PROVIDERS": "1" },
+  "exit_success": false
+}

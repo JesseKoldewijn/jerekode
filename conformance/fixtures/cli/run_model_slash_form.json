@@ -1,0 +1,7 @@
+{
+  "description": "OpenCode-style `-m provider/model` flag on `run`.",
+  "argv": ["run", "-m", "anthropic/stub-model", "ping"],
+  "env": { "JEREKO_USE_STUB_PROVIDERS": "1" },
+  "exit_success": true,
+  "stdout_contains": ["stub:anthropic"]
+}

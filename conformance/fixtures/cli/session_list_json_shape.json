@@ -1,0 +1,5 @@
+{
+  "description": "`session list --format json` must expose a non-empty sessions array.",
+  "required_top_level_keys": ["sessions"],
+  "sessions_min_count": 1
+}
