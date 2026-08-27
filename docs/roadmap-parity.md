@@ -2,11 +2,11 @@
 
 **Status:** Documented slices **R0–P3e** complete (shipped on `main`)  
 **Date:** 2026-08-26  
-**Related:** [roadmap-remaining.md](./roadmap-remaining.md) (foundation archive) · [roadmap-releases.md](./roadmap-releases.md) (packaging / changelogs — **active forward plan**) · [conformance.md](./conformance.md) · [CONTEXT.md](../CONTEXT.md)
+**Related:** [roadmap-remaining.md](./roadmap-remaining.md) (foundation archive) · [roadmap-parity-cli.md](./roadmap-parity-cli.md) (CLI argv / behavior — **active**) · [roadmap-releases.md](./roadmap-releases.md) (packaging / changelogs — **active**) · [conformance.md](./conformance.md) · [CONTEXT.md](../CONTEXT.md)
 
 Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and hard CI gates — not soft-skips, not scaffold-only seams.
 
-**What's next:** Release packaging (changelog quality, version reset, installers, full vs native-only) tracks in [roadmap-releases.md](./roadmap-releases.md) and [ADR 003](./adr/003-release-packaging-and-changelogs.md). This file is the **closed** parity checklist; further capability growth is incremental via fixtures, not a new foundation phase.
+**What's next:** CLI command/behavior parity tracks in [roadmap-parity-cli.md](./roadmap-parity-cli.md). Release packaging (changelog quality, version reset, installers, full vs native-only) tracks in [roadmap-releases.md](./roadmap-releases.md) and [ADR 003](./adr/003-release-packaging-and-changelogs.md). This file is the **closed** runtime/HTTP/plugin parity checklist; further capability growth is incremental via fixtures, not a new foundation phase.
 
 ---
 
@@ -44,6 +44,7 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 | MCP / LSP / PTY | call_tool + hover + portable-pty I/O | Broader protocol matrix |
 | WASM | `jerekode_hook` export + host fallback | Richer WASI surface |
 | HTTP | v1/v2 sessions list/get/delete + messages + stream + tools | Broader fixture coverage |
+| CLI | Smoke: `version` + `serve` | Argv / TUI / `run` parity — [roadmap-parity-cli.md](./roadmap-parity-cli.md) |
 | Release | Auto-release green; archive assets today | Packaging / notes / version reset — [roadmap-releases.md](./roadmap-releases.md) |
 | Docs | Aligned with shipped capability (#30) | Keep updated with each slice |
 
@@ -57,7 +58,8 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 4. **Do not weaken CI** — convert soft-skips to hard gates, never the reverse.
 5. Treat this board as **closed** unless a maintainer adds a new parity slice ID.
 6. Release packaging / wipe / installers: [roadmap-releases.md](./roadmap-releases.md), not this file.
-7. Keep [roadmap-remaining.md](./roadmap-remaining.md) as historical foundation status only.
+7. CLI argv / default-TUI / `run` behavioral parity: [roadmap-parity-cli.md](./roadmap-parity-cli.md), not this file.
+8. Keep [roadmap-remaining.md](./roadmap-remaining.md) as historical foundation status only.
 
 ---
 

@@ -104,6 +104,8 @@ Spawn the real `jerekode` binary (`CARGO_BIN_EXE_jerekode`):
 
 These live in `crates/jerekode-cli/tests/cli_smoke.rs` and run under `cargo test --workspace`.
 
+**Forward work:** widen to argv/help/flag-compat and `run` behavior fixtures — proposed seams and `conformance/fixtures/cli/` layout in [roadmap-parity-cli.md](./roadmap-parity-cli.md). New seams outside this table still need maintainer confirmation before landing.
+
 ## Fixture Rules
 
 - Fixtures live under `conformance/fixtures/`.
@@ -137,5 +139,6 @@ cargo build -p jerekode-rtk-plugin --locked
 
 - [architecture.md](./architecture.md)
 - [development.md](./development.md)
-- [roadmap-parity.md](./roadmap-parity.md) (closed parity checklist)
+- [roadmap-parity.md](./roadmap-parity.md) (closed runtime parity checklist)
+- [roadmap-parity-cli.md](./roadmap-parity-cli.md) (active CLI ↔ OpenCode command/behavior plan)
 - [roadmap-releases.md](./roadmap-releases.md) (active packaging plan)

@@ -11,6 +11,7 @@ See [docs/architecture.md](docs/architecture.md) for system design, adapter laye
 Conformance: [docs/conformance.md](docs/conformance.md).  
 Orientation: [CONTEXT.md](CONTEXT.md), [AGENTS.md](AGENTS.md), [docs/development.md](docs/development.md), [docs/adr/](docs/adr/).  
 Closed parity checklist: [docs/roadmap-parity.md](docs/roadmap-parity.md).  
+Active CLI ↔ OpenCode command/behavior plan: [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md).  
 Active packaging / release plan: [docs/roadmap-releases.md](docs/roadmap-releases.md).
 
 ## Project Structure
@@ -173,6 +174,7 @@ The Bun sidecar hosts TUI and JS/TS plugins over JSON-line IPC. CI hard-gates Bu
 - Platform installers and download names: [Install](#install) above; full ops: [docs/releases.md](docs/releases.md)
 - Local install / alias helpers: [docs/distribution.md](docs/distribution.md)
 - Upcoming packaging (signing, changelog policy, full vs native-only): [docs/roadmap-releases.md](docs/roadmap-releases.md)
+- CLI ↔ OpenCode command parity (argv gaps, phases): [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md)
 
 ## License
 
