@@ -100,6 +100,7 @@ impl Provider for OllamaProvider {
             content,
             model: request.model,
             finish_reason: Some("stop".into()),
+            tool_calls: Vec::new(),
         })
     }
 

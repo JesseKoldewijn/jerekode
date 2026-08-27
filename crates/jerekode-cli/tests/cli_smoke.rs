@@ -63,6 +63,7 @@ async fn cli_serve_health_and_v1_v2_session_smoke() {
     let port = pick_port();
     let child = Command::new(jerekode_bin())
         .args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()])
+        .env("JEREKO_USE_STUB_PROVIDERS", "1")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
@@ -111,6 +112,62 @@ async fn cli_serve_health_and_v1_v2_session_smoke() {
     assert!(!v2_id.is_empty(), "v2 session id missing: {v2_body}");
 }
 
+#[tokio::test]
+async fn cli_serve_hostname_alias_binds() {
+    let port = pick_port();
+    let child = Command::new(jerekode_bin())
+        .args([
+            "serve",
+            "--hostname",
+            "127.0.0.1",
+            "--port",
+            &port.to_string(),
+        ])
+        .env("JEREKO_USE_STUB_PROVIDERS", "1")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("spawn jerekode serve --hostname");
+    let _guard = KillOnDrop(child);
+
+    let client = reqwest::Client::new();
+    wait_health(&client, port).await;
+}
+
+#[tokio::test]
+async fn cli_serve_basic_auth_env_gates_health() {
+    let port = pick_port();
+    let child = Command::new(jerekode_bin())
+        .args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()])
+        .env("JEREKO_USE_STUB_PROVIDERS", "1")
+        .env("OPENCODE_SERVER_PASSWORD", "test-secret")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("spawn jerekode serve with auth");
+    let _guard = KillOnDrop(child);
+
+    let client = reqwest::Client::new();
+    let url = format!("http://127.0.0.1:{port}/health");
+    // Wait until the server answers (401 still means it is up).
+    for _ in 0..50 {
+        if let Ok(resp) = client.get(&url).send().await {
+            assert_eq!(resp.status(), reqwest::StatusCode::UNAUTHORIZED);
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+
+    let ok = client
+        .get(&url)
+        .basic_auth("opencode", Some("test-secret"))
+        .send()
+        .await
+        .unwrap();
+    assert!(ok.status().is_success());
+    assert_eq!(ok.text().await.unwrap(), "ok");
+}
+
 #[test]
 fn cli_help_exits_zero() {
     let output = Command::new(jerekode_bin())
@@ -124,8 +181,136 @@ fn cli_help_exits_zero() {
     );
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.to_lowercase().contains("serve"), "stdout: {stdout}");
+    assert!(stdout.to_lowercase().contains("run"), "stdout: {stdout}");
+    assert!(stdout.to_lowercase().contains("models"), "stdout: {stdout}");
+    assert!(
+        stdout.to_lowercase().contains("session"),
+        "stdout: {stdout}"
+    );
     assert!(
         stdout.to_lowercase().contains("version"),
         "stdout: {stdout}"
+    );
+    // Unfinished surface must stay omitted (Decided #6).
+    assert!(
+        !stdout.to_lowercase().contains("\n    auth"),
+        "help should omit unfinished auth: {stdout}"
+    );
+}
+
+#[test]
+fn cli_run_one_shot_with_stub_provider() {
+    let output = Command::new(jerekode_bin())
+        .args([
+            "run",
+            "--provider",
+            "openai",
+            "--model",
+            "stub-model",
+            "hello",
+        ])
+        .env("JEREKO_USE_STUB_PROVIDERS", "1")
+        .output()
+        .expect("spawn jerekode run");
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("stub:openai"),
+        "expected stub reply, got: {stdout}"
+    );
+}
+
+#[test]
+fn cli_run_model_slash_form() {
+    let output = Command::new(jerekode_bin())
+        .args(["run", "-m", "anthropic/stub-model", "ping"])
+        .env("JEREKO_USE_STUB_PROVIDERS", "1")
+        .output()
+        .expect("spawn jerekode run -m");
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("stub:anthropic"), "stdout: {stdout}");
+}
+
+#[test]
+fn cli_run_without_message_exits_nonzero() {
+    let output = Command::new(jerekode_bin())
+        .args(["run"])
+        .env("JEREKO_USE_STUB_PROVIDERS", "1")
+        .output()
+        .expect("spawn jerekode run empty");
+    assert!(!output.status.success());
+}
+
+#[test]
+fn cli_models_lists_provider_model() {
+    let output = Command::new(jerekode_bin())
+        .args(["models"])
+        .env("JEREKO_USE_STUB_PROVIDERS", "1")
+        .output()
+        .expect("spawn jerekode models");
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("openai/stub-model"), "stdout: {stdout}");
+}
+
+#[tokio::test]
+async fn cli_session_list_against_serve() {
+    let port = pick_port();
+    let child = Command::new(jerekode_bin())
+        .args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()])
+        .env("JEREKO_USE_STUB_PROVIDERS", "1")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("spawn serve for session list");
+    let _guard = KillOnDrop(child);
+
+    let client = reqwest::Client::new();
+    wait_health(&client, port).await;
+
+    let created = client
+        .post(format!("http://127.0.0.1:{port}/v2/sessions"))
+        .json(&serde_json::json!({ "provider_id": "openai" }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(created.status(), 201);
+
+    let list = Command::new(jerekode_bin())
+        .args([
+            "session",
+            "list",
+            "--url",
+            &format!("http://127.0.0.1:{port}"),
+            "--format",
+            "json",
+        ])
+        .output()
+        .expect("spawn session list");
+    assert!(
+        list.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&list.stderr)
+    );
+    let body: Value = serde_json::from_slice(&list.stdout).unwrap();
+    assert!(
+        body["sessions"]
+            .as_array()
+            .map(|a| !a.is_empty())
+            .unwrap_or(false),
+        "expected sessions in {body}"
     );
 }

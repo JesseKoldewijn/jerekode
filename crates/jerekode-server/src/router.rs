@@ -1,15 +1,26 @@
 use crate::extensions::{self, LspHoverResult, McpToolResult, PtyIoResult};
+use crate::middleware::basic_auth_middleware;
+use crate::options::RouterOptions;
 use crate::state::AppState;
 use axum::{
     Json, Router,
     extract::State,
+    http::{HeaderValue, Method},
+    middleware,
     routing::{get, post},
 };
 use serde::Deserialize;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
-/// Build the Axum router with v1 and v2 adapter routes.
+/// Build the Axum router with v1 and v2 adapter routes (default options).
 pub fn build_router(state: AppState) -> Router {
-    Router::new()
+    build_router_with(state, RouterOptions::default())
+}
+
+/// Build the Axum router with CORS / auth middleware.
+pub fn build_router_with(state: AppState, opts: RouterOptions) -> Router {
+    let auth_mode = opts.basic_auth.clone();
+    let router = Router::new()
         .route("/health", get(health))
         .route("/extensions/mcp", get(mcp_status))
         .route("/extensions/mcp/call", post(mcp_call))
@@ -23,6 +34,41 @@ pub fn build_router(state: AppState) -> Router {
         .nest("/v1", crate::adapters::v1::router())
         .nest("/v2", crate::adapters::v2::router())
         .with_state(state)
+        // Auth is inner; CORS is outer so OPTIONS preflight is not blocked.
+        .layer(middleware::from_fn_with_state(
+            auth_mode,
+            basic_auth_middleware,
+        ));
+
+    if opts.cors_origins.is_empty() {
+        router
+    } else {
+        router.layer(cors_layer(&opts.cors_origins))
+    }
+}
+
+fn cors_layer(origins: &[String]) -> CorsLayer {
+    let parsed: Vec<HeaderValue> = origins
+        .iter()
+        .filter_map(|o| HeaderValue::from_str(o.trim()).ok())
+        .collect();
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::list(parsed))
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+            Method::PATCH,
+        ])
+        .allow_headers([
+            axum::http::header::AUTHORIZATION,
+            axum::http::header::CONTENT_TYPE,
+            axum::http::header::ACCEPT,
+        ])
+        .allow_credentials(true)
+        .max_age(std::time::Duration::from_secs(86_400))
 }
 
 async fn health() -> &'static str {

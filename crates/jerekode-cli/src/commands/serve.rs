@@ -1,17 +1,21 @@
 use clap::Args;
 use jerekode_config::{CliOverrides, ConfigLoader};
-use jerekode_server;
+use jerekode_server::{RouterOptions, serve_with};
 use std::env;
 
 #[derive(Args, Debug)]
 pub struct ServeArgs {
-    /// Override bind host
-    #[arg(long)]
+    /// Override bind host (`--hostname` is an OpenCode-compatible alias)
+    #[arg(long, visible_alias = "hostname")]
     pub host: Option<String>,
 
     /// Override bind port
     #[arg(short, long)]
     pub port: Option<u16>,
+
+    /// Extra CORS origin (repeatable)
+    #[arg(long = "cors", action = clap::ArgAction::Append)]
+    pub cors: Vec<String>,
 
     /// Override default provider
     #[arg(long)]
@@ -42,7 +46,11 @@ pub async fn execute(args: ServeArgs) -> anyhow::Result<()> {
     let loader = ConfigLoader::load_discovered(&project, &cli)?;
     tracing::info!(layers = ?loader.loaded_layers(), "loaded config");
 
-    jerekode_server::serve(loader.opencode()).await?;
+    let opts = RouterOptions {
+        cors_origins: args.cors,
+        basic_auth: Default::default(),
+    };
+    serve_with(loader.opencode(), opts).await?;
     Ok(())
 }
 
@@ -67,6 +75,7 @@ mod tests {
         let args = ServeArgs {
             host: Some("127.0.0.1".into()),
             port: Some(port),
+            cors: Vec::new(),
             provider: None,
             model: None,
             project: Some(project.path().to_string_lossy().into_owned()),
@@ -91,5 +100,36 @@ mod tests {
             healthy,
             "serve execute did not become healthy on port {port}"
         );
+    }
+
+    #[tokio::test]
+    async fn execute_accepts_hostname_via_host_field() {
+        let port = pick_port();
+        let project = tempfile::tempdir().expect("temp project");
+        // `hostname` is a clap alias; the field is still `host`.
+        let args = ServeArgs {
+            host: Some("127.0.0.1".into()),
+            port: Some(port),
+            cors: vec!["http://localhost:3000".into()],
+            provider: None,
+            model: None,
+            project: Some(project.path().to_string_lossy().into_owned()),
+        };
+        let handle = tokio::spawn(async move { execute(args).await });
+        let client = reqwest::Client::new();
+        let url = format!("http://127.0.0.1:{port}/health");
+        let mut healthy = false;
+        for _ in 0..50 {
+            if let Ok(resp) = client.get(&url).send().await
+                && resp.status().is_success()
+            {
+                healthy = true;
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        handle.abort();
+        let _ = handle.await;
+        assert!(healthy);
     }
 }

@@ -37,12 +37,25 @@ pub struct CompletionRequest {
     pub max_tokens: Option<u32>,
 }
 
+/// Tool invocation requested by a model turn (provider-normalized).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ProviderToolCall {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    pub name: String,
+    #[serde(default)]
+    pub arguments: serde_json::Value,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompletionResponse {
     pub content: String,
     pub model: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub finish_reason: Option<String>,
+    /// When non-empty, the agent loop should execute these tools before the next turn.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tool_calls: Vec<ProviderToolCall>,
 }
 
 /// One incremental piece of a streaming completion.
@@ -123,6 +136,7 @@ impl Provider for StubProvider {
             ),
             model: request.model,
             finish_reason: Some("stop".into()),
+            tool_calls: Vec::new(),
         })
     }
 }

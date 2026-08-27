@@ -137,6 +137,7 @@ impl Provider for OpenAiProvider {
             content,
             model: request.model,
             finish_reason: finish,
+            tool_calls: Vec::new(),
         })
     }
 
