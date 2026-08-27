@@ -3,7 +3,7 @@
 Phased plan for trustworthy changelogs, a clean version line, installers, and optional Bun-free builds. Decision record: [ADR 003](./adr/003-release-packaging-and-changelogs.md). Operational how-to today: [releases.md](./releases.md).
 
 **Status:** Active forward plan (runtime parity board closed; CLI / drop-in remaining work is a separate active track — [roadmap-parity-cli.md](./roadmap-parity-cli.md)).
-**This document tracks packaging work.** P0 notes fix + version wipe to **0.0.1** were executed (maintainer-approved). Dual-build Cargo features remain **planned, not implemented**. **Default download = full** (Bun sidecar); native-only is advanced/future. Sequencing relative to CLI work is summarized in [roadmap-parity-cli.md § CLI-P3](./roadmap-parity-cli.md#cli-p3--packaging-integration--remaining-10-depth).
+**This document tracks packaging work.** P0 notes fix + version wipe to **0.0.1** were executed (maintainer-approved). Cargo feature `bun-sidecar` (default ON) is implemented; native-only artifacts remain optional/commented in CI. **Default download = full** (Bun sidecar); native-only is advanced/future. Sequencing relative to CLI work is summarized in [roadmap-parity-cli.md § CLI-P3](./roadmap-parity-cli.md#cli-p3--packaging-integration--remaining-10-depth).
 
 ## Goals
 
@@ -61,9 +61,11 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 ## P1 — Multi-arch binaries and naming
 
 - [x] Keep stem `jerekode-{version}-release-{os}-{arch}`; document arch tags (`x64`, `arm64`). *(shipped in `package-release.sh` / `release.yml`; documented in [releases.md](./releases.md))*
-- [ ] Linux/Windows arm64 when free GHA runners (or self-hosted/qemu) exist.
-- [ ] Optional / **advanced-future**: first **native-only** artifacts for **linux-x64** and **windows-x64** only (`…-native-release-…`) to prove the Cargo feature without doubling full matrix cost — **not** the default download (Q7 locked = full).
-- [ ] CI: `os × arch × variant` documented; fail-fast false; cache keys include variant.
+- [x] Cargo feature `bun-sidecar` (default ON); `--no-default-features` = native-only; clear error when Bun/TS plugins configured without Bun host.
+- [x] Document native-only stem `jerekode-{version}-native-release-{os}-{arch}` in [releases.md](./releases.md) / [packaging/README.md](../packaging/README.md).
+- [ ] Linux/Windows arm64 when free GHA runners exist — **honest skip** today; commented matrix stubs in `release.yml` (do not fake runners).
+- [ ] Optional / **advanced-future**: enable commented **native-only** matrix rows for **linux-x64** and **windows-x64** to publish `…-native-release-…` — **not** the default download (Q7 locked = full).
+- [x] CI: `os × arch × variant` documented (`variant: full`); fail-fast false; cache keys include variant; native/arm64 rows commented.
 
 ---
 
@@ -86,20 +88,22 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 ## P3 — Package-manager distribution
 
-- [ ] Homebrew tap (template: [`packaging/homebrew/jerekode.rb.template`](../packaging/homebrew/jerekode.rb.template)).
-- [ ] winget manifest (template: [`packaging/winget/jerekode.yaml.template`](../packaging/winget/jerekode.yaml.template)).
+- [x] Homebrew tap **template + publish checklist** ([`packaging/homebrew/jerekode.rb.template`](../packaging/homebrew/jerekode.rb.template), [packaging/README.md](../packaging/README.md)) — actual tap publish needs maintainer account.
+- [x] winget **template + publish checklist** ([`packaging/winget/jerekode.yaml.template`](../packaging/winget/jerekode.yaml.template)) — submit to winget-pkgs manually.
 - [x] AUR `PKGBUILD` in-repo ([`packaging/arch/`](../packaging/arch/)); publish to AUR manually.
-- [ ] In-repo **Nix flake** (cheap; good for NixOS users).
+- [x] In-repo **Nix flake** ([`flake.nix`](../flake.nix)) — `nix build` / `.#jerekode-native`.
 - [ ] Expand native-only to macos + arm64 as demand warrants.
 - [ ] Revisit **bundling Bun** inside full installers (default remains system Bun).
+- [ ] Actually publish Homebrew / winget / AUR (maintainer accounts; not CI).
 
 ---
 
 ## P4 — Signing and notarization
 
-- [ ] Apple Developer ID + notarization secrets for macOS.
-- [ ] Windows Authenticode (or cloud signing).
-- [ ] Document trust model; keep unsigned fallback notes until complete.
+- [ ] Apple Developer ID + notarization secrets for macOS (`APPLE_*`) — **workflow stub commented** in `release.yml`.
+- [ ] Windows Authenticode (or cloud signing) (`WINDOWS_CERT*`) — **workflow stub commented** in `release.yml`.
+- [x] Document trust model + unsigned pre-1.0 expectations in [releases.md](./releases.md#trust-model--code-signing-pre-10).
+- [ ] Enable signing steps when certs/secrets exist (must not break unsigned releases meanwhile).
 
 ---
 
@@ -107,8 +111,8 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 | Phase | Dual-build work |
 |-------|-----------------|
-| P0 | Document only; no matrix change required for wipe (**feature not implemented yet**) |
-| P1 | Introduce `bun-sidecar` feature; optional native-only artifacts on 1–2 platforms (**planned**) |
+| P0 | Document only; no matrix change required for wipe |
+| P1 | `bun-sidecar` feature implemented (default ON); native-only naming + clear errors; optional CI rows **commented** |
 | P2 | Installers for **full**; native-only remains archive or slim installer |
 | P3+ | Native-only in brew/winget/Nix as separate formulae/packages if useful |
 
@@ -145,9 +149,9 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 ### Dual builds
 
 7. ~~**Default download:** full (with Bun) or native-only?~~ **Locked: full (Bun included)**; native-only = advanced/future ([CLI Decided #9](./roadmap-parity-cli.md#decided--locked-compatibility-contract)).
-8. Should `jerekode` on native-only **error clearly** when config enables a Bun/TS plugin? (**Recommend: yes.**)
+8. ~~Should `jerekode` on native-only **error clearly** when config enables a Bun/TS plugin?~~ **Yes — implemented** (`BUN_SIDECAR_UNAVAILABLE_MSG` / orchestrator + server).
 9. **Full package:** keep requiring **system Bun**, or bundle Bun later?
-10. Artifact naming: `jerekode-native-…` vs `…-native-release-…` vs separate package display names only?
+10. ~~Artifact naming: `jerekode-native-…` vs `…-native-release-…`~~ **Locked: `jerekode-{ver}-native-release-{os}-{arch}`**.
 
 ---
 

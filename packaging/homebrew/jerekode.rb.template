@@ -1,4 +1,15 @@
-# Homebrew formula template — copy to tap as jerekode.rb and set version/sha256.
+# Homebrew formula template — copy into a tap as `Formula/jerekode.rb`.
+# Preferred tap name: JesseKoldewijn/homebrew-jerekode
+#   brew tap JesseKoldewijn/jerekode
+#   brew install jerekode
+#
+# After each GitHub Release, fill {{VERSION}} and sha256 placeholders from:
+#   shasum -a 256 jerekode-*-release-macos-*.tar.gz
+# Linux bottles are optional (Homebrew on Linux); macOS is the primary path.
+#
+# Caveat: the full (default) build expects system Bun for Bun/TS plugins / sidecar TUI.
+# Native-only archives (`…-native-release-…`) are advanced/future and are not this formula.
+
 class Jerekode < Formula
   desc "Rust port of OpenCode — OpenCode-compatible AI coding agent runtime"
   homepage "https://github.com/JesseKoldewijn/jerekode"
@@ -16,8 +27,28 @@ class Jerekode < Formula
     end
   end
 
+  on_linux do
+    if Hardware::CPU.intel?
+      url "https://github.com/JesseKoldewijn/jerekode/releases/download/v{{VERSION}}/jerekode-{{VERSION}}-release-linux-x64.tar.gz"
+      sha256 "{{SHA256_LINUX_X64}}"
+    end
+    # linux-arm64 release assets ship only when free GHA arm64 runners exist
+    # (see docs/releases.md). Uncomment when assets are published:
+    # if Hardware::CPU.arm?
+    #   url "https://github.com/JesseKoldewijn/jerekode/releases/download/v{{VERSION}}/jerekode-{{VERSION}}-release-linux-arm64.tar.gz"
+    #   sha256 "{{SHA256_LINUX_ARM64}}"
+    # end
+  end
+
   def install
     bin.install "jerekode"
+  end
+
+  def caveats
+    <<~EOS
+      Bun is not bundled. For Bun/TS plugins and the sidecar TUI, install Bun
+      (>= 1.1) separately and see sidecar/README.md in the repository.
+    EOS
   end
 
   test do

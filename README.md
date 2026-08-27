@@ -82,9 +82,14 @@ tar -xzf jerekode-*-release-macos-arm64.tar.gz
 
 Gatekeeper may block unsigned packages — allow the app in System Settings, or open via Finder (right-click → Open).
 
-### Package managers (templates / future)
+### Package managers (templates / Nix flake)
 
-AUR, Homebrew, and winget templates live under [`packaging/`](packaging/) — see [packaging/README.md](packaging/README.md) and [packaging/arch/README.md](packaging/arch/README.md). Not published as official taps yet.
+| Channel | In-repo | Published? |
+|---------|---------|------------|
+| Nix | [`flake.nix`](flake.nix) — `nix build` / `nix build .#jerekode-native` | Local flake only (nixpkgs submit later) |
+| AUR / Homebrew / winget | Templates + checklists under [`packaging/`](packaging/) | **No** — maintainer accounts required; see [packaging/README.md](packaging/README.md) |
+
+Default download remains the **full** (Bun sidecar) build. Native-only archives use the `…-native-release-…` stem when enabled.
 
 ### From source
 
