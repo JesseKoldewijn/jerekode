@@ -10,7 +10,7 @@ authors.workspace = true
 axum = { workspace = true }
 jerekode-config = { workspace = true }
 jerekode-core = { workspace = true }
-jerekode-plugins = { workspace = true }
+jerekode-plugins = { workspace = true, default-features = false }
 jerekode-providers = { workspace = true }
 portable-pty = "0.9"
 rusqlite = { version = "0.40", features = ["bundled"] }
@@ -19,6 +19,10 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+
+[features]
+default = ["bun-sidecar"]
+bun-sidecar = ["jerekode-plugins/bun-sidecar"]
 
 [dev-dependencies]
 http-body-util = "0.1"

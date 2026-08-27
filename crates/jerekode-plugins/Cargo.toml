@@ -7,7 +7,11 @@ license.workspace = true
 authors.workspace = true
 
 [features]
-default = []
+default = ["bun-sidecar"]
+# Full / OpenCode-fidelity builds spawn the Bun plugin sidecar.
+# Disable with `--no-default-features` for native-only artifacts
+# (`jerekode-…-native-release-…`).
+bun-sidecar = []
 native-tui = ["dep:ratatui", "dep:crossterm"]
 
 [dependencies]

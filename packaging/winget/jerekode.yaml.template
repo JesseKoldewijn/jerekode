@@ -1,13 +1,62 @@
-# WinGet manifest template — submit to microsoft/winget-pkgs as JesseKoldewijn.jerekode
+# WinGet multi-file manifest templates (microsoft/winget-pkgs layout).
+# Package identifier: JesseKoldewijn.jerekode
+#
+# After each release:
+# 1. Copy these three files into a version folder under winget-pkgs, e.g.
+#    manifests/j/JesseKoldewijn/jerekode/{{VERSION}}/
+# 2. Replace {{VERSION}} and {{SHA256_WINDOWS_SETUP}}.
+# 3. Open a PR to microsoft/winget-pkgs (requires GitHub account; not automated here).
+#
+# Installer points at the stable NSIS alias published on GitHub Releases.
+# Windows arm64 is not shipped until a free GHA windows-arm64 runner exists.
+
+# --- JesseKoldewijn.jerekode.yaml (version) ---
+# PackageIdentifier: JesseKoldewijn.jerekode
+# PackageVersion: {{VERSION}}
+# DefaultLocale: en-US
+# ManifestType: version
+# ManifestVersion: 1.6.0
+
+# --- JesseKoldewijn.jerekode.installer.yaml ---
 PackageIdentifier: JesseKoldewijn.jerekode
 PackageVersion: "{{VERSION}}"
-PackageLocale: en-US
-Publisher: Jesse Koldewijn
-PackageName: jerekode
-License: MIT
-ShortDescription: Rust port of OpenCode — OpenCode-compatible AI coding agent runtime
+Platform:
+  - Windows.Desktop
+InstallerType: exe
+Scope: machine
+InstallModes:
+  - interactive
+  - silent
+InstallerSwitches:
+  Silent: /S
+  SilentWithProgress: /S
+UpgradeBehavior: install
 Installers:
   - Architecture: x64
-    InstallerType: exe
     InstallerUrl: https://github.com/JesseKoldewijn/jerekode/releases/download/v{{VERSION}}/jerekode-x64-setup.exe
     InstallerSha256: "{{SHA256_WINDOWS_SETUP}}"
+    # AppsAndFeaturesEntries optional once ProductCode is stable across releases
+ManifestType: installer
+ManifestVersion: 1.6.0
+
+# --- JesseKoldewijn.jerekode.locale.en-US.yaml ---
+# PackageIdentifier: JesseKoldewijn.jerekode
+# PackageVersion: {{VERSION}}
+# PackageLocale: en-US
+# Publisher: Jesse Koldewijn
+# PublisherUrl: https://github.com/JesseKoldewijn
+# PublisherSupportUrl: https://github.com/JesseKoldewijn/jerekode/issues
+# PackageName: jerekode
+# PackageUrl: https://github.com/JesseKoldewijn/jerekode
+# License: MIT
+# LicenseUrl: https://github.com/JesseKoldewijn/jerekode/blob/main/LICENSE
+# ShortDescription: Rust port of OpenCode — OpenCode-compatible AI coding agent runtime
+# Description: >
+#   Jerekode is an OpenCode-compatible AI coding agent runtime (Rust core, optional
+#   Bun plugin sidecar). Installers are unsigned pre-1.0; SmartScreen may warn.
+# Tags:
+#   - cli
+#   - opencode
+#   - ai
+# ManifestType: defaultLocale
+# ManifestVersion: 1.6.0

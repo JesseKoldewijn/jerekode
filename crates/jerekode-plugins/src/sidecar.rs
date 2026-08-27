@@ -1,11 +1,16 @@
 use crate::error::{PluginError, PluginResult};
 use serde::{Deserialize, Serialize};
-use std::process::Stdio;
 use std::sync::Arc;
-use std::time::Duration;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::{Child, ChildStdin, Command};
 use tokio::sync::Mutex;
+
+#[cfg(feature = "bun-sidecar")]
+use std::process::Stdio;
+#[cfg(feature = "bun-sidecar")]
+use std::time::Duration;
+#[cfg(feature = "bun-sidecar")]
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+#[cfg(feature = "bun-sidecar")]
+use tokio::process::{Child, ChildStdin, Command};
 
 /// JSON-line IPC messages — Rust → Sidecar.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -161,6 +166,7 @@ impl SidecarPort for InMemorySidecarPort {
 }
 
 /// Production SidecarPort — spawns Bun and exchanges JSON-line messages over stdio.
+#[cfg(feature = "bun-sidecar")]
 pub struct BunProcessSidecarPort {
     sidecar_entry: String,
     stdin: Mutex<ChildStdin>,
@@ -168,6 +174,7 @@ pub struct BunProcessSidecarPort {
     child: Mutex<Child>,
 }
 
+#[cfg(feature = "bun-sidecar")]
 impl BunProcessSidecarPort {
     /// Spawn `bun run <entry>` with piped stdio and a stdout reader task.
     pub async fn spawn(sidecar_entry: impl Into<String>) -> PluginResult<Arc<Self>> {
@@ -181,8 +188,13 @@ impl BunProcessSidecarPort {
             .kill_on_drop(true)
             .spawn()
             .map_err(|e| {
+                let hint = if e.kind() == std::io::ErrorKind::NotFound {
+                    " Bun was not found on PATH. Install Bun (>= 1.1), or use a native-only build without Bun/TS plugins."
+                } else {
+                    ""
+                };
                 PluginError::Sidecar(format!(
-                    "failed to spawn bun for sidecar entry '{sidecar_entry}': {e}"
+                    "failed to spawn bun for sidecar entry '{sidecar_entry}': {e}.{hint}"
                 ))
             })?;
 
@@ -280,6 +292,7 @@ impl BunProcessSidecarPort {
 }
 
 #[async_trait::async_trait]
+#[cfg(feature = "bun-sidecar")]
 impl SidecarPort for BunProcessSidecarPort {
     async fn send(&self, message: SidecarOutbound) -> PluginResult<()> {
         let is_shutdown = matches!(message, SidecarOutbound::Shutdown);
@@ -332,7 +345,9 @@ pub async fn run_sidecar_loop(port: &dyn SidecarPort) -> PluginResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "bun-sidecar")]
     use std::path::PathBuf;
+    #[cfg(feature = "bun-sidecar")]
     use std::process::Command as StdCommand;
 
     #[tokio::test]
@@ -347,6 +362,7 @@ mod tests {
         assert_eq!(port.recorded_outbound().await.len(), 1);
     }
 
+    #[cfg(feature = "bun-sidecar")]
     fn bun_available() -> bool {
         StdCommand::new("bun")
             .arg("--version")
@@ -355,10 +371,12 @@ mod tests {
             .unwrap_or(false)
     }
 
+    #[cfg(feature = "bun-sidecar")]
     fn sidecar_entry() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../sidecar/src/index.ts")
     }
 
+    #[cfg(feature = "bun-sidecar")]
     fn require_or_skip(reason: &str) {
         // GitHub Actions sets CI=true. Fail hard there; allow local soft-skip.
         if std::env::var_os("CI").is_some() {
@@ -367,7 +385,8 @@ mod tests {
         eprintln!("skipping: {reason}");
     }
 
-    #[tokio::test]
+        #[cfg(feature = "bun-sidecar")]
+#[tokio::test]
     async fn bun_process_init_ready_and_shutdown() {
         if !bun_available() {
             require_or_skip("bun_process_init_ready_and_shutdown requires bun on PATH");
@@ -407,7 +426,8 @@ mod tests {
             .expect("shutdown");
     }
 
-    #[tokio::test]
+        #[cfg(feature = "bun-sidecar")]
+#[tokio::test]
     async fn bun_process_loads_fixture_plugin_and_invokes_hook() {
         if !bun_available() {
             require_or_skip("bun_process_loads_fixture_plugin_and_invokes_hook requires bun");

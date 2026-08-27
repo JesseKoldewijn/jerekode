@@ -52,7 +52,8 @@ Humans and agents must still land code on `main` **only via pull request** (see 
 
 | Kind | Archive / installer name |
 |------|---------------------------|
-| Tagged / auto release (portable) | `jerekode-{version}-release-{os}-{arch}.tar.gz` / `.zip` |
+| Tagged / auto release (portable, **full**) | `jerekode-{version}-release-{os}-{arch}.tar.gz` / `.zip` |
+| Native-only (advanced / future) | `jerekode-{version}-native-release-{os}-{arch}.tar.gz` / `.zip` — built with `cargo build -p jerekode-cli --no-default-features` |
 | Windows installer | `jerekode-{version}-release-windows-x64-setup.exe`, stable alias `jerekode-x64-setup.exe` |
 | Linux installers | `jerekode-{version}-release-linux-x64.deb`, `.rpm`, `.AppImage`, Arch `.pkg.tar.zst` |
 | macOS installer | `jerekode-{version}-release-macos-{x64\|arm64}.pkg` |
@@ -114,14 +115,46 @@ Release builds always use the **release** Cargo profile.
 
 | OS | Arch | Runner | Status |
 |----|------|--------|--------|
-| Linux | x64 | `ubuntu-22.04` | Built |
-| macOS | x64 | `macos-15-intel` | Built |
-| macOS | arm64 | `macos-14` | Built |
-| Windows | x64 | `windows-latest` | Built |
-| Linux | arm64 | — | **Skipped** — no free GHA linux-arm64 runner |
-| Windows | arm64 | — | **Skipped** — no free GHA windows-arm64 runner |
+| Linux | x64 | `ubuntu-22.04` | Built (full) |
+| macOS | x64 | `macos-15-intel` | Built (full) |
+| macOS | arm64 | `macos-14` | Built (full) |
+| Windows | x64 | `windows-latest` | Built (full) |
+| Linux | arm64 | — | **Not shipped** — no free GHA linux-arm64 runner yet; matrix row commented in `release.yml` (enable when GitHub provides one; do not fake via paid/qemu unless maintainers opt in) |
+| Windows | arm64 | — | **Not shipped** — no free GHA windows-arm64 runner yet; same policy |
 
-Caching: [Swatinem/rust-cache](https://github.com/Swatinem/rust-cache) (PromptComposer-style).
+**Default download = full** (`bun-sidecar` Cargo feature ON). Native-only matrix rows are commented for future `…-native-release-…` linux/windows x64 artifacts.
+
+Caching: [Swatinem/rust-cache](https://github.com/Swatinem/rust-cache) (PromptComposer-style); cache keys include `variant`.
+
+### Dual-build Cargo feature
+
+| Feature | Default | Effect |
+|---------|---------|--------|
+| `bun-sidecar` | **ON** | Compiles Bun spawn/load paths (`BunPluginHost`, `BunProcessSidecarPort`) |
+| `--no-default-features` | — | Native-only binary: no Bun requirement; Bun/TS plugin config fails with a clear error |
+
+```bash
+cargo build --release -p jerekode-cli --locked
+cargo build --release -p jerekode-cli --no-default-features --locked
+```
+
+### Trust model / code signing (pre-1.0)
+
+- GitHub Release assets are the **source of truth** for binaries (checksums via Release asset list / your own `sha256sum`).
+- Installers and archives are **unsigned** until P4 secrets exist (Apple Developer ID + notarization; Windows Authenticode).
+- Expect **SmartScreen** (Windows) and **Gatekeeper** (macOS) warnings; verify the download URL is `github.com/JesseKoldewijn/jerekode/releases`.
+- Workflow stubs for notarization / Authenticode live (commented) in [`.github/workflows/release.yml`](../.github/workflows/release.yml) and activate only when `APPLE_*` / `WINDOWS_CERT*` secrets are set — current releases must not fail without those secrets.
+
+### Package managers (publish checklist)
+
+In-repo only; CI does **not** publish to Homebrew / winget / AUR. See [packaging/README.md](../packaging/README.md):
+
+| Channel | Status |
+|---------|--------|
+| Nix flake | [`flake.nix`](../flake.nix) — `nix build` / `nix build .#jerekode-native` |
+| Homebrew | Template + checklist under `packaging/homebrew/` |
+| winget | Template + checklist under `packaging/winget/` |
+| AUR | `packaging/arch/` — manual publish |
 
 ## PR `/build` (workflow artifacts only)
 
@@ -176,9 +209,9 @@ ls /tmp/jerekode-dist
 
 ## Notes policy / upcoming packaging
 
-Release bodies use a **static artifact blurb** plus **filtered** notes since the previous tag (see workflow + `.github/release.yml`). **P2 installers** (NSIS, deb/rpm/AppImage, macOS pkg, Arch pkg) ship on GitHub Releases via [`scripts/package-installers.sh`](../scripts/package-installers.sh). Signing (P4) and native-only variants remain on the roadmap:
+Release bodies use a **static artifact blurb** plus **filtered** notes since the previous tag (see workflow + `.github/release.yml`). **P2 installers** (NSIS, deb/rpm/AppImage, macOS pkg, Arch pkg) ship on GitHub Releases via [`scripts/package-installers.sh`](../scripts/package-installers.sh). Package-manager templates and the Nix flake are in-repo (publish is a maintainer checklist). Signing remains pending certs (stubs only):
 
 - [roadmap-releases.md](./roadmap-releases.md) — phased plan (P0–P4)
 - [ADR 003](./adr/003-release-packaging-and-changelogs.md) — packaging / changelog decisions
-- [packaging/README.md](../packaging/README.md) — locked installer matrix
+- [packaging/README.md](../packaging/README.md) — locked installer matrix + publish checklists
 

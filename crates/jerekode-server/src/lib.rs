@@ -17,10 +17,9 @@ pub mod state;
 pub mod tools;
 
 use jerekode_config::{OpenCodeConfig, PluginEntry};
-use jerekode_plugins::{
-    BunPluginHost, BunProcessSidecarPort, NativePluginHost, PluginHost, PluginOrchestrator,
-    WasmPluginHost,
-};
+use jerekode_plugins::{NativePluginHost, PluginHost, PluginOrchestrator, WasmPluginHost};
+#[cfg(feature = "bun-sidecar")]
+use jerekode_plugins::{BunPluginHost, BunProcessSidecarPort};
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -101,16 +100,26 @@ pub async fn build_app_state(config: &OpenCodeConfig) -> ServerResult<AppState> 
 
     let mut hosts: Vec<Arc<dyn PluginHost>> = Vec::new();
     if needs_bun_host(&config.plugins) {
-        let entry =
-            std::env::var("JEREKO_SIDECAR_ENTRY").unwrap_or_else(|_| "sidecar/src/index.ts".into());
-        let process = BunProcessSidecarPort::spawn(entry)
-            .await
-            .map_err(|e| ServerError::Serve(e.to_string()))?;
-        process
-            .wait_startup_ready()
-            .await
-            .map_err(|e| ServerError::Serve(e.to_string()))?;
-        hosts.push(Arc::new(BunPluginHost::new(process)));
+        #[cfg(feature = "bun-sidecar")]
+        {
+            let entry = std::env::var("JEREKO_SIDECAR_ENTRY")
+                .unwrap_or_else(|_| "sidecar/src/index.ts".into());
+            let process = BunProcessSidecarPort::spawn(entry)
+                .await
+                .map_err(|e| ServerError::Serve(e.to_string()))?;
+            process
+                .wait_startup_ready()
+                .await
+                .map_err(|e| ServerError::Serve(e.to_string()))?;
+            hosts.push(Arc::new(BunPluginHost::new(process)));
+        }
+        #[cfg(not(feature = "bun-sidecar"))]
+        {
+            return Err(ServerError::Serve(format!(
+                "Bun/TS plugins are configured, but {}",
+                jerekode_plugins::BUN_SIDECAR_UNAVAILABLE_MSG
+            )));
+        }
     }
     hosts.push(Arc::new(NativePluginHost::new()));
     hosts.push(Arc::new(WasmPluginHost::default()));

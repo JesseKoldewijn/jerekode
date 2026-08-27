@@ -55,7 +55,14 @@ impl PluginOrchestrator {
             };
 
             let host = self.resolve_host(host_id).ok_or_else(|| {
-                PluginError::Orchestrator(format!("host not registered: {host_id}"))
+                if host_id == "bun" {
+                    PluginError::Orchestrator(format!(
+                        "Bun/TS plugin '{name}' is configured but the Bun sidecar host is unavailable: {}",
+                        crate::error::BUN_SIDECAR_UNAVAILABLE_MSG
+                    ))
+                } else {
+                    PluginError::Orchestrator(format!("host not registered: {host_id}"))
+                }
             })?;
 
             let spec = PluginSpec {
@@ -104,12 +111,14 @@ impl PluginOrchestrator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bun_host::BunPluginHost;
     use crate::native_host::NativePluginHost;
-    use crate::sidecar::InMemorySidecarPort;
 
+    #[cfg(feature = "bun-sidecar")]
     #[tokio::test]
     async fn dispatches_across_bun_and_native_hosts() {
+        use crate::bun_host::BunPluginHost;
+        use crate::sidecar::InMemorySidecarPort;
+
         let port = Arc::new(InMemorySidecarPort::new());
         let bun = Arc::new(BunPluginHost::new(port.clone()));
         let native = Arc::new(NativePluginHost::with_library_path("./test.so"));
@@ -134,5 +143,20 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(results.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn bun_plugin_errors_clearly_without_bun_host() {
+        let native = Arc::new(NativePluginHost::with_library_path("./test.so"));
+        let mut orchestrator = PluginOrchestrator::new(vec![native]);
+        let err = orchestrator
+            .load_from_config(&[PluginEntry::Bun("@acme/server-plugin".into())])
+            .await
+            .expect_err("bun plugin without bun host must fail");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("Bun/TS plugin") && msg.contains("without Bun sidecar support"),
+            "unexpected error: {msg}"
+        );
     }
 }
