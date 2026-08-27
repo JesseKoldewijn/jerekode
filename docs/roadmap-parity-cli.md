@@ -61,10 +61,9 @@ Locked for JesseKoldewijn/jerekode (2026-08-27). Phase work must follow these; d
 | 5 | **Auth store** | **Import** from OpenCode credentials; **store** under a **jerekode-specific** path (do **not** overwrite OpenCode’s store). | **CLI-P2** `auth`; document paths in `docs/cli.md`. |
 | 6 | **Help stubs** | **Omit until ready** — do not list unimplemented commands in `--help`. | Help = shipped commands only. |
 | 7 | **`web` / `acp` / `github` / `pr`** | **Post-v1** — out of 1.0 CLI parity. | **CLI-P4**. |
+| 8 | **Serve basic auth** | **Mirror OpenCode** — env-gated (`OPENCODE_SERVER_PASSWORD` / username env) + `attach` / `run --attach` `--password`/`--username` flags; required for drop-in remote attach. | Implement with `serve`/`attach` in **CLI-P1–P2**; do not ship remote attach without the mechanism. |
 | 9 | **Default download** | **Default = full (Bun included)** for OpenCode fidelity; **native-only = advanced / future**. | Locked in [roadmap-releases.md](./roadmap-releases.md) (Q7); marketing and install tables lead with full. |
 | 10 | **Conformance seams** | Proposed seams **shown for approval** before the first CLI fixture PR. | No full fixture table invented here yet; smoke may expand until approved. Draft below is **pending approval**. |
-
-**Still open (formal):** **#8 serve basic auth** — see [Open questions](#open-questions-narrow). **Recommended lock:** required for drop-in `attach` / `run --attach`; scheduled in CLI-P1–P2 (do not ship remote attach without the mechanism).
 
 ---
 
@@ -84,6 +83,7 @@ Locked for JesseKoldewijn/jerekode (2026-08-27). Phase work must follow these; d
 - Primary name: `jerekode`; aliases `opencode` / `opencode2` are the same binary (ADR 001); bare → TUI.
 - OpenCode-compatible flags and `--model provider/model` are the bar.
 - Auth: import OpenCode store; write only jerekode-specific store.
+- Serve basic auth: mirror OpenCode env-gated / flag behavior with serve/attach (Decided #8).
 - Default user-facing artifact: **full** (Bun); native-only labeled advanced/future.
 - Behavioral parity via **owned fixtures**, not OpenCode git SHAs.
 
@@ -132,7 +132,7 @@ Comprehensive backlog to match OpenCode CLI behaviour/functionality for **1.0**.
 | Session continuity | `--continue`, `--session`, `--fork`, `--title`, `--share` | Missing | **CLI-P1–P2** |
 | `--format default\|json` | Formatted vs raw JSON events | Missing | **CLI-P1** |
 | `--file`/`-f`, `--thinking`, `--auto`, `--command` | Attach files, show thinking, auto-approve, slash command | Missing | **CLI-P2** |
-| `--attach` + basic auth flags | Attach to running `serve`; `--password`/`--username` | Missing | **CLI-P2** (recommended lock #8) |
+| `--attach` + basic auth flags | Attach to running `serve`; `--password`/`--username` | Missing | **CLI-P2** (Decided #8) |
 | `--port` for local server | Local ephemeral server port | Missing | **CLI-P1–P2** |
 | Agent loop + tools | Tools, permissions, streaming stdout | Sidecar only stub | **CLI-P2** |
 
@@ -143,7 +143,7 @@ Comprehensive backlog to match OpenCode CLI behaviour/functionality for **1.0**.
 | `--hostname` alias | Bind hostname | `--host` only | **CLI-P0** |
 | `--cors` (repeatable) | Extra CORS origins | Missing | **CLI-P1** |
 | `--mdns`, `--mdns-domain` | Discovery | Missing | **CLI-P2** |
-| Basic auth | `OPENCODE_SERVER_PASSWORD` (+ username env) | Missing | **CLI-P1–P2** (**recommended lock #8**) |
+| Basic auth | `OPENCODE_SERVER_PASSWORD` (+ username env) | Missing | **CLI-P1–P2** (Decided #8 — required for drop-in) |
 | `attach [url]` | TUI against remote serve | Missing | **CLI-P2** |
 | `attach` flags | `--dir`, session continue/fork, `--password`/`-p`, `--username`/`-u` | Missing | **CLI-P2** |
 
@@ -213,7 +213,7 @@ These are not separate “CLI-only” tasks — they are the runtime depth OpenC
 | TUI ↔ local server lifecycle (port/hostname flags) | Bare invoke / attach | **CLI-P0–P1** |
 | Session continue / fork end-to-end | `--continue` / `--session` / `--fork` | **CLI-P1–P2** |
 | Provider auth load + OpenCode import | `auth` + first-run `run`/TUI | **CLI-P2** |
-| HTTP basic auth (env-gated) + client flags | Remote attach (recommended lock #8) | **CLI-P1–P2** |
+| HTTP basic auth (env-gated) + client flags | Remote attach (Decided #8 — required for drop-in) | **CLI-P1–P2** |
 | CORS middleware | `serve --cors`; future `web` | **CLI-P1** |
 | Models list/refresh without TUI | `models` CLI | **CLI-P1** |
 | MCP/plugin config writers + live status | `mcp` / `plugin` CLIs | **CLI-P2** |
@@ -227,12 +227,13 @@ CLI-P0  bare TUI + version/help + serve --hostname + run entry (one-shot start)
           │
           ▼
 CLI-P1  cors / logging / models / session CLI + run essentials
-          + start serve basic auth (recommended #8)
+          + start serve basic auth (Decided #8 — required for drop-in)
           │
           ├──────────────────────────────┐
           ▼                              ▼
 CLI-P2  durable run + attach      packaging Rel-* (full default)
-          + auth import/store       native-only advanced/future
+          + complete basic auth     native-only advanced/future
+          + auth import/store
           + mcp / plugin / export-import / db / mdns
           │
           ▼
@@ -268,7 +269,7 @@ From [roadmap-parity.md](./roadmap-parity.md) — **runtime slices are Done**; C
 **Outcome:** Automation/discovery CLIs and serve hardening toward attach.
 
 - [ ] `serve --cors`; logging flags ↔ `--log-level` / `RUST_LOG`.
-- [ ] Begin **basic auth** on `serve` (recommended lock #8) — complete before remote attach.
+- [ ] Begin **basic auth** on `serve` (Decided #8 — mirror OpenCode env-gated behavior); required for drop-in — complete before remote attach.
 - [ ] `models` (`--refresh`, `--verbose`); `session list` / `delete`.
 - [ ] `run` essentials: `--format`, session continue flags, `--dir`.
 - [ ] Global `--pure` / document core `OPENCODE_*` in `docs/cli.md` or [distribution.md](./distribution.md).
@@ -279,7 +280,8 @@ From [roadmap-parity.md](./roadmap-parity.md) — **runtime slices are Done**; C
 **Outcome:** Day-to-day OpenCode workflows work as a drop-in.
 
 - [ ] Full `run` agent loop (tools, streaming, `--auto`, `--file`, `--thinking`, `--attach` + auth flags).
-- [ ] `attach` against `jerekode serve` (requires basic auth — recommended lock #8).
+- [ ] `attach` against `jerekode serve` (requires basic auth — Decided #8; required for drop-in).
+- [ ] Complete serve/attach basic auth client flags (`--password`/`--username`) matching OpenCode (Decided #8).
 - [ ] `auth login|list|logout` — import OpenCode credentials; jerekode-specific store (#5).
 - [ ] `mcp` add/list/auth; `plugin`/`plug`; `export`/`import`; `db path`; `agent` create/list.
 - [ ] `serve --mdns` / `--mdns-domain` as needed for mirror.
@@ -350,20 +352,7 @@ From [roadmap-parity.md](./roadmap-parity.md) — **runtime slices are Done**; C
 
 ## Open questions (narrow)
 
-Most compatibility questions are **locked** above. Remaining:
-
-### 8 — Serve basic auth (still open; recommended lock)
-
-OpenCode enables HTTP basic auth on `serve`/`web` when `OPENCODE_SERVER_PASSWORD` is set (`OPENCODE_SERVER_USERNAME` defaults to `opencode`). `attach` and `run --attach` expose `--password` / `--username` for that path.
-
-**Recommended lock:** **Required for drop-in attach** — schedule server + client support in **CLI-P1–P2** with `attach` / `run --attach`. Local serve without a password can stay open by default (env-gated, same as OpenCode), but the **mechanism** must exist for remote attach parity.
-
-**Choice (awaiting maintainer confirm):**
-
-- **A.** Required for drop-in attach → implement with serve/attach (CLI-P1–P2) — **recommended**.
-- **B.** Defer auth codepaths until someone needs remote attach.
-
-### Other
+All formal compatibility locks (#1–#10) are decided above. Remaining implementation details:
 
 1. **Exact jerekode auth data path** (platform dirs) — pick when implementing `auth` (must not write OpenCode’s `auth.json`).
 2. **Conformance seam table** — propose for approval at first CLI fixture PR (#10); draft below is not approved.
