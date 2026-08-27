@@ -112,7 +112,7 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 | P2 | Installers for **full**; native-only remains archive or slim installer |
 | P3+ | Native-only in brew/winget/Nix as separate formulae/packages if useful |
 
-**Default download recommendation:** **full** (OpenCode fidelity), with native-only clearly labeled for advanced/server users — confirm in open questions.
+**Default download recommendation:** **full** (OpenCode fidelity), with native-only clearly labeled for advanced/server users — **not locked**; decide with [roadmap-parity-cli.md Clarifications #9](./roadmap-parity-cli.md#9--native-only-vs-full-download-messaging) (same question as Q7 below). Full OpenCode CLI drop-in advertising makes “default = full” the likely answer.
 
 ---
 
@@ -144,7 +144,7 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 ### Dual builds
 
-7. **Default download:** full (with Bun) or native-only?
+7. **Default download:** full (with Bun) or native-only? *(open — same as [CLI Clarifications #9](./roadmap-parity-cli.md#9--native-only-vs-full-download-messaging); recommendation A = full default once drop-in OpenCode messaging ships)*
 8. Should `jerekode` on native-only **error clearly** when config enables a Bun/TS plugin? (**Recommend: yes.**)
 9. **Full package:** keep requiring **system Bun**, or bundle Bun later?
 10. Artifact naming: `jerekode-native-…` vs `…-native-release-…` vs separate package display names only?
