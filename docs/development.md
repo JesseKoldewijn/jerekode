@@ -50,6 +50,7 @@ cargo bench -p jereko-core --bench hot_paths
 - `cargo fmt` required; CI fails on format drift.
 - Prefer small PRs that deepen one seam (fixture → impl → green CI).
 - Never soft-skip Bun IPC or native plugin CI gates.
+- Use Conventional Commits prefixes on commits (`feat:`, `fix:`, `docs:`, etc.) — see [CONTRIBUTING.md](../CONTRIBUTING.md#commit-messages).
 
 ## CI
 
