@@ -13,6 +13,14 @@
         "typescript": "^5.9.3",
       },
     },
+    "packages/tui": {
+      "name": "@jerekode/tui",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.9.3",
+      },
+    },
     "sidecar": {
       "name": "@jerekode/sidecar",
       "version": "0.1.0",
@@ -26,6 +34,8 @@
     "@jerekode/rtk": ["@jerekode/rtk@workspace:packages/rtk"],
 
     "@jerekode/sidecar": ["@jerekode/sidecar@workspace:sidecar"],
+
+    "@jerekode/tui": ["@jerekode/tui@workspace:packages/tui"],
 
     "@types/bun": ["@types/bun@1.4.0", "", { "dependencies": { "bun-types": "1.4.0" } }, "sha512-K+lZULY23vRgK/CfTjFIV+tyifaNdSMlPh9j+6mQ/cLfpOznLyAuzgV/JQysyECpkBQLVMSyvjlr2fBUSA9wFQ=="],
 

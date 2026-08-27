@@ -1,7 +1,7 @@
 mod commands;
 mod util;
 
-use clap::{Parser, Subcommand};
+use clap::{ArgAction, Parser, Subcommand};
 use std::process::ExitCode;
 use tracing_subscriber::EnvFilter;
 
@@ -13,8 +13,12 @@ use tracing_subscriber::EnvFilter;
     disable_version_flag = true
 )]
 struct Cli {
+    /// Print version
+    #[arg(short = 'v', long = "version", action = ArgAction::SetTrue)]
+    version: bool,
+
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
@@ -41,22 +45,28 @@ async fn main() -> anyhow::Result<ExitCode> {
         .init();
 
     let cli = Cli::parse();
+    if cli.version {
+        // OpenCode-compatible `-v` / `--version` (clap default short is `-V`).
+        println!("{}", env!("CARGO_PKG_VERSION"));
+        return Ok(ExitCode::SUCCESS);
+    }
 
     match cli.command {
-        Commands::Serve(args) => {
+        None => commands::tui::execute().await,
+        Some(Commands::Serve(args)) => {
             commands::serve::execute(args).await?;
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Run(args) => commands::run::execute(args).await,
-        Commands::Models(args) => {
+        Some(Commands::Run(args)) => commands::run::execute(args).await,
+        Some(Commands::Models(args)) => {
             commands::models::execute(args).await?;
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Session { command } => {
+        Some(Commands::Session { command }) => {
             commands::session::execute(command).await?;
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Version => {
+        Some(Commands::Version) => {
             commands::version::execute();
             Ok(ExitCode::SUCCESS)
         }
