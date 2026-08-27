@@ -1,4 +1,4 @@
-# Contributing to Jereko
+# Contributing to Jerekode
 
 Thanks for contributing. Please read [CONTEXT.md](CONTEXT.md), [AGENTS.md](AGENTS.md), and [docs/development.md](docs/development.md) before opening a PR.
 

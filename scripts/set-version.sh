@@ -87,13 +87,13 @@ path, version = sys.argv[1], sys.argv[2]
 raw = open(path, "rb").read()
 text = raw.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
 pattern = re.compile(
-    r'(?ms)(\[\[package\]\]\nname = "jereko(?:-[^"]+)?"\n)version = "[^"]+"'
+    r'(?ms)(\[\[package\]\]\nname = "jerekode(?:-[^"]+)?"\n)version = "[^"]+"'
 )
 updated, n = pattern.subn(rf'\1version = "{version}"', text)
 if n:
     open(path, "wb").write(updated.encode("utf-8"))
-    print(f"updated {n} jereko* entries in Cargo.lock → {version}")
+    print(f"updated {n} jerekode* entries in Cargo.lock → {version}")
 else:
-    print("no jereko* package versions updated in Cargo.lock (ok if unresolved)")
+    print("no jerekode* package versions updated in Cargo.lock (ok if unresolved)")
 PY
 fi

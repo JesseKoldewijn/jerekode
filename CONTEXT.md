@@ -1,10 +1,10 @@
-# Jereko — Agent Context
+# Jerekode — Agent Context
 
 Start here for a navigable map of the repository. Human-oriented docs live in [docs/](docs/); this file is optimized for agents and contributors who need orientation fast.
 
 ## Current state
 
-Jereko is a **working Rust port of OpenCode** — an OpenCode-compatible AI coding agent runtime (Rust core, Bun plugin sidecar, dual plugin hosts per ADR 002). Compatibility is conformance-driven with owned fixtures (no upstream OpenCode source in-repo). Release pipeline on `main` is green.
+Jerekode is a **working Rust port of OpenCode** — an OpenCode-compatible AI coding agent runtime (Rust core, Bun plugin sidecar, dual plugin hosts per ADR 002). Compatibility is conformance-driven with owned fixtures (no upstream OpenCode source in-repo). Release pipeline on `main` is green.
 
 Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.md](docs/roadmap-parity.md). Further growth (more providers, richer MCP/LSP/WASM surfaces) is incremental, not foundation scaffolding. **Active forward plan:** release packaging / changelogs / version reset — [docs/roadmap-releases.md](docs/roadmap-releases.md).
 
@@ -12,15 +12,15 @@ Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.
 
 | Crate | Path | Responsibility |
 |-------|------|----------------|
-| `jereko-core` | `crates/jereko-core/` | Domain types, session models, shared errors |
-| `jereko-config` | `crates/jereko-config/` | Config loading, merge precedence, `opencode.json` / `tui.json` types |
-| `jereko-server` | `crates/jereko-server/` | Axum HTTP server, v1/v2 wire adapters, tools, extensions, policy |
-| `jereko-cli` | `crates/jereko-cli/` | CLI binary (`jerekode`; aliases `opencode`, `opencode2`) |
-| `jereko-providers` | `crates/jereko-providers/` | `Provider` trait, registry, streaming, HTTP adapters |
-| `jereko-plugins` | `crates/jereko-plugins/` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
-| `jereko-plugin-sdk` | `crates/jereko-plugin-sdk/` | Native plugin C ABI / Rust SDK |
-| `jereko-conformance` | `conformance/` | Owned fixture-driven compatibility tests |
-| `jereko-rtk-plugin` | `packages/rtk/native/` | Native RTK adapter cdylib |
+| `jerekode-core` | `crates/jerekode-core/` | Domain types, session models, shared errors |
+| `jerekode-config` | `crates/jerekode-config/` | Config loading, merge precedence, `opencode.json` / `tui.json` types |
+| `jerekode-server` | `crates/jerekode-server/` | Axum HTTP server, v1/v2 wire adapters, tools, extensions, policy |
+| `jerekode-cli` | `crates/jerekode-cli/` | CLI binary (`jerekode`; aliases `opencode`, `opencode2`) |
+| `jerekode-providers` | `crates/jerekode-providers/` | `Provider` trait, registry, streaming, HTTP adapters |
+| `jerekode-plugins` | `crates/jerekode-plugins/` | PluginOrchestrator, Bun/native/WASM hosts, SidecarPort |
+| `jerekode-plugin-sdk` | `crates/jerekode-plugin-sdk/` | Native plugin C ABI / Rust SDK |
+| `jerekode-conformance` | `conformance/` | Owned fixture-driven compatibility tests |
+| `jerekode-rtk-plugin` | `packages/rtk/native/` | Native RTK adapter cdylib |
 
 Supporting directories:
 
@@ -42,16 +42,16 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 
 | Term | Meaning |
 |------|---------|
-| **Session** | A conversation context in `jereko-core` — messages, status, identity |
-| **Provider** | An LLM backend registered in `jereko-providers`; implements the `Provider` trait |
+| **Session** | A conversation context in `jerekode-core` — messages, status, identity |
+| **Provider** | An LLM backend registered in `jerekode-providers`; implements the `Provider` trait |
 | **Sidecar** | The Bun process (`sidecar/`) that hosts TUI and plugin code; communicates with Rust via JSON-line IPC; transport for **BunPluginHost** |
 | **PluginOrchestrator** | Rust coordinator for plugin hook registry, load order, priority, and dispatch across all hosts |
 | **PluginHost** | Trait generalizing plugin loading — implementations: BunPluginHost, NativePluginHost, WasmPluginHost |
 | **BunPluginHost** | Default plugin host for unqualified config strings; OpenCode-compatible hooks via SidecarPort IPC |
-| **NativePluginHost** | In-process dylib host via stable C ABI (`jereko_plugin.h`); explicit config only |
-| **WasmPluginHost** | Sandboxed WASM host; `jereko_hook` export (host fallback when absent) |
-| **Normalized types** | Version-agnostic request/response shapes in `jereko-server/src/adapters/normalized/`; handlers operate only on these |
-| **Wire adapter** | Translates v1 or v2 HTTP wire format ↔ normalized types (`jereko-server/src/adapters/v1/`, `v2/`) |
+| **NativePluginHost** | In-process dylib host via stable C ABI (`jerekode_plugin.h`); explicit config only |
+| **WasmPluginHost** | Sandboxed WASM host; `jerekode_hook` export (host fallback when absent) |
+| **Normalized types** | Version-agnostic request/response shapes in `jerekode-server/src/adapters/normalized/`; handlers operate only on these |
+| **Wire adapter** | Translates v1 or v2 HTTP wire format ↔ normalized types (`jerekode-server/src/adapters/v1/`, `v2/`) |
 | **Provider adapter** | A concrete `Provider` implementation (e.g. Anthropic, OpenAI, Groq, `StubProvider`) |
 | **Sidecar adapter** | Rust-side transport for BunPluginHost IPC — production (spawn Bun) or test (in-memory); see `SidecarPort` |
 
@@ -67,9 +67,9 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | Tools | read/write/edit/grep/bash via `/tools/execute` + sandbox policy |
 | Bun plugins | Real sidecar spawn, dynamic import, `invoke_hook`; CI hard-gates |
 | Native plugins | libloading + test cdylib; CI hard-gates |
-| RTK adapter | `@jerekode/rtk` OpenCode2 + `jereko-rtk-plugin` native; true Bun+native e2e ([ADR 004](docs/adr/004-rtk-dual-adapter.md)) |
+| RTK adapter | `@jerekode/rtk` OpenCode2 + `jerekode-rtk-plugin` native; true Bun+native e2e ([ADR 004](docs/adr/004-rtk-dual-adapter.md)) |
 | CLI smoke | `jerekode version` + `jerekode serve` v1/v2 session create (binary e2e) |
-| WASM | Module load + `jereko_hook` ABI |
+| WASM | Module load + `jerekode_hook` ABI |
 | MCP / LSP / PTY | call_tool, initialize/hover, portable-pty I/O |
 | TUI | Bun `jerekode run` default; optional `native-tui` interactive MVP |
 | Release | Auto-release on `main` merge (`0.0.<run_number>` after wipe; seed `0.0.1`); archives only — see [roadmap-releases.md](docs/roadmap-releases.md) |

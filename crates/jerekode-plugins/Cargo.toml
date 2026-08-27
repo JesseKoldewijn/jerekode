@@ -1,0 +1,35 @@
+[package]
+name = "jerekode-plugins"
+description = "Plugin orchestrator and host implementations for Jerekode"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+native-tui = ["dep:ratatui", "dep:crossterm"]
+
+[dependencies]
+async-trait = { workspace = true }
+crossterm = { version = "0.29", optional = true }
+jerekode-config = { workspace = true }
+libloading = "0.9"
+ratatui = { version = "0.30", optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+wasmtime = { version = "48", default-features = false, features = ["cranelift", "runtime"] }
+
+[dev-dependencies]
+criterion = { version = "0.8", features = ["async_tokio"] }
+jerekode-test-native-plugin = { path = "../jerekode-test-native-plugin" }
+tempfile = "3"
+tokio = { workspace = true }
+wat = "1"
+
+[[bench]]
+name = "hot_paths"
+harness = false

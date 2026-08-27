@@ -42,7 +42,7 @@ Goal: behavioral parity with OpenCode / opencode2 proven by owned fixtures and h
 | Tools | Wired via `/tools/execute` + policy | Agent-loop depth + fixtures |
 | Providers | OpenAI / Anthropic / Ollama / Groq / OpenRouter + streaming | Growing matrix toward 75+ |
 | MCP / LSP / PTY | call_tool + hover + portable-pty I/O | Broader protocol matrix |
-| WASM | `jereko_hook` export + host fallback | Richer WASI surface |
+| WASM | `jerekode_hook` export + host fallback | Richer WASI surface |
 | HTTP | v1/v2 sessions list/get/delete + messages + stream + tools | Broader fixture coverage |
 | Release | Auto-release green; archive assets today | Packaging / notes / version reset — [roadmap-releases.md](./roadmap-releases.md) |
 | Docs | Aligned with shipped capability (#30) | Keep updated with each slice |

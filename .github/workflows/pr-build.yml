@@ -213,9 +213,9 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "${PROFILE}" == "release" ]]; then
-            cargo build --release -p jereko-cli --locked
+            cargo build --release -p jerekode-cli --locked
           else
-            cargo build -p jereko-cli --locked
+            cargo build -p jerekode-cli --locked
           fi
 
       - name: Package artifact

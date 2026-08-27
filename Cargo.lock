@@ -1567,15 +1567,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
-name = "jereko-cli"
+name = "jerekode-cli"
 version = "0.0.6"
 dependencies = [
  "anyhow",
  "clap",
- "jereko-config",
- "jereko-core",
- "jereko-plugins",
- "jereko-server",
+ "jerekode-config",
+ "jerekode-core",
+ "jerekode-plugins",
+ "jerekode-server",
  "reqwest",
  "serde_json",
  "tokio",
@@ -1584,7 +1584,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "jereko-config"
+name = "jerekode-config"
 version = "0.0.6"
 dependencies = [
  "jsonc-parser",
@@ -1596,14 +1596,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "jereko-conformance"
+name = "jerekode-conformance"
 version = "0.0.6"
 dependencies = [
- "jereko-config",
- "jereko-core",
- "jereko-plugins",
- "jereko-providers",
- "jereko-server",
+ "jerekode-config",
+ "jerekode-core",
+ "jerekode-plugins",
+ "jerekode-providers",
+ "jerekode-server",
  "reqwest",
  "serde_json",
  "tempfile",
@@ -1611,7 +1611,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "jereko-core"
+name = "jerekode-core"
 version = "0.0.6"
 dependencies = [
  "serde",
@@ -1621,7 +1621,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "jereko-plugin-sdk"
+name = "jerekode-plugin-sdk"
 version = "0.0.6"
 dependencies = [
  "serde",
@@ -1629,14 +1629,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "jereko-plugins"
+name = "jerekode-plugins"
 version = "0.0.6"
 dependencies = [
  "async-trait",
  "criterion",
  "crossterm",
- "jereko-config",
- "jereko-test-native-plugin",
+ "jerekode-config",
+ "jerekode-test-native-plugin",
  "libloading",
  "ratatui",
  "serde",
@@ -1650,11 +1650,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "jereko-providers"
+name = "jerekode-providers"
 version = "0.0.6"
 dependencies = [
  "async-trait",
- "jereko-core",
+ "jerekode-core",
  "reqwest",
  "serde",
  "serde_json",
@@ -1665,25 +1665,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "jereko-rtk-plugin"
+name = "jerekode-rtk-plugin"
 version = "0.0.6"
 dependencies = [
- "jereko-plugin-sdk",
+ "jerekode-plugin-sdk",
  "regex",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "jereko-server"
+name = "jerekode-server"
 version = "0.0.6"
 dependencies = [
  "axum",
  "http-body-util",
- "jereko-config",
- "jereko-core",
- "jereko-plugins",
- "jereko-providers",
+ "jerekode-config",
+ "jerekode-core",
+ "jerekode-plugins",
+ "jerekode-providers",
  "portable-pty",
  "rusqlite",
  "serde",
@@ -1696,10 +1696,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "jereko-test-native-plugin"
+name = "jerekode-test-native-plugin"
 version = "0.0.6"
 dependencies = [
- "jereko-plugin-sdk",
+ "jerekode-plugin-sdk",
  "serde_json",
 ]
 

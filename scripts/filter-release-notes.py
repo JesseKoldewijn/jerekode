@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Post-filter GitHub-generated release notes for jereko publishes."""
+"""Post-filter GitHub-generated release notes for jerekode publishes."""
 from __future__ import annotations
 
 import re

@@ -60,7 +60,7 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 ## P1 — Multi-arch binaries and naming
 
-- [x] Keep stem `jereko-{version}-release-{os}-{arch}`; document arch tags (`x64`, `arm64`). *(shipped in `package-release.sh` / `release.yml`; documented in [releases.md](./releases.md))*
+- [x] Keep stem `jerekode-{version}-release-{os}-{arch}`; document arch tags (`x64`, `arm64`). *(shipped in `package-release.sh` / `release.yml`; documented in [releases.md](./releases.md))*
 - [ ] Linux/Windows arm64 when free GHA runners (or self-hosted/qemu) exist.
 - [ ] Optional: first **native-only** artifacts for **linux-x64** and **windows-x64** only (`…-native-release-…`) to prove the Cargo feature without doubling full matrix cost.
 - [ ] CI: `os × arch × variant` documented; fail-fast false; cache keys include variant.
@@ -71,7 +71,7 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 | OS / distro | Ship |
 |-------------|------|
-| Windows | NSIS setup exe (+ keep zip) + stable `jereko-x64-setup.exe` alias |
+| Windows | NSIS setup exe (+ keep zip) + stable `jerekode-x64-setup.exe` alias |
 | macOS | `.pkg` unsigned (+ keep tarball) |
 | Linux (Debian/Ubuntu) | `.deb` |
 | Linux (Fedora/RHEL) | `.rpm` |
@@ -86,8 +86,8 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 ## P3 — Package-manager distribution
 
-- [ ] Homebrew tap (template: [`packaging/homebrew/jereko.rb.template`](../packaging/homebrew/jereko.rb.template)).
-- [ ] winget manifest (template: [`packaging/winget/jereko.yaml.template`](../packaging/winget/jereko.yaml.template)).
+- [ ] Homebrew tap (template: [`packaging/homebrew/jerekode.rb.template`](../packaging/homebrew/jerekode.rb.template)).
+- [ ] winget manifest (template: [`packaging/winget/jerekode.yaml.template`](../packaging/winget/jerekode.yaml.template)).
 - [x] AUR `PKGBUILD` in-repo ([`packaging/arch/`](../packaging/arch/)); publish to AUR manually.
 - [ ] In-repo **Nix flake** (cheap; good for NixOS users).
 - [ ] Expand native-only to macos + arm64 as demand warrants.
@@ -139,15 +139,15 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 ### Packaging / signing
 
 4. Possess (or willing to buy) **Apple** and/or **Windows** code-signing certificates?
-5. Preferred **Homebrew tap** name (e.g. `JesseKoldewijn/homebrew-jereko`)?
+5. Preferred **Homebrew tap** name (e.g. `JesseKoldewijn/homebrew-jerekode`)?
 6. Accept **unsigned** installers until P4?
 
 ### Dual builds
 
 7. **Default download:** full (with Bun) or native-only?
-8. Should `jereko` on native-only **error clearly** when config enables a Bun/TS plugin? (**Recommend: yes.**)
+8. Should `jerekode` on native-only **error clearly** when config enables a Bun/TS plugin? (**Recommend: yes.**)
 9. **Full package:** keep requiring **system Bun**, or bundle Bun later?
-10. Artifact naming: `jereko-native-…` vs `…-native-release-…` vs separate package display names only?
+10. Artifact naming: `jerekode-native-…` vs `…-native-release-…` vs separate package display names only?
 
 ---
 

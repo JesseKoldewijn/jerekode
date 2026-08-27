@@ -6,7 +6,7 @@
 
 ## Decision
 
-Jereko plugins are loaded and dispatched through a **PluginOrchestrator** in Rust that coordinates multiple **PluginHost** implementations. **BunPluginHost** (default for unqualified plugin strings) and **NativePluginHost** (explicit dylib config) run **together** in an ordered hook chain. **WasmPluginHost** is an optional third host for sandboxed plugins (initial load/`jereko_hook` support shipped; deeper sandbox policy remains incremental).
+Jerekode plugins are loaded and dispatched through a **PluginOrchestrator** in Rust that coordinates multiple **PluginHost** implementations. **BunPluginHost** (default for unqualified plugin strings) and **NativePluginHost** (explicit dylib config) run **together** in an ordered hook chain. **WasmPluginHost** is an optional third host for sandboxed plugins (initial load/`jerekode_hook` support shipped; deeper sandbox policy remains incremental).
 
 ## Background
 
@@ -31,7 +31,7 @@ This ADR **extends** ADR 001 Decision 3: `SidecarPort` becomes the transport lay
 ┌──────────────────┐  ┌──────────────────────┐  ┌──────────────────┐
 │ Internal hooks   │  │  NativePluginHost    │  │  BunPluginHost   │
 │ (built-in)       │  │  dylib via C ABI     │  │  SidecarPort IPC │
-│                  │  │  jereko_plugin.h     │  │  full OpenCode   │
+│                  │  │  jerekode_plugin.h     │  │  full OpenCode   │
 │                  │  │  Phase 2.5+          │  │  fidelity        │
 └──────────────────┘  └──────────────────────┘  └──────────────────┘
                                                            │
@@ -50,7 +50,7 @@ Also:
 
 ### 1. PluginOrchestrator (Rust)
 
-Central coordinator living in the **`jereko-plugins`** crate:
+Central coordinator living in the **`jerekode-plugins`** crate:
 
 - **Unified hook registry** — all hook types (server tools, providers, transforms, HTTP routes, etc.) registered in one place regardless of host
 - **Load order** — deterministic ordering across internal, native, and Bun plugins (see below)
@@ -64,7 +64,7 @@ Central coordinator living in the **`jereko-plugins`** crate:
 Generalizes the `SidecarPort` concept. Each host implements `PluginHost`:
 
 ```rust
-// Implemented in `jereko-plugins` (shape simplified for the ADR).
+// Implemented in `jerekode-plugins` (shape simplified for the ADR).
 pub trait PluginHost: Send + Sync {
     fn host_id(&self) -> HostId;
     async fn load(&self, spec: &PluginSpec) -> Result<LoadedPlugin, PluginError>;
@@ -77,7 +77,7 @@ pub trait PluginHost: Send + Sync {
 |------|----------------|-----------|
 | `BunPluginHost` | Default for unqualified strings | `SidecarPort` → Bun process |
 | `NativePluginHost` | Explicit `{ "native": "..." }` config | In-process dylib via stable C ABI |
-| `WasmPluginHost` | Explicit `{ "wasm": "..." }` config | WASM runtime (`jereko_hook` ABI) |
+| `WasmPluginHost` | Explicit `{ "wasm": "..." }` config | WASM runtime (`jerekode_hook` ABI) |
 
 ### 3. BunPluginHost — default path
 
@@ -88,15 +88,15 @@ pub trait PluginHost: Send + Sync {
 
 ### 4. NativePluginHost — in-process dylib
 
-- Loads plugins as **dynamic libraries** (`.so` / `.dylib` / `.dll`) via a **stable C ABI** defined in `jereko_plugin.h`
+- Loads plugins as **dynamic libraries** (`.so` / `.dylib` / `.dll`) via a **stable C ABI** defined in `jerekode_plugin.h`
 - **Server hooks first** (Phase 2.5): tools, providers, transforms
 - Requires **explicit config** — never loaded implicitly from an unqualified string
-- Rust SDK crate: **`jereko-plugin-sdk`** (see [development.md](../development.md))
+- Rust SDK crate: **`jerekode-plugin-sdk`** (see [development.md](../development.md))
 
 ### 5. WasmPluginHost — sandboxed plugins
 
 - Optional third host for **sandboxed** or user-supplied plugins
-- WASM runtime with `jereko_hook` export (host fallback when absent); deeper isolation policy is incremental
+- WASM runtime with `jerekode_hook` export (host fallback when absent); deeper isolation policy is incremental
 - Explicit `{ "wasm": "./path/to/plugin.wasm" }` config only
 
 ### 6. Both hosts active together
@@ -115,7 +115,7 @@ Plugin entries in `opencode.json` (and related config) resolve to a host by form
 |--------------|------|-------|
 | `"@acme/server-plugin"` | **Bun** (default) | Unqualified string → BunPluginHost |
 | `{ "native": "./path/to/plugin.so" }` | **Native** | Explicit dylib path |
-| `{ "wasm": "./path/to/plugin.wasm" }` | **WASM** | Explicit path; `jereko_hook` ABI |
+| `{ "wasm": "./path/to/plugin.wasm" }` | **WASM** | Explicit path; `jerekode_hook` ABI |
 
 Priority and ordering modifiers (when supported) apply within and across hosts; the orchestrator merges the final dispatch list.
 
@@ -133,7 +133,7 @@ Priority and ordering modifiers (when supported) apply within and across hosts; 
 Fixed tier ordering (lowest runs first unless hook semantics invert):
 
 ```text
-1. Internal (built-in hooks registered by jereko itself)
+1. Internal (built-in hooks registered by jerekode itself)
 2. Native  (NativePluginHost dylibs, explicit config)
 3. Bun     (BunPluginHost sidecar plugins, default strings)
 ```
@@ -165,9 +165,9 @@ Historical delivery order (foundation scopes below are **shipped** on `main`; de
 | Phase | Scope | Status |
 |-------|-------|--------|
 | **2** | `PluginOrchestrator` + **BunPluginHost**; `SidecarPort` feeds BunPluginHost; server plugin routes via IPC | Done |
-| **2.5** | **NativePluginHost** — server hooks; `jereko_plugin.h` C ABI; `jereko-plugin-sdk` crate | Done |
-| **3** | Bun TUI plugins via sidecar; `jereko run` | Done (bootstrap + real plugin load) |
-| **4** | **WasmPluginHost** for untrusted plugins | Done (`jereko_hook` ABI; deepen WASI as needed) |
+| **2.5** | **NativePluginHost** — server hooks; `jerekode_plugin.h` C ABI; `jerekode-plugin-sdk` crate | Done |
+| **3** | Bun TUI plugins via sidecar; `jerekode run` | Done (bootstrap + real plugin load) |
+| **4** | **WasmPluginHost** for untrusted plugins | Done (`jerekode_hook` ABI; deepen WASI as needed) |
 | **5** | Native TUI plugins / interactive MVP | Partial (ratatui MVP via `native-tui`; Bun remains default) |
 
 Phase 2 shipped the orchestrator abstraction even with a Bun-first host — that avoided retrofitting dispatch when native arrived in 2.5.
@@ -193,7 +193,7 @@ Example seam tests:
 
 - Phase 2 must implement `PluginOrchestrator` and `PluginHost` trait, not ad-hoc sidecar calls
 - `SidecarPort` is scoped to `BunPluginHost`; new code should not depend on `SidecarPort` directly except inside that host
-- Phase 2.5 adds `jereko_plugin.h` and SDK crate without changing orchestrator dispatch semantics
+- Phase 2.5 adds `jerekode_plugin.h` and SDK crate without changing orchestrator dispatch semantics
 - Config parser must distinguish unqualified strings (Bun) from `{ "native": ... }` / `{ "wasm": ... }` objects
 - Bun remains the default TUI; optional `native-tui` is an MVP, not a Bun replacement
 
