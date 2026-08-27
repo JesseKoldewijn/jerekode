@@ -17,12 +17,12 @@ fn resolve_tui_entry() -> Option<PathBuf> {
     }
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     candidates.push(manifest_dir.join("../.."));
-    if let Ok(exe) = env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            candidates.push(dir.to_path_buf());
-            candidates.push(dir.join(".."));
-            candidates.push(dir.join("../.."));
-        }
+    if let Ok(exe) = env::current_exe()
+        && let Some(dir) = exe.parent()
+    {
+        candidates.push(dir.to_path_buf());
+        candidates.push(dir.join(".."));
+        candidates.push(dir.join("../.."));
     }
 
     for base in candidates {
