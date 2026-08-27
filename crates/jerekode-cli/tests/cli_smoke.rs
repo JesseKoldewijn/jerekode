@@ -245,3 +245,71 @@ async fn cli_session_list_against_serve() {
     let body: Value = serde_json::from_slice(&list.stdout).unwrap();
     assert_session_list_shape(&body, "session_list_json_shape.json");
 }
+
+#[test]
+fn cli_version_flag_short_v() {
+    let output = Command::new(jerekode_bin())
+        .arg("-v")
+        .output()
+        .expect("spawn jerekode -v");
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains(env!("CARGO_PKG_VERSION")),
+        "stdout missing version: {stdout}"
+    );
+}
+
+#[test]
+fn cli_version_flag_long() {
+    let output = Command::new(jerekode_bin())
+        .arg("--version")
+        .output()
+        .expect("spawn jerekode --version");
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains(env!("CARGO_PKG_VERSION")),
+        "stdout missing version: {stdout}"
+    );
+}
+
+#[test]
+fn cli_bare_invoke_starts_tui_smoke() {
+    let bun_ok = Command::new("bun")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+    if !bun_ok {
+        if std::env::var_os("CI").is_some() {
+            panic!("cli_bare_invoke_starts_tui_smoke requires bun on PATH");
+        }
+        eprintln!("skipping: bun unavailable");
+        return;
+    }
+
+    let output = Command::new(jerekode_bin())
+        .env("JEREKODE_TUI_SMOKE", "1")
+        .output()
+        .expect("spawn bare jerekode");
+    assert!(
+        output.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&output.stderr),
+        String::from_utf8_lossy(&output.stdout)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("jerekode TUI"),
+        "expected TUI banner, got: {stdout}"
+    );
+}

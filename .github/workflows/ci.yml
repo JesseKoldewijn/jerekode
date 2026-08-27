@@ -97,3 +97,11 @@ jobs:
       - name: Test RTK package
         working-directory: packages/rtk
         run: bun test
+
+      - name: Typecheck TUI package
+        working-directory: packages/tui
+        run: bun run check
+
+      - name: Test TUI package
+        working-directory: packages/tui
+        run: bun test

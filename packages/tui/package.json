@@ -1,0 +1,21 @@
+{
+  "name": "@jerekode/tui",
+  "version": "0.0.1",
+  "private": true,
+  "license": "MIT",
+  "description": "Minimal owned Bun TUI for jerekode bare invoke",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "check": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
+  }
+}

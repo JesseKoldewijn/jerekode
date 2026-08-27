@@ -71,7 +71,7 @@ Use these terms consistently (see [docs/architecture.md](docs/architecture.md) f
 | CLI | `serve` (hostname/CORS/basic-auth env), real `run` one-shot + agent loop, `models`, `session list/delete`; Layer 6 smoke + approved CLI seams in [conformance.md](docs/conformance.md); remaining drop-in inventory in [roadmap-parity-cli.md](docs/roadmap-parity-cli.md) |
 | WASM | Module load + `jerekode_hook` ABI |
 | MCP / LSP / PTY | call_tool, initialize/hover, portable-pty I/O |
-| TUI | Bun `jerekode run` default; optional `native-tui` interactive MVP |
+| TUI | Bare `jerekode` → owned Bun `@jerekode/tui` (minimal); optional `native-tui` MVP |
 | Release | Auto-release on `main` merge (`0.0.<N+1>` after wipe; seed `0.0.1`); full archives + installers; `bun-sidecar` default ON; Nix flake + package-manager templates — see [roadmap-releases.md](docs/roadmap-releases.md) |
 
 Historical phase notes and foundation archive: [docs/roadmap-remaining.md](docs/roadmap-remaining.md).  
