@@ -2,8 +2,8 @@
 
 Phased plan for trustworthy changelogs, a clean version line, installers, and optional Bun-free builds. Decision record: [ADR 003](./adr/003-release-packaging-and-changelogs.md). Operational how-to today: [releases.md](./releases.md).
 
-**Status:** Active forward plan (parity board closed).
-**This document tracks packaging work.** P0 notes fix + version wipe to **0.0.1** were executed (maintainer-approved). Dual-build Cargo features remain **planned, not implemented**.
+**Status:** Active forward plan (runtime parity board closed; CLI argv parity is a separate active track — [roadmap-parity-cli.md](./roadmap-parity-cli.md)).
+**This document tracks packaging work.** P0 notes fix + version wipe to **0.0.1** were executed (maintainer-approved). Dual-build Cargo features remain **planned, not implemented**. Sequencing relative to CLI work is summarized in [roadmap-parity-cli.md § CLI-P3](./roadmap-parity-cli.md#cli-p3--packaging--distribution-from-releases-roadmap).
 
 ## Goals
 
