@@ -1568,7 +1568,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "jerekode-cli"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "anyhow",
  "clap",
@@ -1585,7 +1585,7 @@ dependencies = [
 
 [[package]]
 name = "jerekode-config"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "jsonc-parser",
  "serde",
@@ -1597,7 +1597,7 @@ dependencies = [
 
 [[package]]
 name = "jerekode-conformance"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "jerekode-config",
  "jerekode-core",
@@ -1612,7 +1612,7 @@ dependencies = [
 
 [[package]]
 name = "jerekode-core"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -1622,7 +1622,7 @@ dependencies = [
 
 [[package]]
 name = "jerekode-plugin-sdk"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -1630,7 +1630,7 @@ dependencies = [
 
 [[package]]
 name = "jerekode-plugins"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "async-trait",
  "criterion",
@@ -1651,7 +1651,7 @@ dependencies = [
 
 [[package]]
 name = "jerekode-providers"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "async-trait",
  "jerekode-core",
@@ -1666,7 +1666,7 @@ dependencies = [
 
 [[package]]
 name = "jerekode-rtk-plugin"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "jerekode-plugin-sdk",
  "regex",
@@ -1676,7 +1676,7 @@ dependencies = [
 
 [[package]]
 name = "jerekode-server"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "axum",
  "http-body-util",
@@ -1697,7 +1697,7 @@ dependencies = [
 
 [[package]]
 name = "jerekode-test-native-plugin"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "jerekode-plugin-sdk",
  "serde_json",
