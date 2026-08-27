@@ -29,7 +29,7 @@ jerekode-config = { path = "crates/jerekode-config" }
 jerekode-core = { path = "crates/jerekode-core" }
 jerekode-plugins = { path = "crates/jerekode-plugins", default-features = false }
 jerekode-providers = { path = "crates/jerekode-providers" }
-jerekode-server = { path = "crates/jerekode-server" }
+jerekode-server = { path = "crates/jerekode-server", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
