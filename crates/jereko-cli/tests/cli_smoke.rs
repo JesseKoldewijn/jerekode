@@ -1,12 +1,12 @@
-//! CLI runtime smoke — spawn the real `jereko` binary (not in-process router).
+//! CLI runtime smoke — spawn the real `jerekode` binary (not in-process router).
 
 use serde_json::Value;
 use std::net::TcpListener;
 use std::process::{Child, Command, Stdio};
 use std::time::Duration;
 
-fn jereko_bin() -> &'static str {
-    env!("CARGO_BIN_EXE_jereko")
+fn jerekode_bin() -> &'static str {
+    env!("CARGO_BIN_EXE_jerekode")
 }
 
 fn pick_port() -> u16 {
@@ -36,15 +36,15 @@ async fn wait_health(client: &reqwest::Client, port: u16) {
         }
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
-    panic!("jereko serve did not become healthy on port {port}");
+    panic!("jerekode serve did not become healthy on port {port}");
 }
 
 #[test]
 fn cli_version_prints_package_version() {
-    let output = Command::new(jereko_bin())
+    let output = Command::new(jerekode_bin())
         .arg("version")
         .output()
-        .expect("spawn jereko version");
+        .expect("spawn jerekode version");
     assert!(
         output.status.success(),
         "stderr={}",
@@ -55,18 +55,18 @@ fn cli_version_prints_package_version() {
         stdout.contains(env!("CARGO_PKG_VERSION")),
         "stdout missing version: {stdout}"
     );
-    assert!(stdout.contains("jereko"), "stdout: {stdout}");
+    assert!(stdout.contains("jerekode"), "stdout: {stdout}");
 }
 
 #[tokio::test]
 async fn cli_serve_health_and_v1_v2_session_smoke() {
     let port = pick_port();
-    let child = Command::new(jereko_bin())
+    let child = Command::new(jerekode_bin())
         .args(["serve", "--host", "127.0.0.1", "--port", &port.to_string()])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .expect("spawn jereko serve");
+        .expect("spawn jerekode serve");
     let _guard = KillOnDrop(child);
 
     let client = reqwest::Client::new();
@@ -113,10 +113,10 @@ async fn cli_serve_health_and_v1_v2_session_smoke() {
 
 #[test]
 fn cli_help_exits_zero() {
-    let output = Command::new(jereko_bin())
+    let output = Command::new(jerekode_bin())
         .arg("--help")
         .output()
-        .expect("spawn jereko --help");
+        .expect("spawn jerekode --help");
     assert!(
         output.status.success(),
         "stderr={}",

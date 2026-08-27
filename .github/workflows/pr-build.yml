@@ -108,7 +108,7 @@ jobs:
           SHORT_SHA="$(echo "${SHA}" | cut -c1-7)"
           VERSION="0.0.0-pr.${PR_NUMBER}.${SHORT_SHA}"
           RUN_URL="${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
-          MARKER="<!-- jereko-pr-build-sticky:${PROFILE} -->"
+          MARKER="<!-- jerekode-pr-build-sticky:${PROFILE} -->"
 
           {
             echo "pr_number=${PR_NUMBER}"
@@ -143,13 +143,13 @@ jobs:
           set -euo pipefail
           BODY="$(cat <<EOF
           ${MARKER}
-          ### 🛠️ jereko PR build started
+          ### 🛠️ jerekode PR build started
 
           Building **\`${VERSION}\`** (**${PROFILE}** profile) from \`${SHORT_SHA}\` (\`${SHA}\`).
 
           **In-progress run:** [${RUN_URL}](${RUN_URL})
 
-          Artifact names will look like \`jereko-pr${PR_NUMBER}-${PROFILE}-{os}-{arch}\`.
+          Artifact names will look like \`jerekode-pr${PR_NUMBER}-${PROFILE}-{os}-{arch}\`.
           Artifacts upload when the matrix finishes. This does **not** create a GitHub Release.
           EOF
           )"
@@ -234,18 +234,18 @@ jobs:
             TARGET_DIR="debug"
           fi
           if [[ "${TARGET_OS}" == "windows" ]]; then
-            BIN="target/${TARGET_DIR}/jereko.exe"
+            BIN="target/${TARGET_DIR}/jerekode.exe"
           else
-            BIN="target/${TARGET_DIR}/jereko"
+            BIN="target/${TARGET_DIR}/jerekode"
           fi
-          STEM="jereko-pr${PR_NUMBER}-${PROFILE}-${TARGET_OS}-${ARCH}"
+          STEM="jerekode-pr${PR_NUMBER}-${PROFILE}-${TARGET_OS}-${ARCH}"
           mkdir -p dist
           ./scripts/package-release.sh "${STEM}" "${BIN}" dist "${PROFILE}"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jereko-pr${{ needs.gate.outputs.pr_number }}-${{ needs.gate.outputs.profile }}-${{ matrix.target_os }}-${{ matrix.arch }}
+          name: jerekode-pr${{ needs.gate.outputs.pr_number }}-${{ needs.gate.outputs.profile }}-${{ matrix.target_os }}-${{ matrix.arch }}
           path: dist/*
           if-no-files-found: error
           retention-days: 14
@@ -288,7 +288,7 @@ jobs:
 
             BODY="$(cat <<EOF
           ${MARKER}
-          ### ✅ jereko PR build finished
+          ### ✅ jerekode PR build finished
 
           Built **\`${VERSION}\`** (**${PROFILE}** profile) from \`${SHORT_SHA}\` (\`${SHA}\`).
 
@@ -298,7 +298,7 @@ jobs:
           #### Build assets (\`${PROFILE}\`)
 
           ${ARTIFACT_LINES}
-          Naming: \`jereko-pr${PR_NUMBER}-${PROFILE}-{os}-{arch}\`
+          Naming: \`jerekode-pr${PR_NUMBER}-${PROFILE}-{os}-{arch}\`
           Platforms: \`linux-x64\`, \`macos-x64\`, \`macos-arm64\`, \`windows-x64\`.
 
           > PR builds upload **workflow artifacts only**. No GitHub Release is created.
@@ -307,7 +307,7 @@ jobs:
           else
             BODY="$(cat <<EOF
           ${MARKER}
-          ### ❌ jereko PR build failed
+          ### ❌ jerekode PR build failed
 
           Build of **\`${VERSION}\`** (**${PROFILE}** profile) from \`${SHORT_SHA}\` (\`${SHA}\`) finished with status **\`${BUILD_RESULT}\`**.
 

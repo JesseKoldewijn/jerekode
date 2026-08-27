@@ -2,7 +2,7 @@
 
 **Status:** Accepted (P0 notes fix + version wipe executed 2026-08-26; P2 installers shipped 2026-08-26)  
 **Date:** 2026-08-26  
-**Context:** Auto-release on `main` was producing unusable GitHub Release notes; assets are archives only; users want installers, a clean version reset, and optional Bun-free builds. Companion plan: [roadmap-releases.md](../roadmap-releases.md). Extends ADR 001 (binary `jereko`) and ADR 002 (plugin hosts).
+**Context:** Auto-release on `main` was producing unusable GitHub Release notes; assets are archives only; users want installers, a clean version reset, and optional Bun-free builds. Companion plan: [roadmap-releases.md](../roadmap-releases.md). Extends ADR 001 (binary `jerekode`) and ADR 002 (plugin hosts).
 
 ## Decision (summary)
 
@@ -57,13 +57,13 @@ Root causes (combined):
 
 | Fact | Detail |
 |------|--------|
-| Binary name | `jereko` (`jereko-cli` `[[bin]]`) |
+| Binary name | `jerekode` (`jereko-cli` `[[bin]]`) |
 | Cargo features today | `native-tui` only (optional ratatui stub via `jereko-plugins/native-tui`). **No** `bun-sidecar` / `native-only` feature. |
-| Bun coupling | Always-on in code paths that use it: `BunProcessSidecarPort::spawn` runs `Command::new("bun")`; `jereko run` always builds orchestrator with `NativePluginHost` + `BunPluginHost` + `WasmPluginHost`. |
+| Bun coupling | Always-on in code paths that use it: `BunProcessSidecarPort::spawn` runs `Command::new("bun")`; `jerekode run` always builds orchestrator with `NativePluginHost` + `BunPluginHost` + `WasmPluginHost`. |
 | Release archives | **Do not** bundle Bun or `sidecar/` sources — `SIDECAR.txt` tells users to install Bun and run from repo (system Bun). |
 | Without Bun | OpenCode-fidelity TUI (SolidJS / sidecar), unqualified npm/TS plugins, and `tui.render` via sidecar are unavailable. Native dylib plugins + WASM (when enabled) + HTTP `serve` remain in scope for a native-only variant. `native-tui` is a stub, not a Bun replacement yet. |
 
-**Feasibility:** Yes. Gate `BunPluginHost` / `BunProcessSidecarPort` (and CLI wiring in `jereko run`) behind a Cargo feature such as `bun-sidecar` (default **on**). Native-only builds compile without depending on a Bun runtime at start; unqualified Bun plugin configs must fail with a clear error.
+**Feasibility:** Yes. Gate `BunPluginHost` / `BunProcessSidecarPort` (and CLI wiring in `jerekode run`) behind a Cargo feature such as `bun-sidecar` (default **on**). Native-only builds compile without depending on a Bun runtime at start; unqualified Bun plugin configs must fail with a clear error.
 
 ## Changelog approach (recommendation)
 

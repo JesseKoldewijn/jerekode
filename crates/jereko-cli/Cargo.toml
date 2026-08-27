@@ -7,7 +7,7 @@ license.workspace = true
 authors.workspace = true
 
 [[bin]]
-name = "jereko"
+name = "jerekode"
 path = "src/main.rs"
 
 [dependencies]
