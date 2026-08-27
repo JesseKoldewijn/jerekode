@@ -28,3 +28,4 @@ native-tui = ["jerekode-plugins/native-tui"]
 
 [dev-dependencies]
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
+tempfile = "3"

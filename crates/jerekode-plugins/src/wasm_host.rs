@@ -254,4 +254,44 @@ mod tests {
         assert_eq!(result.output["abi"], "jerekode_hook");
         assert_eq!(result.output["host"], "wasm");
     }
+
+    fn raw_hook_wasm() -> Vec<u8> {
+        let wat = r#"
+(module
+  (memory (export "memory") 1)
+  (func (export "jerekode_hook") (param i32 i32) (result i32)
+    i32.const 16)
+  (data (i32.const 16) "not-json-output\00")
+)
+"#;
+        wat::parse_str(wat).expect("raw hook wat")
+    }
+
+    #[tokio::test]
+    async fn raw_hook_output_uses_jerekode_abi_fallback() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("raw.wasm");
+        std::fs::write(&path, raw_hook_wasm()).unwrap();
+
+        let host = WasmPluginHost::new();
+        let loaded = host
+            .load(&PluginSpec {
+                name: path.to_string_lossy().into_owned(),
+                host: HostId("wasm".into()),
+            })
+            .await
+            .unwrap();
+        let result = host
+            .invoke_hook(
+                &loaded,
+                HookCall {
+                    hook: "before_transform".into(),
+                    payload: serde_json::json!({}),
+                },
+            )
+            .await
+            .unwrap();
+        assert_eq!(result.output["abi"], "jerekode_hook");
+        assert_eq!(result.output["raw"], "not-json-output");
+    }
 }

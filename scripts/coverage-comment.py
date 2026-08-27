@@ -10,11 +10,20 @@ from pathlib import Path
 
 MARKER = "<!-- jerekode-coverage-sticky -->"
 
+# CSI / OSC-style ANSI sequences (colors from diff-cover --show-uncovered / pygments).
+_ANSI_RE = re.compile(
+    r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\][^\x07\x1B]*(?:\x07|\x1B\\))"
+)
+
+
+def strip_ansi(text: str) -> str:
+    return _ANSI_RE.sub("", text)
+
 
 def read_text(path: Path | None) -> str:
     if path is None or not path.is_file():
         return ""
-    return path.read_text(encoding="utf-8", errors="replace")
+    return strip_ansi(path.read_text(encoding="utf-8", errors="replace"))
 
 
 def extract_diff_pct(diff_txt: str) -> str:
@@ -204,7 +213,7 @@ Commit: `{sha}`
 _Sticky comment updated on each push. Rust and Bun/TS **diff** coverage both block merge when below the gate._
 """
 
-    Path(args.out).write_text(body, encoding="utf-8")
+    Path(args.out).write_text(strip_ansi(body), encoding="utf-8", newline="\n")
     print(f"wrote {args.out}")
 
 
