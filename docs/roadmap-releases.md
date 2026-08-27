@@ -2,8 +2,8 @@
 
 Phased plan for trustworthy changelogs, a clean version line, installers, and optional Bun-free builds. Decision record: [ADR 003](./adr/003-release-packaging-and-changelogs.md). Operational how-to today: [releases.md](./releases.md).
 
-**Status:** Active forward plan (runtime parity board closed; CLI argv parity is a separate active track — [roadmap-parity-cli.md](./roadmap-parity-cli.md)).
-**This document tracks packaging work.** P0 notes fix + version wipe to **0.0.1** were executed (maintainer-approved). Dual-build Cargo features remain **planned, not implemented**. Sequencing relative to CLI work is summarized in [roadmap-parity-cli.md § CLI-P3](./roadmap-parity-cli.md#cli-p3--packaging--distribution-from-releases-roadmap).
+**Status:** Active forward plan (runtime parity board closed; CLI / drop-in remaining work is a separate active track — [roadmap-parity-cli.md](./roadmap-parity-cli.md)).
+**This document tracks packaging work.** P0 notes fix + version wipe to **0.0.1** were executed (maintainer-approved). Dual-build Cargo features remain **planned, not implemented**. **Default download = full** (Bun sidecar); native-only is advanced/future. Sequencing relative to CLI work is summarized in [roadmap-parity-cli.md § CLI-P3](./roadmap-parity-cli.md#cli-p3--packaging-integration--remaining-10-depth).
 
 ## Goals
 
@@ -62,7 +62,7 @@ See [ADR 003](./adr/003-release-packaging-and-changelogs.md#version-reset-and-re
 
 - [x] Keep stem `jerekode-{version}-release-{os}-{arch}`; document arch tags (`x64`, `arm64`). *(shipped in `package-release.sh` / `release.yml`; documented in [releases.md](./releases.md))*
 - [ ] Linux/Windows arm64 when free GHA runners (or self-hosted/qemu) exist.
-- [ ] Optional: first **native-only** artifacts for **linux-x64** and **windows-x64** only (`…-native-release-…`) to prove the Cargo feature without doubling full matrix cost.
+- [ ] Optional / **advanced-future**: first **native-only** artifacts for **linux-x64** and **windows-x64** only (`…-native-release-…`) to prove the Cargo feature without doubling full matrix cost — **not** the default download (Q7 locked = full).
 - [ ] CI: `os × arch × variant` documented; fail-fast false; cache keys include variant.
 
 ---

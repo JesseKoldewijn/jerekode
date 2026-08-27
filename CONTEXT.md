@@ -6,7 +6,7 @@ Start here for a navigable map of the repository. Human-oriented docs live in [d
 
 Jerekode is a **working Rust port of OpenCode** — an OpenCode-compatible AI coding agent runtime (Rust core, Bun plugin sidecar, dual plugin hosts per ADR 002). Compatibility is conformance-driven with owned fixtures (no upstream OpenCode source in-repo). Release pipeline on `main` is green.
 
-Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.md](docs/roadmap-parity.md). Further growth (more providers, richer MCP/LSP/WASM surfaces) is incremental, not foundation scaffolding. **Active forward plans:** CLI ↔ OpenCode full drop-in (locked decisions + remaining-work inventory) — [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md); release packaging / changelogs / installers (default download = **full**/Bun) — [docs/roadmap-releases.md](docs/roadmap-releases.md).
+Documented parity slices **R0–P3e** are complete — see [docs/roadmap-parity.md](docs/roadmap-parity.md). Further growth (more providers, richer MCP/LSP/WASM surfaces) is incremental, not foundation scaffolding. **Active forward plans:** CLI ↔ OpenCode full drop-in remaining work (locked decisions + phased inventory; serve basic auth still open with recommended lock) — [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md); release packaging / changelogs / installers (**default download = full**/Bun; native-only advanced/future) — [docs/roadmap-releases.md](docs/roadmap-releases.md).
 
 ## Crate Map
 
