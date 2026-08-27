@@ -17,9 +17,9 @@ pub mod state;
 pub mod tools;
 
 use jerekode_config::{OpenCodeConfig, PluginEntry};
-use jerekode_plugins::{NativePluginHost, PluginHost, PluginOrchestrator, WasmPluginHost};
 #[cfg(feature = "bun-sidecar")]
 use jerekode_plugins::{BunPluginHost, BunProcessSidecarPort};
+use jerekode_plugins::{NativePluginHost, PluginHost, PluginOrchestrator, WasmPluginHost};
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -129,4 +129,70 @@ pub async fn build_app_state(config: &OpenCodeConfig) -> ServerResult<AppState> 
         .await
         .map_err(|e| ServerError::Serve(e.to_string()))?;
     Ok(base.with_plugins(orch))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    use std::process::Command as StdCommand;
+
+    #[cfg(feature = "bun-sidecar")]
+    fn bun_available() -> bool {
+        StdCommand::new("bun")
+            .arg("--version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    }
+
+    #[cfg(feature = "bun-sidecar")]
+    fn sidecar_entry() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../sidecar/src/index.ts")
+    }
+
+    #[cfg(feature = "bun-sidecar")]
+    #[tokio::test]
+    async fn build_app_state_loads_bun_host_when_plugins_need_it() {
+        if !bun_available() {
+            if std::env::var_os("CI").is_some() {
+                panic!("build_app_state_loads_bun_host_when_plugins_need_it requires bun");
+            }
+            eprintln!("skipping: bun unavailable");
+            return;
+        }
+
+        let entry = sidecar_entry();
+        assert!(
+            entry.exists(),
+            "sidecar entry missing at {}",
+            entry.display()
+        );
+        // SAFETY: test-only env mutation; restored below.
+        let previous = std::env::var_os("JEREKO_SIDECAR_ENTRY");
+        unsafe {
+            std::env::set_var("JEREKO_SIDECAR_ENTRY", entry.as_os_str());
+            std::env::set_var("JEREKO_USE_STUB_PROVIDERS", "1");
+        }
+
+        let config = OpenCodeConfig {
+            plugins: vec![PluginEntry::Bun("@acme/server-plugin".into())],
+            ..Default::default()
+        };
+        let result = build_app_state(&config).await;
+
+        match previous {
+            Some(v) => unsafe { std::env::set_var("JEREKO_SIDECAR_ENTRY", v) },
+            None => unsafe { std::env::remove_var("JEREKO_SIDECAR_ENTRY") },
+        }
+        unsafe {
+            std::env::remove_var("JEREKO_USE_STUB_PROVIDERS");
+        }
+
+        let state = result.expect("build_app_state with bun plugins");
+        assert!(
+            state.ctx.plugins.is_some(),
+            "plugins orchestrator must be attached"
+        );
+    }
 }

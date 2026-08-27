@@ -1,12 +1,12 @@
 //! Criterion benchmark hooks for hot paths (see docs/perf-baseline.md).
 
 use criterion::{Criterion, criterion_group, criterion_main};
+#[cfg(feature = "bun-sidecar")]
+use jerekode_plugins::BunPluginHost;
 use jerekode_plugins::{
     HookCall, InMemorySidecarPort, NativePluginHost, PluginOrchestrator, SidecarOutbound,
     SidecarPort,
 };
-#[cfg(feature = "bun-sidecar")]
-use jerekode_plugins::BunPluginHost;
 use std::hint::black_box;
 use std::sync::Arc;
 

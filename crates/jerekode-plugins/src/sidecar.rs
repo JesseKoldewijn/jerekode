@@ -387,8 +387,8 @@ mod tests {
         eprintln!("skipping: {reason}");
     }
 
-        #[cfg(feature = "bun-sidecar")]
-#[tokio::test]
+    #[cfg(feature = "bun-sidecar")]
+    #[tokio::test]
     async fn bun_process_init_ready_and_shutdown() {
         if !bun_available() {
             require_or_skip("bun_process_init_ready_and_shutdown requires bun on PATH");
@@ -428,8 +428,8 @@ mod tests {
             .expect("shutdown");
     }
 
-        #[cfg(feature = "bun-sidecar")]
-#[tokio::test]
+    #[cfg(feature = "bun-sidecar")]
+    #[tokio::test]
     async fn bun_process_loads_fixture_plugin_and_invokes_hook() {
         if !bun_available() {
             require_or_skip("bun_process_loads_fixture_plugin_and_invokes_hook requires bun");
@@ -497,5 +497,28 @@ mod tests {
         port.send(SidecarOutbound::Shutdown)
             .await
             .expect("shutdown");
+    }
+
+    #[cfg(feature = "bun-sidecar")]
+    #[tokio::test]
+    async fn bun_spawn_reports_not_found_hint_when_bun_missing() {
+        let previous = std::env::var_os("PATH");
+        // SAFETY: test-only PATH mutation; restored below before returning.
+        unsafe {
+            std::env::set_var("PATH", "");
+        }
+        let err = match BunProcessSidecarPort::spawn("sidecar/src/index.ts").await {
+            Ok(_) => panic!("spawn must fail without bun on PATH"),
+            Err(e) => e,
+        };
+        match previous {
+            Some(path) => unsafe { std::env::set_var("PATH", path) },
+            None => unsafe { std::env::remove_var("PATH") },
+        }
+        let msg = err.to_string();
+        assert!(
+            msg.contains("failed to spawn bun") && msg.contains("Bun was not found on PATH"),
+            "unexpected error: {msg}"
+        );
     }
 }

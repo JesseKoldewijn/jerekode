@@ -1,8 +1,8 @@
 use clap::Args;
 use jerekode_config::{CliOverrides, ConfigLoader};
-use jerekode_plugins::{NativePluginHost, PluginOrchestrator, WasmPluginHost};
 #[cfg(feature = "bun-sidecar")]
 use jerekode_plugins::{BunPluginHost, BunProcessSidecarPort, SidecarOutbound, SidecarPort};
+use jerekode_plugins::{NativePluginHost, PluginOrchestrator, WasmPluginHost};
 use std::sync::Arc;
 
 #[derive(Args, Debug)]
@@ -102,4 +102,66 @@ pub async fn execute(args: RunArgs) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::process::Command as StdCommand;
+
+    #[cfg(feature = "bun-sidecar")]
+    fn bun_available() -> bool {
+        StdCommand::new("bun")
+            .arg("--version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    }
+
+    #[cfg(feature = "bun-sidecar")]
+    fn sidecar_entry() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../sidecar/src/index.ts")
+    }
+
+    #[cfg(feature = "bun-sidecar")]
+    #[tokio::test]
+    async fn execute_boots_sidecar_plugin_host() {
+        if !bun_available() {
+            if std::env::var_os("CI").is_some() {
+                panic!("execute_boots_sidecar_plugin_host requires bun on PATH");
+            }
+            eprintln!("skipping: bun unavailable");
+            return;
+        }
+
+        let entry = sidecar_entry();
+        assert!(
+            entry.exists(),
+            "sidecar entry missing at {}",
+            entry.display()
+        );
+
+        let project = tempfile::tempdir().expect("temp project");
+        let opencode = project.path().join(".opencode");
+        fs::create_dir_all(&opencode).expect("mkdir .opencode");
+        fs::write(
+            opencode.join("tui.json"),
+            serde_json::json!({
+                "theme": "test",
+                "sidecar": { "entry": entry.to_string_lossy() }
+            })
+            .to_string(),
+        )
+        .expect("write tui.json");
+
+        execute(RunArgs {
+            provider: None,
+            model: None,
+            project: Some(project.path().to_string_lossy().into_owned()),
+        })
+        .await
+        .expect("run execute with bun sidecar");
+    }
 }

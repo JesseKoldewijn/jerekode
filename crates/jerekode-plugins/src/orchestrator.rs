@@ -159,4 +159,20 @@ mod tests {
             "unexpected error: {msg}"
         );
     }
+
+    #[tokio::test]
+    async fn native_plugin_errors_without_native_host() {
+        let mut orchestrator = PluginOrchestrator::new(vec![]);
+        let err = orchestrator
+            .load_from_config(&[PluginEntry::Native {
+                native: "./tools.so".into(),
+            }])
+            .await
+            .expect_err("native plugin without native host must fail");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("host not registered: native"),
+            "unexpected error: {msg}"
+        );
+    }
 }
