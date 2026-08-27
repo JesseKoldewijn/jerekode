@@ -1,6 +1,7 @@
 ; NSIS installer for jereko CLI (unsigned pre-1.0)
 ; Build: makensis /DVERSION=0.0.3 /DBINARY=path/to/jereko.exe /DOUTFILE=out.exe packaging/nsis/jereko.nsi
 !include "MUI2.nsh"
+!include "WinMessages.nsh"
 
 !ifndef VERSION
 !define VERSION "0.0.0"
@@ -29,8 +30,10 @@ Section "jereko" SecMain
   SetOutPath "$INSTDIR"
   File /oname=jereko.exe "${BINARY}"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
-  ; Prepend install dir to machine PATH
-  EnVarSet /HKLM "PATH" "$INSTDIR"
+  ; Prepend install dir to machine PATH (native registry; EnVar plugin not bundled in CI)
+  ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
+  WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$INSTDIR;$0"
+  SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
 SectionEnd
 
 Section "Uninstall"
