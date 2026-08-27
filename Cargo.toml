@@ -14,7 +14,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.0.11"
+version = "0.0.12"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
@@ -27,9 +27,9 @@ axum = "0.8"
 clap = { version = "4", features = ["derive"] }
 jerekode-config = { path = "crates/jerekode-config" }
 jerekode-core = { path = "crates/jerekode-core" }
-jerekode-plugins = { path = "crates/jerekode-plugins" }
+jerekode-plugins = { path = "crates/jerekode-plugins", default-features = false }
 jerekode-providers = { path = "crates/jerekode-providers" }
-jerekode-server = { path = "crates/jerekode-server" }
+jerekode-server = { path = "crates/jerekode-server", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

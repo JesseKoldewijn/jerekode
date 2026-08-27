@@ -91,7 +91,7 @@ jobs:
             nums="$(gh pr list --state open --label release-sync --json number,headRefName               --jq ".[] | select(.headRefName != \"${keep_branch}\") | .number" 2>/dev/null || true)"
             while read -r num; do
               [[ -z "${num}" ]] && continue
-              gh pr close "${num}" --comment "Superseded by \`${keep_branch}\` (newer auto-release sync)."                 || echo "::warning::Could not close superseded sync PR #${num}"
+              gh pr close "${num}" --comment "Superseded by `${keep_branch}` (newer auto-release sync)."                 || echo "::warning::Could not close superseded sync PR #${num}"
             done <<< "${nums}"
           }
 
@@ -114,7 +114,7 @@ jobs:
               echo "Sync PR for ${branch} already exists: ${pr_url}"
             else
               local body
-              body="Auto version bump from the Release workflow after merge to main (label \`release-sync\`). Keeps Cargo.toml aligned with ${tag}. Commit/title include \`[skip release]\` so merging does not start another release. Auto-merge (squash) is enabled; merges when required checks pass. Build/publish in this run uses the bumped commit and does not wait for the sync PR."
+              body="Auto version bump from the Release workflow after merge to main (label `release-sync`). Keeps Cargo.toml aligned with ${tag}. Commit/title include `[skip release]` so merging does not start another release. Auto-merge (squash) is enabled; merges when required checks pass. Build/publish in this run uses the bumped commit and does not wait for the sync PR."
               # Requires repo setting: Actions → General → Workflow permissions →
               # "Allow GitHub Actions to create and approve pull requests" (write).
               if ! pr_url="$(gh pr create \
@@ -262,20 +262,42 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Free GitHub-hosted runners. linux-arm64 and windows-arm64 are omitted
-          # (no free GHA runners); see docs/releases.md.
+          # Free GitHub-hosted runners only. Do not fake arm64 via qemu/cross unless
+          # maintainers explicitly opt in. See docs/releases.md.
           - runner: ubuntu-22.04
             target_os: linux
             arch: x64
+            variant: full
           - runner: macos-15-intel
             target_os: macos
             arch: x64
+            variant: full
           - runner: macos-14
             target_os: macos
             arch: arm64
+            variant: full
           - runner: windows-latest
             target_os: windows
             arch: x64
+            variant: full
+          # --- Future: enable when free GHA arm64 runners exist (do not uncomment early) ---
+          # - runner: ubuntu-24.04-arm   # placeholder name; confirm when GitHub ships free linux-arm64
+          #   target_os: linux
+          #   arch: arm64
+          #   variant: full
+          # - runner: windows-11-arm     # placeholder; confirm when free windows-arm64 exists
+          #   target_os: windows
+          #   arch: arm64
+          #   variant: full
+          # --- Optional native-only (advanced): …-native-release-… ; not default download ---
+          # - runner: ubuntu-22.04
+          #   target_os: linux
+          #   arch: x64
+          #   variant: native
+          # - runner: windows-latest
+          #   target_os: windows
+          #   arch: x64
+          #   variant: native
     steps:
       - uses: actions/checkout@v4
         with:
@@ -287,7 +309,7 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: release-${{ matrix.target_os }}-${{ matrix.arch }}
+          shared-key: release-${{ matrix.target_os }}-${{ matrix.arch }}-${{ matrix.variant }}
           cache-on-failure: true
 
       - name: Install packaging tools (Linux)
@@ -305,7 +327,15 @@ jobs:
 
       - name: Build release binary
         shell: bash
-        run: cargo build --release -p jerekode-cli --locked
+        env:
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          set -euo pipefail
+          EXTRA=()
+          if [[ "${VARIANT}" == "native" ]]; then
+            EXTRA+=(--no-default-features)
+          fi
+          cargo build --release -p jerekode-cli --locked "${EXTRA[@]}"
 
       - name: Package artifact
         shell: bash
@@ -313,6 +343,7 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
           TARGET_OS: ${{ matrix.target_os }}
           ARCH: ${{ matrix.arch }}
+          VARIANT: ${{ matrix.variant }}
         run: |
           set -euo pipefail
           chmod +x scripts/package-release.sh
@@ -321,11 +352,17 @@ jobs:
           else
             BIN="target/release/jerekode"
           fi
-          STEM="jerekode-${VERSION}-release-${TARGET_OS}-${ARCH}"
+          if [[ "${VARIANT}" == "native" ]]; then
+            STEM="jerekode-${VERSION}-native-release-${TARGET_OS}-${ARCH}"
+          else
+            STEM="jerekode-${VERSION}-release-${TARGET_OS}-${ARCH}"
+          fi
           mkdir -p dist
           ./scripts/package-release.sh "${STEM}" "${BIN}" dist release
 
       - name: Package installers
+        # Full variant only; native-only stays archive until installer UX is stable.
+        if: matrix.variant == 'full'
         shell: bash
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
@@ -344,7 +381,7 @@ jobs:
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jerekode-${{ needs.prepare.outputs.version }}-release-${{ matrix.target_os }}-${{ matrix.arch }}
+          name: jerekode-${{ needs.prepare.outputs.version }}-${{ matrix.variant }}-release-${{ matrix.target_os }}-${{ matrix.arch }}
           path: dist/*
           if-no-files-found: error
           retention-days: 30
@@ -362,7 +399,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: jerekode-${{ needs.prepare.outputs.version }}-release-*
+          pattern: jerekode-${{ needs.prepare.outputs.version }}-*-release-*
           path: dist
           merge-multiple: true
 
@@ -383,26 +420,28 @@ jobs:
           chmod +x scripts/filter-release-notes.py
 
           cat > /tmp/release-notes.md <<EOF
-          Release **jerekode ${VERSION}** at \`${SHA}\` (\`${SHORT_SHA}\`).
+          Release **jerekode ${VERSION}** at `${SHA}` (`${SHORT_SHA}`).
 
           ### Artifacts
-          Portable archives: \`jerekode-{version}-release-{os}-{arch}\` (\`.tar.gz\` / \`.zip\`).
+          Portable archives: `jerekode-{version}-release-{os}-{arch}` (`.tar.gz` / `.zip`).
 
           **Installers (unsigned pre-1.0):**
-          - **Windows:** \`jerekode-{version}-release-windows-x64-setup.exe\` or stable \`jerekode-x64-setup.exe\`
-          - **Linux:** \`.deb\`, \`.rpm\`, \`.AppImage\`, Arch \`.pkg.tar.zst\` (plus \`.tar.gz\`)
-          - **macOS:** \`.pkg\` (plus \`.tar.gz\`)
+          - **Windows:** `jerekode-{version}-release-windows-x64-setup.exe` or stable `jerekode-x64-setup.exe`
+          - **Linux:** `.deb`, `.rpm`, `.AppImage`, Arch `.pkg.tar.zst` (plus `.tar.gz`)
+          - **macOS:** `.pkg` (plus `.tar.gz`)
 
-          Install examples: \`pacman -U …pkg.tar.zst\`, \`sudo dpkg -i …deb\`, run NSIS setup on Windows.
+          Install examples: `pacman -U …pkg.tar.zst`, `sudo dpkg -i …deb`, run NSIS setup on Windows.
 
           ### Platforms
           - linux x64 (deb, rpm, AppImage, Arch pkg, tarball)
           - macos x64 / arm64 (pkg + tarball)
           - windows x64 (NSIS + zip)
+          - linux/windows arm64: not shipped until free GHA runners exist
+          - Default download is **full** (Bun sidecar paths). Native-only `…-native-release-…` is advanced/future.
 
-          Bun sidecar sources are **not** bundled — see \`sidecar/README.md\` and [docs/releases.md](docs/releases.md).
+          Installers are **unsigned** pre-1.0 (SmartScreen / Gatekeeper warnings expected). Bun sidecar sources are **not** bundled — see `sidecar/README.md` and [docs/releases.md](docs/releases.md).
 
-          Version \`0.0.<n>\` increments the patch on every successful \`main\` auto-release (seed after wipe: \`0.0.1\` → \`0.0.2\` → …). Include \`[skip release]\` in a merge commit message to skip publishing.
+          Version `0.0.<n>` increments the patch on every successful `main` auto-release (seed after wipe: `0.0.1` → `0.0.2` → …). Include `[skip release]` in a merge commit message to skip publishing.
           EOF
           # Strip the common leading indent from the heredoc above.
           sed -i -E 's/^[[:space:]]{10}//' /tmp/release-notes.md
@@ -434,6 +473,34 @@ jobs:
           echo "----- release notes preview -----"
           cat /tmp/release-notes.md
           echo "---------------------------------"
+
+      # --- P4 signing (inactive until secrets exist; do not break unsigned releases) ---
+      # Uncomment and wire when APPLE_* / WINDOWS_CERT* secrets are configured.
+      #
+      # - name: Notarize macOS pkg (Apple)
+      #   if: hashFiles('dist/*.pkg') != '' && secrets.APPLE_API_KEY != ''
+      #   shell: bash
+      #   env:
+      #     APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      #     APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      #     APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+      #     APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      #   run: |
+      #     set -euo pipefail
+      #     # xcrun notarytool submit dist/*.pkg --wait \
+      #     #   --key <(printf '%s' "$APPLE_API_KEY") \
+      #     #   --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER"
+      #     echo "Notarization stub — enable when Apple secrets are present."
+      #
+      # - name: Sign Windows NSIS (Authenticode)
+      #   if: hashFiles('dist/*-setup.exe') != '' && secrets.WINDOWS_CERT_PFX != ''
+      #   shell: pwsh
+      #   env:
+      #     WINDOWS_CERT_PFX: ${{ secrets.WINDOWS_CERT_PFX }}
+      #     WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+      #   run: |
+      #     # Import PFX and signtool sign /fd SHA256 dist\*-setup.exe
+      #     Write-Host "Authenticode stub — enable when WINDOWS_CERT* secrets are present."
 
       - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2

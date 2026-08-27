@@ -1,9 +1,11 @@
 //! Criterion benchmark hooks for hot paths (see docs/perf-baseline.md).
 
 use criterion::{Criterion, criterion_group, criterion_main};
+#[cfg(feature = "bun-sidecar")]
+use jerekode_plugins::BunPluginHost;
 use jerekode_plugins::{
-    BunPluginHost, HookCall, InMemorySidecarPort, NativePluginHost, PluginOrchestrator,
-    SidecarOutbound, SidecarPort,
+    HookCall, InMemorySidecarPort, NativePluginHost, PluginOrchestrator, SidecarOutbound,
+    SidecarPort,
 };
 use std::hint::black_box;
 use std::sync::Arc;
@@ -42,10 +44,15 @@ fn bench_orchestrator_dispatch(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
     c.bench_function("orchestrator_dispatch_hook", |b| {
         b.to_async(&rt).iter(|| async {
-            let port = Arc::new(InMemorySidecarPort::new());
-            let bun = Arc::new(BunPluginHost::new(port));
             let native = Arc::new(NativePluginHost::new());
-            let orch = PluginOrchestrator::new(vec![native, bun]);
+            #[cfg(feature = "bun-sidecar")]
+            let orch = {
+                let port = Arc::new(InMemorySidecarPort::new());
+                let bun = Arc::new(BunPluginHost::new(port));
+                PluginOrchestrator::new(vec![native, bun])
+            };
+            #[cfg(not(feature = "bun-sidecar"))]
+            let orch = PluginOrchestrator::new(vec![native]);
             let _ = orch
                 .dispatch_hook(HookCall {
                     hook: "before_transform".into(),

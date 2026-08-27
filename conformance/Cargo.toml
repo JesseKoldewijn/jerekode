@@ -10,9 +10,9 @@ publish = false
 [dependencies]
 jerekode-config = { workspace = true }
 jerekode-core = { workspace = true }
-jerekode-plugins = { workspace = true }
+jerekode-plugins = { workspace = true, features = ["bun-sidecar"] }
 jerekode-providers = { workspace = true }
-jerekode-server = { workspace = true }
+jerekode-server = { workspace = true, features = ["bun-sidecar"] }
 serde_json = { workspace = true }
 
 [dev-dependencies]
