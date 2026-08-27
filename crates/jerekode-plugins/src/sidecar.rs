@@ -1,7 +1,9 @@
 use crate::error::{PluginError, PluginResult};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use tokio::sync::Mutex;
+
+#[cfg(feature = "bun-sidecar")]
+use std::sync::Arc;
 
 #[cfg(feature = "bun-sidecar")]
 use std::process::Stdio;
@@ -74,15 +76,15 @@ pub trait SidecarPort: Send + Sync {
 /// In-memory SidecarPort for tests (Layer 4 / sidecar contract tests).
 #[derive(Debug, Default)]
 pub struct InMemorySidecarPort {
-    outbound: tokio::sync::Mutex<Vec<SidecarOutbound>>,
-    inbound: tokio::sync::Mutex<Vec<SidecarInbound>>,
+    outbound: Mutex<Vec<SidecarOutbound>>,
+    inbound: Mutex<Vec<SidecarInbound>>,
 }
 
 impl InMemorySidecarPort {
     pub fn new() -> Self {
         Self {
-            outbound: tokio::sync::Mutex::new(Vec::new()),
-            inbound: tokio::sync::Mutex::new(vec![SidecarInbound::Ready]),
+            outbound: Mutex::new(Vec::new()),
+            inbound: Mutex::new(vec![SidecarInbound::Ready]),
         }
     }
 
