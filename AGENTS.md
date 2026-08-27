@@ -7,7 +7,7 @@ Brief orientation for AI agents working in this repository.
 1. Read [CONTEXT.md](CONTEXT.md) — crate map, vocabulary, current capability snapshot.
 2. Check [docs/adr/](docs/adr/) for architectural decisions in the area you are changing.
 3. Follow installed skills in [.agents/skills/](.agents/skills/) for the task at hand.
-4. Parity board is closed ([docs/roadmap-parity.md](docs/roadmap-parity.md)); CLI ↔ OpenCode argv/behavior work uses [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md) (**full drop-in mirror** locked there; check Decided + Clarifications pending before scoping CLI PRs); packaging / releases work uses [docs/roadmap-releases.md](docs/roadmap-releases.md) and [ADR 003](docs/adr/003-release-packaging-and-changelogs.md). First-party RTK dual adapter: [ADR 004](docs/adr/004-rtk-dual-adapter.md) / `packages/rtk`.
+4. Parity board is closed ([docs/roadmap-parity.md](docs/roadmap-parity.md)); CLI ↔ OpenCode work uses [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md) (**Decided** + **remaining-work inventory** — scope CLI PRs from that); packaging / releases uses [docs/roadmap-releases.md](docs/roadmap-releases.md) and [ADR 003](docs/adr/003-release-packaging-and-changelogs.md) (default download = full/Bun). First-party RTK dual adapter: [ADR 004](docs/adr/004-rtk-dual-adapter.md) / `packages/rtk`.
 
 ## Git: pull requests only
 
@@ -39,7 +39,7 @@ Format: `prefix:` or `prefix(scope):` + short imperative summary (e.g. `feat(cli
 | [docs/conformance.md](docs/conformance.md) | Test seams, fixture rules, TDD policy |
 | [docs/development.md](docs/development.md) | Rust standards, build commands |
 | [docs/roadmap-parity.md](docs/roadmap-parity.md) | Closed parity checklist (R0–P3e) |
-| [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md) | Active CLI ↔ OpenCode parity (full mirror locked; clarifications pending) |
+| [docs/roadmap-parity-cli.md](docs/roadmap-parity-cli.md) | Active CLI ↔ OpenCode full drop-in plan + remaining-work inventory |
 | [docs/roadmap-remaining.md](docs/roadmap-remaining.md) | Foundation archive (historical) |
 | [docs/releases.md](docs/releases.md) | Auto-release and `/build` (current ops) |
 | [docs/roadmap-releases.md](docs/roadmap-releases.md) | Active packaging / changelog / version-reset plan |
